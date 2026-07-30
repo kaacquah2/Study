@@ -1,0 +1,148 @@
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/poppins/600.css';
+@import '@fontsource/poppins/700.css';
+@import 'tailwindcss';
+
+@theme {
+	--color-bg: var(--bg);
+	--color-surface: var(--surface);
+	--color-surface-muted: var(--surface-muted);
+	--color-border: var(--border);
+	--color-text: var(--text);
+	--color-text-muted: var(--text-muted);
+	--color-primary: var(--primary);
+	--color-primary-soft: var(--primary-soft);
+	--color-primary-hover: var(--primary-hover);
+	--color-accent: var(--accent);
+	--color-accent-soft: var(--accent-soft);
+	--color-accent-text: var(--accent-text);
+	--color-success: var(--success);
+	--color-success-soft: var(--success-soft);
+	--color-danger: var(--danger);
+	--color-danger-soft: var(--danger-soft);
+	--color-hero-from: var(--hero-from);
+	--color-hero-to: var(--hero-to);
+
+	/* Course Specific Theme Accents */
+	--color-course-violet: var(--c-violet);
+	--color-course-violet-soft: var(--c-violet-soft);
+	--color-course-amber: var(--c-amber);
+	--color-course-amber-soft: var(--c-amber-soft);
+	--color-course-emerald: var(--c-emerald);
+	--color-course-emerald-soft: var(--c-emerald-soft);
+
+	/* Fonts */
+	--font-display: 'General Sans', 'Poppins', sans-serif;
+	--font-sans: 'Inter', sans-serif;
+	--font-mono: 'JetBrains Mono', monospace;
+
+	/* Border Radii */
+	--radius-sm: 8px;
+	--radius-md: 12px;
+	--radius-lg: 16px;
+	--radius-xl: 24px;
+
+	/* Shadows */
+	--shadow-sm: 0 1px 2px rgb(29 35 64 / 0.04);
+	--shadow-md: 0 4px 16px rgb(29 35 64 / 0.06);
+	--shadow-lg: 0 12px 32px rgb(29 35 64 / 0.1);
+
+	/* Shimmer animation for loading states */
+	--animate-shimmer: shimmer 2s infinite linear;
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: -200% 0;
+	}
+	100% {
+		background-position: 200% 0;
+	}
+}
+
+/* Theme definitions */
+
+/* Light — default */
+:root,
+[data-theme='light'] {
+	--bg: #eef1f7; /* page */
+	--surface: #ffffff; /* cards */
+	--surface-muted: #f5f7fb; /* inset panels, option rows */
+	--border: #e3e7f0;
+	--text: #1d2340; /* headings */
+	--text-muted: #5c6287; /* body, captions */
+	--primary: #574fd6; /* buttons, active pill, logo, FR badges */
+	--primary-soft: #eeedfb; /* lesson/module icon tiles */
+	--primary-hover: #4740be;
+	--accent: #f5a524; /* STREAK ONLY */
+	--accent-soft: #fef1dc;
+	--accent-text: #b25e00;
+	--success: #166534;
+	--success-soft: #e6f7ee;
+	--danger: #dc2626;
+	--danger-soft: #fdecec;
+	--hero-from: #6c63e8; /* login hero panel gradient */
+	--hero-to: #574fd6;
+
+	/* Course Specific Accents */
+	--c-violet: #6d28d9;
+	--c-violet-soft: #f5f3ff;
+	--c-amber: #b45309;
+	--c-amber-soft: #fffbeb;
+	--c-emerald: #047857;
+	--c-emerald-soft: #ecfdf5;
+}
+
+/* Dark */
+[data-theme='dark'] {
+	--bg: #12141c;
+	--surface: #1a1d28;
+	--surface-muted: #222634;
+	--border: #2c3142;
+	--text: #eef0f7;
+	--text-muted: #9aa0bc;
+	--primary: #7c74f0;
+	--primary-soft: #262445;
+	--primary-hover: #8f88f5;
+	--accent: #f5a524;
+	--accent-soft: #3a2b10;
+	--accent-text: #f5a524;
+	--success: #34d399;
+	--success-soft: #10291f;
+	--danger: #f87171;
+	--danger-soft: #2e1414;
+	--hero-from: #4a43b8;
+	--hero-to: #322c8c;
+
+	/* Course Specific Accents */
+	--c-violet: #a78bfa;
+	--c-violet-soft: #23153c;
+	--c-amber: #fbbf24;
+	--c-amber-soft: #38240a;
+	--c-emerald: #34d399;
+	--c-emerald-soft: #0d2a1d;
+}
+
+/* Global resets for fonts and base styles */
+body {
+	font-family: var(--font-sans);
+	background-color: var(--bg);
+	color: var(--text);
+	margin: 0;
+	padding: 0;
+	transition:
+		background-color 0.3s ease,
+		color 0.3s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-family: var(--font-display);
+}

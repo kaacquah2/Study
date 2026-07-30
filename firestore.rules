@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn()  { return request.auth != null; }
+    function isOwner(uid){ return signedIn() && request.auth.uid == uid; }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      // client may only change theme; streak is server-authoritative
+      allow update: if isOwner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['theme']);
+      allow create, delete: if false;
+
+      match /progress/{courseId} {
+        allow read: if isOwner(uid);
+        allow write: if false;                 // Server-authoritative via /api/modules/[id]/complete
+      }
+    }
+
+    match /courses/{courseId} {
+      allow read: if isOwner(resource.data.ownerUid);
+      allow write: if false;                  // Admin SDK only
+      
+      match /modules/{moduleId} {
+        allow read: if isOwner(get(/databases/$(db)/documents/courses/$(courseId)).data.ownerUid);
+        allow write: if false;
+      }
+    }
+
+    match /sharedCourses/{token} {
+      allow read: if signedIn() && (resource == null || !('revoked' in resource.data) || resource.data.revoked == false);  // anyone signed in with valid active link
+      allow write: if false;                                 // Admin SDK only
+    }
+
+    match /usage/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+    }
+
+    match /flashcards/{cardId} {
+      allow read, delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if signedIn() && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid;
+    }
+
+    match /weakTopics/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false; // Server-authoritative via /api/quiz/complete & review logs
+    }
+
+    match /studyGroups/{groupId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.memberUids;
+      allow write: if false; // Admin SDK only via /api/study-groups
+    }
+
+    match /peerQuestions/{questionId} {
+      allow read: if signedIn() && (
+        resource.data.status == 'approved' || 
+        resource.data.submittedBy == request.auth.uid
+      );
+      allow create: if signedIn() 
+        && request.resource.data.submittedBy == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update, delete: if false; // Moderation updates via Admin SDK only
+    }
+  }
+}
+

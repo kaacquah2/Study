@@ -1,0 +1,16 @@
+{
+	"name": "AI Study Buddy",
+	"short_name": "Study Buddy",
+	"description": "Personalized AI-powered course generation, spaced repetition, and study assistant.",
+	"start_url": "/app",
+	"display": "standalone",
+	"background_color": "#090d16",
+	"theme_color": "#3b82f6",
+	"icons": [
+		{
+			"src": "/favicon.png",
+			"sizes": "192x192 512x512",
+			"type": "image/png"
+		}
+	]
+}

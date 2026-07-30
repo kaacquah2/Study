@@ -1,0 +1,15 @@
+{"input": "The algorithm runs in linear time.", "output": "The time complexity of this algorithm is O(n), meaning it scales linearly with input size.", "style": "academic"}
+{"input": "The computer saves your work automatically.", "output": "The system performs automatic persistence of user-generated data at predefined intervals.", "style": "academic"}
+{"input": "You need to write clean code that others can understand.", "output": "It is essential to produce legible, well-structured source code that facilitates comprehension by other developers.", "style": "academic"}
+{"input": "Neural networks learn from examples.", "output": "Artificial neural networks acquire task-specific knowledge through iterative exposure to labeled training data.", "style": "academic"}
+{"input": "The app stores data in a database.", "output": "The application persists user and operational data within a structured relational database management system.", "style": "academic"}
+{"input": "Recursion is when a function calls itself.", "output": "Put simply, recursion is when a function runs itself again inside its own code to solve a smaller version of the same problem.", "style": "simple"}
+{"input": "Polymorphism allows objects of different types to be treated as instances of the same class.", "output": "Polymorphism lets you use different types of objects in the same way, even if they work differently under the hood.", "style": "simple"}
+{"input": "The database query returns null when no record matches the filter criteria.", "output": "The search gives you nothing back when it can't find what you're looking for.", "style": "simple"}
+{"input": "Memory allocation is the process of reserving a portion of memory for the use of a program.", "output": "Memory allocation means setting aside a section of your computer's memory so a program can use it.", "style": "simple"}
+{"input": "Big data refers to data sets that are too large or complex to be dealt with by traditional data-processing application software.", "output": "Big data describes collections of data so large and complicated that normal software cannot handle them.", "style": "simple"}
+{"input": "We need to fix the bug.", "output": "It is necessary to identify, diagnose, and resolve the software defect in order to restore correct system functionality.", "style": "formal"}
+{"input": "The team will review the code.", "output": "The development team will conduct a systematic review of the source code to ensure adherence to established quality standards.", "style": "formal"}
+{"input": "The system crashed because of too many users.", "output": "The system experienced an unplanned outage as a result of demand exceeding the available computational capacity.", "style": "formal"}
+{"input": "This method is faster than the old one.", "output": "The proposed methodology demonstrates a measurable improvement in computational efficiency compared to the prior approach.", "style": "formal"}
+{"input": "We built a chatbot that answers student questions.", "output": "An AI-powered conversational agent was developed to provide automated responses to student inquiries.", "style": "formal"}

@@ -1,0 +1,530 @@
+<script lang="ts">
+	import { auth } from '$lib/firebase/client';
+	import { toastStore } from '$lib/stores/toast.svelte';
+	import { resolve } from '$app/paths';
+	import { onMount } from 'svelte';
+
+	// ── State ──────────────────────────────────────────────────────────────────
+	let chunkCount = $state(0);
+	let hasDocuments = $state(false);
+	let statsLoading = $state(true);
+
+	// Upload state
+	let pasteText = $state('');
+	let uploading = $state(false);
+	let uploadError = $state('');
+	let dragOver = $state(false);
+
+	// Staged files: list of { name, content } objects
+	let stagedFiles = $state<{ name: string; content: string }[]>([]);
+
+	// Clear confirmation
+	let showClearConfirm = $state(false);
+	let clearing = $state(false);
+
+	// ── Auth helper ───────────────────────────────────────────────────────────
+	async function getToken(): Promise<string> {
+		const token = await auth.currentUser?.getIdToken();
+		if (!token) throw new Error('Not authenticated');
+		return token;
+	}
+
+	// ── Load Stats ────────────────────────────────────────────────────────────
+	async function loadStats() {
+		statsLoading = true;
+		try {
+			const token = await getToken();
+			const res = await fetch('/api/documents', {
+				headers: { Authorization: `Bearer ${token}` }
+			});
+			if (res.ok) {
+				const data = await res.json();
+				chunkCount = data.chunk_count ?? 0;
+				hasDocuments = data.has_documents ?? false;
+			}
+		} catch (e) {
+			console.error('Failed to load RAG stats:', e);
+		} finally {
+			statsLoading = false;
+		}
+	}
+
+	onMount(() => {
+		loadStats();
+	});
+
+	// ── File Drop / Pick ──────────────────────────────────────────────────────
+	function handleDrop(e: DragEvent) {
+		e.preventDefault();
+		dragOver = false;
+		const files = Array.from(e.dataTransfer?.files || []);
+		readFiles(files);
+	}
+
+	function handleFilePick(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const files = Array.from(input.files || []);
+		readFiles(files);
+		input.value = '';
+	}
+
+	function extractPdfText(buffer: ArrayBuffer): string {
+		const decoder = new TextDecoder('utf-8', { fatal: false });
+		const raw = decoder.decode(buffer);
+		// Match text tokens in PDF Tj or TJ operator structures
+		const matches = raw.match(/\((.*?)\)\s*Tj|\[(.*?)\]\s*TJ/g);
+		if (matches && matches.length > 0) {
+			const extracted = matches
+				.map((m) => m.replace(/^[\(\[]|[\)\]]\s*T[jJ]$/g, '').replace(/\\/g, ''))
+				.filter((t) => t.trim().length > 1)
+				.join(' ');
+			if (extracted.length >= 20) return extracted;
+		}
+		// Fallback clean extraction for PDF text streams
+		const cleanText = raw
+			.replace(/%PDF-[\s\S]*?stream/g, ' ')
+			.replace(/endstream[\s\S]*?endobj/g, ' ')
+			.replace(/[^\x20-\x7E\n]/g, ' ')
+			.replace(/\s+/g, ' ');
+		return cleanText.trim();
+	}
+
+	function readFiles(files: File[]) {
+		const supportedExts = ['.txt', '.md', '.pdf', '.json', '.csv'];
+		const supported = files.filter((f) =>
+			supportedExts.some((ext) => f.name.toLowerCase().endsWith(ext))
+		);
+		if (supported.length !== files.length) {
+			toastStore.error('Supported formats: .pdf, .txt, .md, .json, .csv');
+		}
+		supported.forEach((file) => {
+			const isPdf = file.name.toLowerCase().endsWith('.pdf');
+			const reader = new FileReader();
+			reader.onload = () => {
+				let content = '';
+				if (isPdf && reader.result instanceof ArrayBuffer) {
+					content = extractPdfText(reader.result);
+				} else if (typeof reader.result === 'string') {
+					content = reader.result.trim();
+				}
+				if (content.length < 20) {
+					toastStore.error(`${file.name} is empty or has insufficient text content to index.`);
+					return;
+				}
+				if (stagedFiles.some((f) => f.name === file.name)) {
+					toastStore.error(`${file.name} is already staged.`);
+					return;
+				}
+				stagedFiles = [...stagedFiles, { name: file.name, content }];
+				toastStore.success(`Staged: ${file.name}`);
+			};
+
+			if (isPdf) {
+				reader.readAsArrayBuffer(file);
+			} else {
+				reader.readAsText(file);
+			}
+		});
+	}
+
+	function addPasteText() {
+		const text = pasteText.trim();
+		if (text.length < 20) {
+			uploadError = 'Text must be at least 20 characters.';
+			return;
+		}
+		const name = `Pasted text (${new Date().toLocaleTimeString()})`;
+		stagedFiles = [...stagedFiles, { name, content: text }];
+		pasteText = '';
+		uploadError = '';
+		toastStore.success('Text staged for upload.');
+	}
+
+	function removeStaged(index: number) {
+		stagedFiles = stagedFiles.filter((_, i) => i !== index);
+	}
+
+	// ── Upload ────────────────────────────────────────────────────────────────
+	async function uploadAll() {
+		if (stagedFiles.length === 0) return;
+		uploading = true;
+		uploadError = '';
+		try {
+			const token = await getToken();
+			const res = await fetch('/api/documents', {
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ texts: stagedFiles.map((f) => f.content) })
+			});
+			const data = await res.json();
+			if (!res.ok) {
+				throw new Error(data.error?.message || 'Upload failed');
+			}
+			toastStore.success(
+				`✓ ${data.chunks_added} chunks indexed from ${stagedFiles.length} document${stagedFiles.length > 1 ? 's' : ''}`
+			);
+			stagedFiles = [];
+			await loadStats();
+		} catch (err) {
+			uploadError = err instanceof Error ? err.message : 'Upload failed';
+			toastStore.error(uploadError);
+		} finally {
+			uploading = false;
+		}
+	}
+
+	// ── Clear Store ───────────────────────────────────────────────────────────
+	async function clearStore() {
+		clearing = true;
+		try {
+			const token = await getToken();
+			const res = await fetch('/api/documents', {
+				method: 'DELETE',
+				headers: { Authorization: `Bearer ${token}` }
+			});
+			if (!res.ok) {
+				const data = await res.json();
+				throw new Error(data.error?.message || 'Clear failed');
+			}
+			toastStore.success('Knowledge base cleared.');
+			showClearConfirm = false;
+			await loadStats();
+		} catch (err) {
+			toastStore.error(err instanceof Error ? err.message : 'Clear failed');
+		} finally {
+			clearing = false;
+		}
+	}
+</script>
+
+<svelte:head>
+	<title>Knowledge Base — AI Study Buddy</title>
+</svelte:head>
+
+<div class="mx-auto flex w-full max-w-3xl flex-col gap-6 py-4">
+	<!-- Header -->
+	<div class="flex items-center justify-between border-b border-border pb-4">
+		<div>
+			<a
+				href={resolve('/app')}
+				class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
+			>
+				&larr; Return to Dashboard
+			</a>
+			<h1 class="mt-1 font-display text-2xl font-bold text-text">Knowledge Base</h1>
+			<p class="mt-0.5 text-xs text-text-muted">
+				Upload study materials to improve AI lesson &amp; quiz generation quality.
+			</p>
+		</div>
+	</div>
+
+	<!-- Stats Bar -->
+	<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+		<div class="rounded-2xl border border-border bg-surface p-4">
+			<p class="text-[11px] font-bold tracking-wider text-text-muted uppercase">Indexed Chunks</p>
+			{#if statsLoading}
+				<div class="mt-1 h-6 w-16 animate-pulse rounded-lg bg-surface-muted"></div>
+			{:else}
+				<p class="mt-1 font-display text-2xl font-bold text-primary">
+					{chunkCount.toLocaleString()}
+				</p>
+			{/if}
+		</div>
+		<div class="rounded-2xl border border-border bg-surface p-4">
+			<p class="text-[11px] font-bold tracking-wider text-text-muted uppercase">RAG Status</p>
+			{#if statsLoading}
+				<div class="mt-1 h-6 w-20 animate-pulse rounded-lg bg-surface-muted"></div>
+			{:else}
+				<p
+					class="mt-1 font-display text-sm font-bold {hasDocuments
+						? 'text-success'
+						: 'text-text-muted'}"
+				>
+					{hasDocuments ? '✓ Active' : 'No documents'}
+				</p>
+			{/if}
+		</div>
+		<div class="col-span-2 rounded-2xl border border-border bg-surface p-4 sm:col-span-1">
+			<p class="text-[11px] font-bold tracking-wider text-text-muted uppercase">Chunk Size</p>
+			<p class="mt-1 font-display text-sm font-bold text-text">400 chars / 50 overlap</p>
+		</div>
+	</div>
+
+	<!-- How it works banner -->
+	<div
+		class="rounded-2xl border border-primary/20 bg-primary-soft/40 p-4 text-xs leading-relaxed text-primary"
+	>
+		<span class="font-bold">How it works:</span> Documents you upload are split into chunks, embedded
+		with a semantic model, and stored in a FAISS index on disk. When you generate lessons or quizzes,
+		the AI retrieves the most relevant chunks and uses them as grounded context — producing far more accurate
+		and specific content.
+	</div>
+
+	<!-- Upload Section -->
+	<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+		<h2 class="font-display text-base font-bold text-text">Add Documents</h2>
+
+		<!-- Drag & Drop Zone -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 text-center transition-colors
+				{dragOver
+				? 'border-primary bg-primary-soft/30'
+				: 'border-border bg-surface-muted/50 hover:border-primary/50'}"
+			ondragover={(e) => {
+				e.preventDefault();
+				dragOver = true;
+			}}
+			ondragleave={() => {
+				dragOver = false;
+			}}
+			ondrop={handleDrop}
+		>
+			<div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft">
+				<svg
+					class="h-6 w-6 text-primary"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					stroke-width="2"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+					/>
+				</svg>
+			</div>
+			<div>
+				<p class="text-sm font-bold text-text">Drag &amp; drop files here</p>
+				<p class="text-xs text-text-muted">
+					Supports <code class="rounded bg-surface-muted px-1 font-mono">.txt</code> and
+					<code class="rounded bg-surface-muted px-1 font-mono">.md</code> files
+				</p>
+			</div>
+			<label
+				class="cursor-pointer rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text transition-colors hover:border-primary hover:text-primary"
+			>
+				Browse Files
+				<input type="file" accept=".txt,.md" multiple class="hidden" onchange={handleFilePick} />
+			</label>
+		</div>
+
+		<!-- Paste Text -->
+		<div class="flex flex-col gap-2 border-t border-border/40 pt-4">
+			<label for="paste-input" class="text-xs font-bold tracking-wider text-text-muted uppercase">
+				Or paste text directly
+			</label>
+			<textarea
+				id="paste-input"
+				bind:value={pasteText}
+				rows="4"
+				placeholder="Paste lecture notes, textbook excerpts, or any study material here..."
+				class="w-full resize-none rounded-xl border border-border bg-surface-muted/50 px-4 py-3 text-xs leading-relaxed text-text focus:border-primary focus:outline-none"
+			></textarea>
+			{#if uploadError}
+				<p class="text-[11px] font-semibold text-danger">{uploadError}</p>
+			{/if}
+			<div class="flex justify-end">
+				<button
+					type="button"
+					onclick={addPasteText}
+					disabled={pasteText.trim().length < 20}
+					class="cursor-pointer rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+				>
+					+ Stage Text
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Staged Files Queue -->
+	{#if stagedFiles.length > 0}
+		<div class="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+			<div class="flex items-center justify-between">
+				<h2 class="font-display text-base font-bold text-text">
+					Staged for Upload
+					<span
+						class="ml-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white"
+					>
+						{stagedFiles.length}
+					</span>
+				</h2>
+				<button
+					type="button"
+					onclick={() => {
+						stagedFiles = [];
+					}}
+					class="text-xs font-bold text-text-muted transition-colors hover:text-danger"
+				>
+					Clear all
+				</button>
+			</div>
+
+			<ul class="flex flex-col gap-2">
+				{#each stagedFiles as file, i (file.name + i)}
+					<li
+						class="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-muted/50 px-4 py-2.5"
+					>
+						<div class="flex min-w-0 items-center gap-2">
+							<svg
+								class="h-4 w-4 shrink-0 text-primary"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+								/>
+							</svg>
+							<span class="truncate text-xs font-semibold text-text">{file.name}</span>
+						</div>
+						<div class="flex shrink-0 items-center gap-3">
+							<span class="text-[11px] text-text-muted"
+								>{(file.content.length / 1000).toFixed(1)}k chars</span
+							>
+							<button
+								type="button"
+								onclick={() => removeStaged(i)}
+								class="text-text-muted transition-colors hover:text-danger"
+								aria-label="Remove {file.name}"
+							>
+								<svg
+									class="h-4 w-4"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+								</svg>
+							</button>
+						</div>
+					</li>
+				{/each}
+			</ul>
+
+			<button
+				type="button"
+				onclick={uploadAll}
+				disabled={uploading}
+				class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50"
+			>
+				{#if uploading}
+					<span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+					></span>
+					Indexing documents...
+				{:else}
+					<svg
+						class="h-4 w-4"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+						/>
+					</svg>
+					Index {stagedFiles.length} Document{stagedFiles.length > 1 ? 's' : ''}
+				{/if}
+			</button>
+		</div>
+	{/if}
+
+	<!-- Danger Zone — Clear Store -->
+	<div class="flex flex-col gap-3 rounded-2xl border border-danger/20 bg-danger-soft/30 p-6">
+		<div>
+			<h2 class="font-display text-base font-bold text-danger">Danger Zone</h2>
+			<p class="mt-0.5 text-xs text-text-muted">
+				Clearing the knowledge base permanently deletes all indexed document chunks from the FAISS
+				vector store. Sample documents will be re-seeded on next server restart.
+			</p>
+		</div>
+
+		{#if !showClearConfirm}
+			<button
+				type="button"
+				onclick={() => {
+					showClearConfirm = true;
+				}}
+				disabled={!hasDocuments}
+				class="inline-flex items-center gap-2 self-start rounded-xl border border-danger/40 bg-danger-soft px-4 py-2 text-xs font-bold text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-40"
+			>
+				<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+					/>
+				</svg>
+				Clear Knowledge Base
+			</button>
+		{:else}
+			<div class="flex flex-col gap-2">
+				<p class="text-xs font-bold text-danger">
+					Are you sure? This will delete all {chunkCount.toLocaleString()} indexed chunks.
+				</p>
+				<div class="flex gap-2">
+					<button
+						type="button"
+						onclick={clearStore}
+						disabled={clearing}
+						class="inline-flex items-center gap-2 rounded-xl bg-danger px-4 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
+					>
+						{#if clearing}
+							<span
+								class="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"
+							></span>
+							Clearing...
+						{:else}
+							Yes, Clear Everything
+						{/if}
+					</button>
+					<button
+						type="button"
+						onclick={() => {
+							showClearConfirm = false;
+						}}
+						class="rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted transition-colors hover:text-text"
+					>
+						Cancel
+					</button>
+				</div>
+			</div>
+		{/if}
+	</div>
+
+	<!-- Tips -->
+	<div
+		class="rounded-2xl border border-border bg-surface p-5 text-xs leading-relaxed text-text-muted"
+	>
+		<p class="mb-2 font-bold text-text">Tips for best results</p>
+		<ul class="flex list-inside list-disc flex-col gap-1.5">
+			<li>Upload topic-specific materials that match what you'll be generating courses about</li>
+			<li>
+				Longer, well-structured documents (textbook chapters, lecture notes) produce the best
+				grounding
+			</li>
+			<li>
+				The knowledge base is <span class="font-semibold text-text"
+					>shared across all your courses</span
+				> — it's not per-course
+			</li>
+			<li>Documents persist on disk across ML backend restarts</li>
+			<li>
+				You can also use the <code class="rounded bg-surface-muted px-1 font-mono"
+					>build_index.py</code
+				> script to bulk-index a folder of files
+			</li>
+		</ul>
+	</div>
+</div>

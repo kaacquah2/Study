@@ -1,0 +1,55 @@
+{
+	"indexes": [
+		{
+			"collectionGroup": "courses",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "ownerUid",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "createdAt",
+					"order": "DESCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "flashcards",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "uid",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "dueDate",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "sourceType",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "peerQuestions",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "courseId",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "status",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "createdAt",
+					"order": "DESCENDING"
+				}
+			]
+		}
+	],
+	"fieldOverrides": []
+}
