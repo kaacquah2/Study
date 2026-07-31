@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
@@ -17,7 +18,7 @@ const RegenerateModuleZod = z.object({
 });
 
 // POST /api/courses/[id]/draft/regenerate-module
-export async function POST({ params, request }) {
+export const POST: RequestHandler = async ({ params, request }) => {
 	const { id: courseId } = params;
 
 	try {
@@ -80,4 +81,4 @@ Please generate 1 fresh, distinct module to replace Module ${moduleIndex + 1} ($
 		const message = err instanceof Error ? err.message : 'Failed to regenerate module';
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

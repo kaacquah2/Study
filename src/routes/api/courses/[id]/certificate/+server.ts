@@ -1,8 +1,9 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
 
-export async function GET({ params, request }) {
+export const GET: RequestHandler = async ({ params, request }) => {
 	const { id: courseId } = params;
 
 	try {
@@ -53,4 +54,4 @@ export async function GET({ params, request }) {
 			{ status: 500 }
 		);
 	}
-}
+};

@@ -3,18 +3,7 @@
 	import { auth } from '$lib/firebase/client';
 	import { page } from '$app/state';
 	import { themeStore } from '$lib/stores/theme.svelte';
-	import { marked } from 'marked';
-	import DOMPurify from 'isomorphic-dompurify';
-
-	function renderMarkdown(content: string): string {
-		if (!content) return '';
-		try {
-			const rawHtml = marked.parse(content, { async: false }) as string;
-			return DOMPurify.sanitize(rawHtml);
-		} catch {
-			return DOMPurify.sanitize(content);
-		}
-	}
+	import { renderSanitizedMarkdown } from '$lib/utils/markdown';
 	interface Message {
 		role: 'user' | 'assistant';
 		content: string;
@@ -271,7 +260,7 @@
 							{#if msg.role === 'assistant'}
 								<div class="space-y-2">
 									<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-									{@html renderMarkdown(msg.content)}
+									{@html renderSanitizedMarkdown(msg.content)}
 								</div>
 							{:else}
 								<div>{msg.content}</div>

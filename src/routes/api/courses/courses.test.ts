@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './+server';
 import { verifySessionUser } from '$lib/server/auth';
 import { generateOutline } from '$lib/server/ai/provider';
-import type { RequestEvent } from '@sveltejs/kit';
 
 vi.mock('$lib/server/auth', () => ({
 	verifySessionUser: vi.fn()

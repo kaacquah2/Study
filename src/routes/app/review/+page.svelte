@@ -87,7 +87,7 @@
 			} else {
 				toastStore.error('Failed to submit review score.');
 			}
-		} catch (e) {
+		} catch {
 			toastStore.error('Network error saving review score.');
 		}
 	}

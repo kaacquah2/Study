@@ -7,18 +7,7 @@
  * Run with: npx tsx scripts/calibrate_domain_classifier.ts
  */
 
-export const CS_TAXONOMY_TOPICS = [
-	'Data Structures & Algorithms',
-	'Operating Systems',
-	'Computer Networks & Protocols',
-	'Database Management Systems',
-	'Computer Architecture & Assembly',
-	'Discrete Mathematics & Graph Theory',
-	'Software Engineering & System Design',
-	'Object-Oriented Programming in Java/C++',
-	'Compilers & Automata Theory',
-	'Cybersecurity & Cryptography Fundamentals'
-];
+import { calculateDomainConfidence } from '../src/lib/server/ai/domainClassifier';
 
 export const BENCHMARK_DATASET = [
 	// CS Core Topics (Target: High Confidence / In-Domain)
@@ -55,53 +44,6 @@ export const BENCHMARK_DATASET = [
 	{ topic: 'French Conversational Grammar', expectedInDomain: false },
 	{ topic: 'Creative Writing: Narrative Arc and Pacing', expectedInDomain: false }
 ];
-
-/**
- * Calculates a lightweight token-Jaccard + keyword overlap similarity score (0 to 1)
- */
-export function calculateDomainConfidence(userTopic: string): {
-	confidence: number;
-	matchedTopic: string | null;
-} {
-	const normalize = (str: string) =>
-		str
-			.toLowerCase()
-			.replace(/[^a-z0-9\s]/g, '')
-			.split(/\s+/)
-			.filter((w) => w.length > 2);
-
-	const topicTokens = new Set(normalize(userTopic));
-	if (topicTokens.size === 0) return { confidence: 0, matchedTopic: null };
-
-	let maxScore = 0;
-	let bestMatch: string | null = null;
-
-	for (const taxonomyTopic of CS_TAXONOMY_TOPICS) {
-		const taxTokens = new Set(normalize(taxonomyTopic));
-		let intersection = 0;
-
-		for (const token of topicTokens) {
-			if (taxTokens.has(token)) {
-				intersection++;
-			}
-		}
-
-		// Jaccard similarity weighted towards user topic token coverage
-		const userCoverage = intersection / topicTokens.size;
-		const taxCoverage = intersection / taxTokens.size;
-		const combinedScore = userCoverage * 0.7 + taxCoverage * 0.3;
-
-		if (combinedScore > maxScore) {
-			maxScore = combinedScore;
-			bestMatch = taxonomyTopic;
-		}
-	}
-
-	return {
-		confidence: Math.min(1.0, Number(maxScore.toFixed(3))),
-		matchedTopic: maxScore > 0 ? bestMatch : null
-	};
-}
 
 export function calibrateThreshold(threshold: number) {
 	let truePositives = 0;

@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { verifySessionUser } from '$lib/server/auth';
 import { chat } from '$lib/server/ai/provider';
@@ -21,7 +22,7 @@ const ChatBodySchema = z.object({
 	courseContext: z.string().max(1_000).optional()
 });
 
-export async function POST({ request }) {
+export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const user = await verifySessionUser(request);
 
@@ -98,7 +99,7 @@ export async function POST({ request }) {
 		}
 
 		// Execute chat inference
-		const { result: chatResult, provider } = await chat(messages, contextToUse);
+		const { result: chatResult, provider } = await chat(messages, contextToUse, user.uid);
 
 		// Construct SSE stream using ReadableStream
 		const encoder = new TextEncoder();
@@ -145,4 +146,4 @@ export async function POST({ request }) {
 			{ status: 500 }
 		);
 	}
-}
+};

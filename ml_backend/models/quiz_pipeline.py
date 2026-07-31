@@ -24,13 +24,14 @@ logger = logging.getLogger(__name__)
 import os
 
 _QG_MODEL_ID = os.getenv("QUIZ_QG_MODEL_ID", "valhalla/t5-small-qg-prepend")
-_DG_MODEL_ID = os.getenv("QUIZ_DG_MODEL_ID", "valhalla/t5-small-qa-qg-hl")
+_DG_MODEL_ID = os.getenv("QUIZ_DG_MODEL_ID", "potsawee/t5-large-generation-race-Distractor")
 
 MIN_QUESTIONS = 3
 MAX_QUESTIONS = 5
 
 
 def load_models() -> tuple[Pipeline, Pipeline]:
+    logger.info(f"Quiz pipeline initializing models: QG='{_QG_MODEL_ID}', DG='{_DG_MODEL_ID}'")
     qg = get_pipeline("text2text-generation", _QG_MODEL_ID)
     dg = get_pipeline("text2text-generation", _DG_MODEL_ID)
     return qg, dg

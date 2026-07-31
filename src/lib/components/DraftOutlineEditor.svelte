@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { auth } from '$lib/firebase/client';
 	import { toastStore } from '$lib/stores/toast.svelte';
+	import { apiFetch } from '$lib/api/client';
 
 	interface ModuleOutline {
 		id?: string;
@@ -74,21 +74,18 @@
 		if (!courseId || regeneratingModuleIndex !== null) return;
 		regeneratingModuleIndex = index;
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch(`/api/courses/${courseId}/draft/regenerate-module`, {
-				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					moduleIndex: index,
-					currentModules: modules
-				})
-			});
+			const data = await apiFetch<{ module: { title: string; summary: string } }>(
+				`/api/courses/${courseId}/draft/regenerate-module`,
+				{
+					method: 'POST',
+					body: {
+						moduleIndex: index,
+						currentModules: modules
+					}
+				}
+			);
 
-			const data = await res.json();
-			if (res.ok && data.module) {
+			if (data.module) {
 				const updated = [...modules];
 				updated[index] = {
 					...updated[index],
@@ -96,13 +93,11 @@
 					summary: data.module.summary
 				};
 				modules = updated;
-				toastStore.success(`Module ${index + 1} regenerated!`);
-			} else {
-				throw new Error(data.error?.message || 'Failed to regenerate module');
 			}
 		} catch (err) {
 			console.error('Single module regeneration error:', err);
-			toastStore.error('Could not regenerate this module.');
+			const message = err instanceof Error ? err.message : 'Could not regenerate this module.';
+			toastStore.error(message);
 		} finally {
 			regeneratingModuleIndex = null;
 		}
@@ -113,18 +108,14 @@
 		if (!courseId || isRegeneratingOutline) return;
 		isRegeneratingOutline = true;
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch(`/api/courses/${courseId}/draft/regenerate-outline`, {
+			const data = await apiFetch<{
+				outline: { title?: string; description?: string; modules?: ModuleOutline[] };
+			}>(`/api/courses/${courseId}/draft/regenerate-outline`, {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ steeringHint })
+				body: { steeringHint }
 			});
 
-			const data = await res.json();
-			if (res.ok && data.outline) {
+			if (data.outline) {
 				title = data.outline.title || title;
 				description = data.outline.description || description;
 				modules = (data.outline.modules || []).map(
@@ -136,9 +127,8 @@
 						estimatedMinutes: 12
 					})
 				);
-				toastStore.success('Whole outline regenerated with steering hint!');
 			} else {
-				throw new Error(data.error?.message || 'Failed to regenerate outline');
+				throw new Error('Failed to regenerate outline');
 			}
 		} catch (err) {
 			console.error('Steering outline regeneration error:', err);

@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 /**
  * /api/spaced-repetition/export — Export flashcard decks to CSV or Anki format.
  */
@@ -6,15 +7,12 @@ import { json } from '@sveltejs/kit';
 import { verifySessionUser } from '$lib/server/auth';
 import { adminDb } from '$lib/server/admin';
 
-export async function GET({ request, url }) {
+export const GET: RequestHandler = async ({ request, url }) => {
 	try {
 		const user = await verifySessionUser(request);
 		const format = url.searchParams.get('format') || 'csv';
 
-		const snapshot = await adminDb
-			.collection('flashcards')
-			.where('uid', '==', user.uid)
-			.get();
+		const snapshot = await adminDb.collection('flashcards').where('uid', '==', user.uid).get();
 
 		const cards = snapshot.docs.map((doc) => doc.data());
 
@@ -42,4 +40,4 @@ export async function GET({ request, url }) {
 		}
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

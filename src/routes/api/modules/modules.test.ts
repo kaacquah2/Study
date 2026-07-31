@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { RequestEvent } from '@sveltejs/kit';
 import { POST as completeModuleHandler } from './[id]/complete/+server';
 import { POST as generateModuleHandler } from './[id]/generate/+server';
 import { verifySessionUser } from '$lib/server/auth';
@@ -61,7 +60,10 @@ describe('/api/modules/[id] Integration Tests', () => {
 				body: JSON.stringify({})
 			});
 
-			const response = await completeModuleHandler({ params: { id: 'mod1' }, request } as any);
+			const response = await completeModuleHandler({
+				params: { id: 'mod1' },
+				request
+			} as unknown as Parameters<typeof completeModuleHandler>[0]);
 			const json = await response.json();
 
 			expect(response.status).toBe(400);
@@ -91,7 +93,10 @@ describe('/api/modules/[id] Integration Tests', () => {
 				body: JSON.stringify({ courseId: 'c1' })
 			});
 
-			const response = await completeModuleHandler({ params: { id: 'mod1' }, request } as any);
+			const response = await completeModuleHandler({
+				params: { id: 'mod1' },
+				request
+			} as unknown as Parameters<typeof completeModuleHandler>[0]);
 			const json = await response.json();
 
 			expect(response.status).toBe(403);
@@ -140,7 +145,10 @@ describe('/api/modules/[id] Integration Tests', () => {
 				body: JSON.stringify({ courseId: 'c1', timezone: 'Africa/Accra' })
 			});
 
-			const response = await completeModuleHandler({ params: { id: 'mod1' }, request } as any);
+			const response = await completeModuleHandler({
+				params: { id: 'mod1' },
+				request
+			} as unknown as Parameters<typeof completeModuleHandler>[0]);
 			const json = await response.json();
 
 			expect(response.status).toBe(200);
@@ -160,7 +168,10 @@ describe('/api/modules/[id] Integration Tests', () => {
 				body: JSON.stringify({})
 			});
 
-			const response = await generateModuleHandler({ params: { id: 'mod1' }, request } as any);
+			const response = await generateModuleHandler({
+				params: { id: 'mod1' },
+				request
+			} as unknown as Parameters<typeof generateModuleHandler>[0]);
 			const json = await response.json();
 
 			expect(response.status).toBe(400);
@@ -184,7 +195,10 @@ describe('/api/modules/[id] Integration Tests', () => {
 				body: JSON.stringify({ courseId: 'nonexistent' })
 			});
 
-			const response = await generateModuleHandler({ params: { id: 'mod1' }, request } as any);
+			const response = await generateModuleHandler({
+				params: { id: 'mod1' },
+				request
+			} as unknown as Parameters<typeof generateModuleHandler>[0]);
 			const json = await response.json();
 
 			expect(response.status).toBe(404);
@@ -236,7 +250,10 @@ describe('/api/modules/[id] Integration Tests', () => {
 				body: JSON.stringify({ courseId: 'c1' })
 			});
 
-			const response = await generateModuleHandler({ params: { id: 'mod1' }, request } as any);
+			const response = await generateModuleHandler({
+				params: { id: 'mod1' },
+				request
+			} as unknown as Parameters<typeof generateModuleHandler>[0]);
 			const json = await response.json();
 
 			expect(response.status).toBe(200);
@@ -280,7 +297,10 @@ describe('/api/modules/[id] Integration Tests', () => {
 				body: JSON.stringify({ courseId: 'c1' })
 			});
 
-			const response = await generateModuleHandler({ params: { id: 'mod1' }, request } as any);
+			const response = await generateModuleHandler({
+				params: { id: 'mod1' },
+				request
+			} as unknown as Parameters<typeof generateModuleHandler>[0]);
 			const json = await response.json();
 
 			expect(response.status).toBe(500);

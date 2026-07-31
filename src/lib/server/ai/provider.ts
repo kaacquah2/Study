@@ -317,7 +317,8 @@ export async function generateOutline(
 	topic: string,
 	moduleCount: number,
 	format: 'lessons_and_quizzes' | 'quizzes_only',
-	referenceText?: string
+	referenceText?: string,
+	userId?: string
 ): Promise<AIResult<CourseOutline>> {
 	const parseOutline = (raw: unknown): CourseOutline => {
 		const parsed = OutlineZodSchema.parse(raw);
@@ -345,7 +346,8 @@ export async function generateOutline(
 					format,
 					reference_text: referenceText ?? null
 				},
-				90_000
+				90_000,
+				userId
 			);
 			return parseOutline(response);
 		},
@@ -369,7 +371,8 @@ export async function generateLesson(
 	fullOutline: CourseOutline,
 	moduleTitle: string,
 	moduleObjective: string,
-	keyPoints: string[]
+	keyPoints: string[],
+	userId?: string
 ): Promise<AIResult<LessonContent>> {
 	const parseLesson = (raw: unknown): LessonContent => {
 		const parsed = LessonZodSchema.parse(raw);
@@ -405,7 +408,8 @@ export async function generateLesson(
 						type: m.type
 					}))
 				},
-				120_000
+				120_000,
+				userId
 			);
 			return parseLesson(response);
 		},
@@ -440,7 +444,8 @@ export async function generateQuiz(
 	fullOutline: CourseOutline,
 	moduleTitle: string,
 	moduleObjective: string,
-	keyPoints: string[]
+	keyPoints: string[],
+	userId?: string
 ): Promise<AIResult<QuizContent>> {
 	const parseQuiz = (raw: unknown): QuizContent => {
 		const parsed = QuizZodSchema.parse(raw);
@@ -474,7 +479,8 @@ export async function generateQuiz(
 					key_points: safeKeyPoints,
 					lesson_body: null
 				},
-				120_000
+				120_000,
+				userId
 			);
 			return parseQuiz(response);
 		},
@@ -502,15 +508,21 @@ export async function generateQuiz(
 export async function summarize(
 	text: string,
 	maxLength = 150,
-	minLength = 40
+	minLength = 40,
+	userId?: string
 ): Promise<AIResult<string>> {
 	return executeAI(
 		async () => {
-			const response = await callML<{ summary: string }>('/summarize', {
-				text,
-				max_length: maxLength,
-				min_length: minLength
-			});
+			const response = await callML<{ summary: string }>(
+				'/summarize',
+				{
+					text,
+					max_length: maxLength,
+					min_length: minLength
+				},
+				120_000,
+				userId
+			);
 			return response.summary;
 		},
 		async () => {
@@ -529,11 +541,17 @@ export async function summarize(
 
 export async function paraphrase(
 	text: string,
-	style: 'academic' | 'simple' | 'formal' = 'academic'
+	style: 'academic' | 'simple' | 'formal' = 'academic',
+	userId?: string
 ): Promise<AIResult<string>> {
 	return executeAI(
 		async () => {
-			const response = await callML<{ paraphrase: string }>('/paraphrase', { text, style });
+			const response = await callML<{ paraphrase: string }>(
+				'/paraphrase',
+				{ text, style },
+				120_000,
+				userId
+			);
 			return response.paraphrase;
 		},
 		async () => {
@@ -552,7 +570,8 @@ export async function paraphrase(
 
 export async function chat(
 	messages: ChatMessage[],
-	courseContext?: string
+	courseContext?: string,
+	userId?: string
 ): Promise<AIResult<ChatResult>> {
 	return executeAI(
 		async () => {
@@ -562,7 +581,8 @@ export async function chat(
 					messages,
 					course_context: courseContext ?? null
 				},
-				180_000
+				180_000,
+				userId
 			);
 			return {
 				reply: response.reply,
@@ -604,4 +624,52 @@ export async function enhanceTopic(
 		undefined,
 		'reasoning'
 	);
+}
+
+// ── Generic AI Completion ───────────────────────────────────────────────────
+
+export interface AICompletionOptions {
+	prompt: string;
+	systemInstruction?: string;
+	userId?: string;
+}
+
+export async function generateAICompletion(
+	options: AICompletionOptions
+): Promise<{ text: string; provider: AIProvider }> {
+	const result = await executeAI(
+		async () => {
+			const res = await callML<{ text?: string; reply?: string }>(
+				'/completion',
+				{
+					prompt: options.prompt,
+					system_instruction: options.systemInstruction
+				},
+				120_000,
+				options.userId
+			);
+			return res.text || res.reply || '';
+		},
+		async () => {
+			const res = await chatViaGemini(
+				[{ role: 'user', content: options.prompt }],
+				options.systemInstruction
+			);
+			return res.reply;
+		},
+		async () => {
+			const res = await chatViaOllama(
+				[{ role: 'user', content: options.prompt }],
+				options.systemInstruction
+			);
+			return res.reply;
+		},
+		'reasoning',
+		options.prompt
+	);
+
+	return {
+		text: result.result,
+		provider: result.provider
+	};
 }

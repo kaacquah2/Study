@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 /**
  * /api/quiz/explain — "Explain My Mistake" endpoint.
  *
@@ -10,7 +11,7 @@ import { verifySessionUser } from '$lib/server/auth';
 import { generateAICompletion } from '$lib/server/ai/provider';
 import { moderateText } from '$lib/server/ai/moderation';
 
-export async function POST({ request }) {
+export const POST: RequestHandler = async ({ request }) => {
 	try {
 		await verifySessionUser(request);
 
@@ -52,7 +53,8 @@ Lesson Context: ${lessonContext || 'N/A'}`;
 		}
 
 		return json({
-			explanation: 'The student answer is incorrect. The correct answer provides the accurate factual explanation based on the lesson material.',
+			explanation:
+				'The student answer is incorrect. The correct answer provides the accurate factual explanation based on the lesson material.',
 			servicedByProvider: aiResponse.provider,
 			moderated: true
 		});
@@ -63,4 +65,4 @@ Lesson Context: ${lessonContext || 'N/A'}`;
 		}
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

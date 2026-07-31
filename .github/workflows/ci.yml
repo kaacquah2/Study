@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install Dependencies
@@ -32,6 +32,9 @@ jobs:
 
       - name: Run Unit Tests
         run: npm run test:unit -- --run
+
+      - name: Run NPM Security Audit
+        run: npm audit --audit-level=high || true
 
   ml-backend-check:
     name: ML Backend Verification
@@ -51,9 +54,14 @@ jobs:
           cd ml_backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
+          pip install pytest pip-audit
 
       - name: Run Pytest Suite
         run: |
           cd ml_backend
           pytest test_ml_backend.py -v
+
+      - name: Run Python Dependency Audit
+        run: |
+          cd ml_backend
+          pip-audit --desc || true

@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 /**
  * /api/documents — Secure proxy to the ML backend's RAG document endpoints.
  *
@@ -17,22 +18,25 @@ const ML_BACKEND_URL = env.ML_BACKEND_URL || 'http://localhost:8000';
 const ML_BACKEND_API_KEY = env.ML_BACKEND_API_KEY || '';
 
 /** Build headers for forwarding requests to the Python ML backend */
-function mlHeaders(): Record<string, string> {
+function mlHeaders(userId?: string): Record<string, string> {
 	const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 	if (ML_BACKEND_API_KEY) {
 		headers['X-API-Key'] = ML_BACKEND_API_KEY;
+	}
+	if (userId) {
+		headers['X-User-ID'] = userId;
 	}
 	return headers;
 }
 
 // ── GET /api/documents ─────────────────────────────────────────────────────────
 
-export async function GET({ request }) {
+export const GET: RequestHandler = async ({ request }) => {
 	try {
-		await verifySessionUser(request);
+		const user = await verifySessionUser(request);
 
 		const res = await fetch(`${ML_BACKEND_URL}/rag-stats`, {
-			headers: mlHeaders()
+			headers: mlHeaders(user.uid)
 		});
 
 		if (!res.ok) {
@@ -49,13 +53,13 @@ export async function GET({ request }) {
 		}
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};
 
 // ── POST /api/documents ────────────────────────────────────────────────────────
 
-export async function POST({ request }) {
+export const POST: RequestHandler = async ({ request }) => {
 	try {
-		await verifySessionUser(request);
+		const user = await verifySessionUser(request);
 
 		const body = await request.json();
 		const texts: string[] = body?.texts;
@@ -88,7 +92,7 @@ export async function POST({ request }) {
 
 		const res = await fetch(`${ML_BACKEND_URL}/documents`, {
 			method: 'POST',
-			headers: mlHeaders(),
+			headers: mlHeaders(user.uid),
 			body: JSON.stringify({ texts: cleaned })
 		});
 
@@ -106,17 +110,17 @@ export async function POST({ request }) {
 		}
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};
 
 // ── DELETE /api/documents ──────────────────────────────────────────────────────
 
-export async function DELETE({ request }) {
+export const DELETE: RequestHandler = async ({ request }) => {
 	try {
-		await verifySessionUser(request);
+		const user = await verifySessionUser(request);
 
 		const res = await fetch(`${ML_BACKEND_URL}/documents`, {
 			method: 'DELETE',
-			headers: mlHeaders()
+			headers: mlHeaders(user.uid)
 		});
 
 		if (!res.ok) {
@@ -133,4 +137,4 @@ export async function DELETE({ request }) {
 		}
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

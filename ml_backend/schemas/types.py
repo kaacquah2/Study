@@ -59,7 +59,7 @@ class OutlineResponse(BaseModel):
 # ── RAG Documents ─────────────────────────────────────────────────────────────
 
 class DocumentsRequest(BaseModel):
-    texts: list[str] = Field(..., min_length=1, max_items=100)
+    texts: list[str] = Field(..., min_length=1, max_length=100)
     user_id: Optional[str] = Field(default="default_user", max_length=128)
 
 

@@ -46,7 +46,7 @@ import models.outline_generator as outline_model
 import models.lesson_generator as lesson_model
 import models.quiz_pipeline as quiz_model
 import models.chat_assistant as chat_model
-from models.model_registry import inference_lock
+from models.model_registry import inference_lock, is_any_inference_busy
 from models.rag_pipeline import rag
 
 logging.basicConfig(level=logging.INFO)
@@ -222,7 +222,7 @@ def healthcheck():
             "chat_assistant": chat_model.is_loaded(),
             "rag_index": rag.has_documents(),
         },
-        inference_busy=inference_lock.locked(),
+        inference_busy=is_any_inference_busy(),
     )
 
 
@@ -241,7 +241,7 @@ def metrics():
         "status": "up",
         "cuda_available": cuda_available,
         "device_name": torch.cuda.get_device_name(0) if cuda_available else "CPU",
-        "inference_lock_held": inference_lock.locked(),
+        "inference_lock_held": is_any_inference_busy(),
         "rag_chunks": rag.chunk_count(),
         "model_status": _MODEL_STATUS,
     }

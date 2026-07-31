@@ -275,4 +275,3 @@ describe('Firestore Security Rules', () => {
 		expect(approvedSnap.exists()).toBe(true);
 	});
 });
-

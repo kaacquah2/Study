@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
@@ -13,7 +14,7 @@ const GenerateModuleZod = z.object({
 	courseId: z.string()
 });
 
-export async function POST({ params, request }) {
+export const POST: RequestHandler = async ({ params, request }) => {
 	const { id: moduleId } = params;
 
 	try {
@@ -143,7 +144,8 @@ export async function POST({ params, request }) {
 					courseOutline,
 					moduleData.title,
 					moduleData.learningObjective || '',
-					moduleData.keyPoints || []
+					moduleData.keyPoints || [],
+					user.uid
 				);
 
 				// Sanitize and validate markdown content on write
@@ -198,12 +200,7 @@ export async function POST({ params, request }) {
 					pages: pages,
 					estimatedMinutes: estMinutes,
 					status: 'ready',
-					model:
-						provider === 'gemini'
-							? 'gemini-1.5-flash'
-							: provider === 'ollama'
-								? 'ollama-local'
-								: 'flan-t5-large',
+					model: provider,
 					verbatimSimilarityScore: memCheck.verbatimSimilarityScore,
 					generatedAt: FieldValue.serverTimestamp(),
 					error: null
@@ -219,7 +216,8 @@ export async function POST({ params, request }) {
 					courseOutline,
 					moduleData.title,
 					moduleData.learningObjective || '',
-					moduleData.keyPoints || []
+					moduleData.keyPoints || [],
+					user.uid
 				);
 
 				// Pre-save Quality Guardrail Validation
@@ -252,12 +250,7 @@ export async function POST({ params, request }) {
 					questions: result.questions,
 					estimatedMinutes: estMinutes,
 					status: 'ready',
-					model:
-						provider === 'gemini'
-							? 'gemini-1.5-flash'
-							: provider === 'ollama'
-								? 'ollama-local'
-								: 'flan-t5-large',
+					model: provider,
 					generatedAt: FieldValue.serverTimestamp(),
 					error: null
 				});
@@ -376,4 +369,4 @@ export async function POST({ params, request }) {
 				: message || 'Internal Server Error';
 		return json({ error: { code: 'SERVER_ERROR', message: clientMessage } }, { status: 500 });
 	}
-}
+};

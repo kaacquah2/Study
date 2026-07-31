@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { verifySessionUser } from '$lib/server/auth';
 import { paraphrase } from '$lib/server/ai/provider';
@@ -11,7 +12,7 @@ const ParaphraseBodySchema = z.object({
 	style: z.enum(['academic', 'simple', 'formal']).optional()
 });
 
-export async function POST({ request }) {
+export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const user = await verifySessionUser(request);
 
@@ -52,7 +53,7 @@ export async function POST({ request }) {
 		}
 
 		const { text, style = 'academic' } = parsed.data;
-		const { result: paraphraseResult, provider } = await paraphrase(text, style);
+		const { result: paraphraseResult, provider } = await paraphrase(text, style, user.uid);
 
 		return json({ paraphrase: paraphraseResult, provider });
 	} catch (err) {
@@ -67,4 +68,4 @@ export async function POST({ request }) {
 				: message || 'Internal Server Error';
 		return json({ error: { code: 'SERVER_ERROR', message: clientMessage } }, { status: 500 });
 	}
-}
+};

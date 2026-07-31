@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-	POST as sharePostHandler,
-	DELETE as shareDeleteHandler
-} from '../courses/[id]/share/+server';
+import { POST as sharePostHandler } from '../courses/[id]/share/+server';
 import { GET as getSharePreviewHandler } from './[token]/+server';
 import { POST as claimShareHandler } from './[token]/claim/+server';
 import { verifySessionUser } from '$lib/server/auth';
@@ -92,7 +89,7 @@ describe('Course Sharing & Claiming API Integration Tests', () => {
 				params: { id: 'c1' },
 				url: new URL('http://localhost/api/courses/c1/share'),
 				request: req
-			} as any);
+			} as unknown as Parameters<typeof sharePostHandler>[0]);
 
 			expect(res.status).toBe(401);
 		});
@@ -105,7 +102,7 @@ describe('Course Sharing & Claiming API Integration Tests', () => {
 			const res = await getSharePreviewHandler({
 				params: { token: 't123' },
 				getClientAddress: () => '127.0.0.1'
-			} as any);
+			} as unknown as Parameters<typeof getSharePreviewHandler>[0]);
 			const json = await res.json();
 
 			expect(res.status).toBe(429);
@@ -118,7 +115,10 @@ describe('Course Sharing & Claiming API Integration Tests', () => {
 			vi.mocked(verifySessionUser).mockRejectedValue(new Error('Unauthorized'));
 
 			const req = new Request('http://localhost/api/share/t123/claim', { method: 'POST' });
-			const res = await claimShareHandler({ params: { token: 't123' }, request: req } as any);
+			const res = await claimShareHandler({
+				params: { token: 't123' },
+				request: req
+			} as unknown as Parameters<typeof claimShareHandler>[0]);
 
 			expect(res.status).toBe(401);
 		});

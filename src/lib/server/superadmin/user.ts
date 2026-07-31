@@ -49,10 +49,7 @@ export async function verifySuperAdmin(request: Request): Promise<AuthenticatedU
 		// Ignore token decode error if already verified by verifySessionUser
 	}
 
-	const isSuperAdminDoc =
-		userData?.role === 'superadmin' ||
-		userData?.isSuperAdmin === true ||
-		userData?.isAdmin === true;
+	const isSuperAdminDoc = userData?.role === 'superadmin' || userData?.isSuperAdmin === true;
 
 	if (!isSuperAdminClaim && !isSuperAdminDoc) {
 		// Fallback check: if user is the first admin/owner or environment override
@@ -209,7 +206,11 @@ export async function getUserDetails(
 		role = 'admin';
 	}
 
-	const coursesSnap = await adminDb.collection('courses').where('userId', '==', uid).get();
+	const coursesSnap = await adminDb
+		.collection('courses')
+		.where('userId', '==', uid)
+		.limit(100)
+		.get();
 
 	const courses = coursesSnap.docs.map((d) => {
 		const cData = d.data();

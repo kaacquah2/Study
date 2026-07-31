@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
@@ -11,7 +12,7 @@ const RegenerateItemZod = z.object({
 });
 
 // POST /api/modules/[id]/regenerate-item
-export async function POST({ params, request }) {
+export const POST: RequestHandler = async ({ params, request }) => {
 	const { id: moduleId } = params;
 
 	try {
@@ -52,7 +53,8 @@ export async function POST({ params, request }) {
 				{ title: courseDoc.data()?.title || '', description: '', modules: [] },
 				modData.title,
 				`Generate 1 new replacement question for topic: ${targetQ?.prompt || modData.title}`,
-				modData.keyPoints || []
+				modData.keyPoints || [],
+				user.uid
 			);
 
 			const newQ = quizRes.result.questions[0];
@@ -73,7 +75,8 @@ export async function POST({ params, request }) {
 				{ title: courseDoc.data()?.title || '', description: '', modules: [] },
 				modData.title,
 				`Generate 1 new replacement lesson page for section: ${targetP?.heading || modData.title}`,
-				modData.keyPoints || []
+				modData.keyPoints || [],
+				user.uid
 			);
 
 			const newP = lessonRes.result.pages[0];
@@ -96,4 +99,4 @@ export async function POST({ params, request }) {
 		const message = err instanceof Error ? err.message : 'Regeneration failed';
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

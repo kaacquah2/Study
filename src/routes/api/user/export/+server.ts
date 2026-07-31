@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
@@ -7,7 +8,7 @@ import { verifySessionUser } from '$lib/server/auth';
  * GDPR & CCPA Data Export endpoint.
  * Returns complete JSON dump of all stored user data, courses, modules, and quiz history.
  */
-export async function GET({ request }) {
+export const GET: RequestHandler = async ({ request }) => {
 	try {
 		const user = await verifySessionUser(request);
 
@@ -72,4 +73,4 @@ export async function GET({ request }) {
 			{ status: 500 }
 		);
 	}
-}
+};

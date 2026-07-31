@@ -66,7 +66,7 @@
 			</button>
 
 			<div>
-				<h3 class="mb-1 font-display text-lg font-bold text-text">Share Course</h3>
+				<h3 class="mb-1 font-display text-lg font-bold text-text">Share {courseTitle}</h3>
 				<p class="text-xs leading-relaxed text-text-muted">
 					Copy the link below and send it to your classmate. When they open it, an independent copy
 					of this course will be cloned into their account.

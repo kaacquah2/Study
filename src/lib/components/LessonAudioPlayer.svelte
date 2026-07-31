@@ -164,7 +164,7 @@
 					<h4 class="text-xs font-bold text-text">{title}</h4>
 					<p class="text-[11px] text-text-muted">
 						{#if isPlaying}
-							Reading sentence {currentSentenceIndex + 1} of {sentences.length}
+							Reading sentence {currentSentenceIndex + 1} of {sentences.length} ({progressPercent}%)
 						{:else if isPaused}
 							Paused
 						{:else}
@@ -219,7 +219,7 @@
 			<!-- Speed selector -->
 			<div class="flex items-center gap-1.5">
 				<span class="text-[10px] font-bold tracking-wider text-text-muted uppercase">Speed:</span>
-				{#each [0.75, 1, 1.25, 1.5] as sRate}
+				{#each [0.75, 1, 1.25, 1.5] as sRate (sRate)}
 					<button
 						type="button"
 						onclick={() => handleRateChange(sRate)}
@@ -234,12 +234,12 @@
 
 			<!-- Voice selection if multiple -->
 			{#if availableVoices.length > 1}
-				<div class="flex max-w-[200px] flex-col gap-1">
+				<div class="flex max-w-50 flex-col gap-1">
 					<select
 						bind:value={selectedVoiceURI}
 						class="w-full truncate rounded-lg border border-border bg-surface px-2 py-0.5 text-[10px] text-text"
 					>
-						{#each availableVoices.filter((v) => v.lang.startsWith('en')) as voice}
+						{#each availableVoices.filter((v) => v.lang.startsWith('en')) as voice (voice.voiceURI)}
 							<option value={voice.voiceURI}>{voice.name}</option>
 						{/each}
 					</select>

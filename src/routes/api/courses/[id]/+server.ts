@@ -1,9 +1,10 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
 
 // DELETE /api/courses/[id]
-export async function DELETE({ params, request }) {
+export const DELETE: RequestHandler = async ({ params, request }) => {
 	try {
 		const user = await verifySessionUser(request);
 		const { id: courseId } = params;
@@ -66,4 +67,4 @@ export async function DELETE({ params, request }) {
 			{ status: 500 }
 		);
 	}
-}
+};

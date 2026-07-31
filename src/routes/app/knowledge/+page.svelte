@@ -75,7 +75,7 @@
 		const matches = raw.match(/\((.*?)\)\s*Tj|\[(.*?)\]\s*TJ/g);
 		if (matches && matches.length > 0) {
 			const extracted = matches
-				.map((m) => m.replace(/^[\(\[]|[\)\]]\s*T[jJ]$/g, '').replace(/\\/g, ''))
+				.map((m) => m.replace(/^[([]|[)]]\s*T[jJ]$/g, '').replace(/\\/g, ''))
 				.filter((t) => t.trim().length > 1)
 				.join(' ');
 			if (extracted.length >= 20) return extracted;

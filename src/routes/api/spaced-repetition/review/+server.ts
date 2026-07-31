@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
@@ -11,7 +12,7 @@ const ReviewZod = z.object({
 	quality: z.number().int().min(0).max(5)
 });
 
-export async function POST({ request }) {
+export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const user = await verifySessionUser(request);
 		const body = await request.json();
@@ -100,4 +101,4 @@ export async function POST({ request }) {
 			{ status: 500 }
 		);
 	}
-}
+};

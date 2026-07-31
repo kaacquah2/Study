@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
@@ -11,7 +12,7 @@ const CompleteModuleZod = z.object({
 });
 
 // POST /api/modules/[id]/complete
-export async function POST({ params, request }) {
+export const POST: RequestHandler = async ({ params, request }) => {
 	const { id: moduleId } = params;
 
 	try {
@@ -250,4 +251,4 @@ export async function POST({ params, request }) {
 			{ status: 500 }
 		);
 	}
-}
+};

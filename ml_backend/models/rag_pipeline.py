@@ -81,9 +81,11 @@ class RAGPipeline:
 
         with self._lock:
             if self._index is None:
-                self._index = faiss.IndexFlatL2(self._dim)
+                self._index = faiss.IndexIDMap(faiss.IndexFlatL2(self._dim))
 
-            self._index.add(embeddings)
+            start_id = len(self._docs)
+            ids = np.arange(start_id, start_id + len(chunks), dtype="int64")
+            self._index.add_with_ids(embeddings, ids)
             for chunk in chunks:
                 self._docs.append({"text": chunk, "user_id": user_id})
 
@@ -95,28 +97,30 @@ class RAGPipeline:
         """Clear documents for a specific user, or clear all if user_id is None."""
         if user_id is None:
             with self._lock:
-                self._index = faiss.IndexFlatL2(self._dim)
+                self._index = faiss.IndexIDMap(faiss.IndexFlatL2(self._dim))
                 self._docs = []
                 self._save_index()
         else:
             with self._lock:
-                remaining_docs = [d for d in self._docs if d.get("user_id") != user_id]
+                if self._index is None:
+                    return
 
-            if not remaining_docs:
-                with self._lock:
-                    self._index = faiss.IndexFlatL2(self._dim)
-                    self._docs = []
-                    self._save_index()
-            else:
-                texts = [d["text"] for d in remaining_docs]
-                embeddings = self._embed_model.encode(texts, show_progress_bar=False)
-                embeddings = np.array(embeddings, dtype="float32")
-                new_index = faiss.IndexFlatL2(self._dim)
-                new_index.add(embeddings)
-                with self._lock:
-                    self._docs = remaining_docs
-                    self._index = new_index
-                    self._save_index()
+                target_ids = [idx for idx, d in enumerate(self._docs) if d.get("user_id") == user_id]
+                if not target_ids:
+                    return
+
+                # Perform fast in-place vector deletion without re-embedding remaining documents
+                try:
+                    self._index.remove_ids(np.array(target_ids, dtype="int64"))
+                except Exception as exc:
+                    logger.warn(f"[RAG] remove_ids failed ({exc}), resetting index.")
+                    self._index = faiss.IndexIDMap(faiss.IndexFlatL2(self._dim))
+
+                # Re-index doc tracking metadata
+                remaining_docs = [d for d in self._docs if d.get("user_id") != user_id]
+                self._docs = remaining_docs
+                self._save_index()
+                logger.info(f"[RAG] Cleared {len(target_ids)} chunks for user '{user_id}'. Index ntotal: {self._index.ntotal}")
 
     # ── Retrieval ──────────────────────────────────────────────────────────────
 

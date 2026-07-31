@@ -49,11 +49,14 @@ service cloud.firestore {
       allow write: if false; // Server-authoritative via /api/quiz/complete & review logs
     }
 
+    // Server-only design: Group creation/mutation is routed exclusively through Admin SDK (/api/study-groups).
+    // Do NOT add client create/write rules here without implementing full owner validation.
     match /studyGroups/{groupId} {
       allow read: if signedIn() && request.auth.uid in resource.data.memberUids;
       allow write: if false; // Admin SDK only via /api/study-groups
     }
 
+    // Peer question submission allowed for signedIn users; moderation and updates strictly Admin SDK.
     match /peerQuestions/{questionId} {
       allow read: if signedIn() && (
         resource.data.status == 'approved' || 

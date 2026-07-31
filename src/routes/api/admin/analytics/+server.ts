@@ -1,8 +1,9 @@
 import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
 
-export async function GET({ request }) {
+export const GET: RequestHandler = async ({ request }) => {
 	try {
 		const user = await verifySessionUser(request);
 
@@ -86,6 +87,7 @@ export async function GET({ request }) {
 				for (const modDoc of modulesSnap.docs) {
 					const mod = modDoc.data();
 					if (
+						mod.model === 'gemini' ||
 						mod.model === 'gemini-1.5-flash' ||
 						mod.model === 'gemini-2.5-flash' ||
 						mod.usedFallback === true
@@ -93,7 +95,11 @@ export async function GET({ request }) {
 						geminiCount++;
 					} else if (mod.model === 'ollama' || mod.model?.includes('ollama')) {
 						ollamaCount++;
-					} else if (mod.model === 'flan-t5-large' || mod.status === 'ready') {
+					} else if (
+						mod.model === 'ml_backend' ||
+						mod.model === 'flan-t5-large' ||
+						mod.status === 'ready'
+					) {
 						mlBackendCount++;
 					}
 				}
@@ -133,4 +139,4 @@ export async function GET({ request }) {
 			{ status: 500 }
 		);
 	}
-}
+};

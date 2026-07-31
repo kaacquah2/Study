@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
@@ -9,7 +10,7 @@ const SteeringRegenerateZod = z.object({
 });
 
 // POST /api/courses/[id]/draft/regenerate-outline
-export async function POST({ params, request }) {
+export const POST: RequestHandler = async ({ params, request }) => {
 	const { id: courseId } = params;
 
 	try {
@@ -40,7 +41,8 @@ export async function POST({ params, request }) {
 			topicPrompt,
 			courseData?.moduleCount || 4,
 			courseData?.format || 'lessons_and_quizzes',
-			courseData?.referenceText || undefined
+			courseData?.referenceText || undefined,
+			user.uid
 		);
 
 		return json({
@@ -53,4 +55,4 @@ export async function POST({ params, request }) {
 		const message = err instanceof Error ? err.message : 'Failed to regenerate outline';
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

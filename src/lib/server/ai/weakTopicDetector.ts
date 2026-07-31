@@ -37,10 +37,8 @@ export function analyzeWeakTopics(
 	quizLogs: QuizAttemptLog[],
 	srsLogs: SRSLapseLog[] = []
 ): TopicMastery[] {
-	const topicStats: Record<
-		string,
-		{ conceptTag: string; total: number; successWeight: number }
-	> = {};
+	const topicStats: Record<string, { conceptTag: string; total: number; successWeight: number }> =
+		{};
 
 	for (const log of quizLogs) {
 		const key = `${log.topicId}:${log.conceptTag}`;
@@ -70,7 +68,7 @@ export function analyzeWeakTopics(
 	const results: TopicMastery[] = [];
 
 	for (const [key, stats] of Object.entries(topicStats)) {
-		const [topicId, conceptTag] = key.split(':');
+		const [topicId] = key.split(':');
 		const accuracy = stats.total > 0 ? (stats.successWeight / stats.total) * 100 : 100;
 		const accuracyPercentage = Number(accuracy.toFixed(1));
 

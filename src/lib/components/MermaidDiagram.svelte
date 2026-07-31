@@ -12,18 +12,24 @@
 	let errorMsg = $state<string | null>(null);
 	let svgContent = $state<string>('');
 
-	async function loadMermaid(): Promise<any> {
+	interface MermaidAPI {
+		initialize: (config: Record<string, unknown>) => void;
+		render: (id: string, code: string) => Promise<{ svg: string }>;
+	}
+
+	async function loadMermaid(): Promise<MermaidAPI | null> {
 		if (typeof window === 'undefined') return null;
-		if ((window as any).mermaid) return (window as any).mermaid;
+		const win = window as unknown as { mermaid?: MermaidAPI };
+		if (win.mermaid) return win.mermaid;
 		return new Promise((resolve) => {
 			const existing = document.querySelector('script[src*="mermaid"]');
 			if (existing) {
-				existing.addEventListener('load', () => resolve((window as any).mermaid));
-				if ((window as any).mermaid) return resolve((window as any).mermaid);
+				existing.addEventListener('load', () => resolve(win.mermaid || null));
+				if (win.mermaid) return resolve(win.mermaid);
 			}
 			const script = document.createElement('script');
 			script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
-			script.onload = () => resolve((window as any).mermaid);
+			script.onload = () => resolve(win.mermaid || null);
 			script.onerror = () => resolve(null);
 			document.head.appendChild(script);
 		});
@@ -67,6 +73,7 @@
 >
 	{#if svgContent}
 		<div bind:this={container} class="flex items-center justify-center">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			{@html svgContent}
 		</div>
 	{:else if errorMsg}

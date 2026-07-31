@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { verifySessionUser } from '$lib/server/auth';
 import { enhanceTopic } from '$lib/server/ai/provider';
@@ -8,7 +9,7 @@ const RequestSchema = z.object({
 });
 
 // POST /api/courses/enhance-topic
-export async function POST({ request }) {
+export const POST: RequestHandler = async ({ request }) => {
 	try {
 		await verifySessionUser(request);
 
@@ -34,4 +35,4 @@ export async function POST({ request }) {
 		const message = err instanceof Error ? err.message : 'Failed to enhance topic';
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

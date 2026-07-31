@@ -58,10 +58,49 @@ export async function redisSet(key: string, value: unknown, ttlSeconds?: number)
 	return res === 'OK';
 }
 
-export async function redisIncr(key: string, ttlSeconds?: number): Promise<number | null> {
-	const count = await redisCommand<number>(['INCR', key]);
-	if (count === 1 && ttlSeconds) {
-		await redisCommand(['EXPIRE', key, ttlSeconds.toString()]);
+/**
+ * Execute multiple pipeline commands via Upstash Redis REST /pipeline API in a single HTTP request.
+ */
+export async function redisPipeline<T = unknown[]>(commands: string[][]): Promise<T | null> {
+	if (!isRedisConfigured()) return null;
+
+	try {
+		const pipelineUrl = REDIS_URL.endsWith('/pipeline')
+			? REDIS_URL
+			: `${REDIS_URL.replace(/\/$/, '')}/pipeline`;
+
+		const res = await fetch(pipelineUrl, {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${REDIS_TOKEN}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(commands)
+		});
+
+		if (!res.ok) {
+			console.warn(`Redis pipeline command failed: ${res.statusText}`);
+			return null;
+		}
+
+		const data = await res.json();
+		return (Array.isArray(data)
+			? data.map((item: { result?: unknown }) => item.result)
+			: null) as unknown as T;
+	} catch (err) {
+		console.warn('Redis pipeline connection error:', err);
+		return null;
 	}
-	return count;
+}
+
+export async function redisIncr(key: string, ttlSeconds?: number): Promise<number | null> {
+	if (ttlSeconds) {
+		const results = await redisPipeline<[number, number]>([
+			['INCR', key],
+			['EXPIRE', key, ttlSeconds.toString()]
+		]);
+		return results ? results[0] : null;
+	}
+
+	return await redisCommand<number>(['INCR', key]);
 }

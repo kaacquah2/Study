@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
@@ -8,7 +9,7 @@ const RetryModuleZod = z.object({
 });
 
 // POST /api/modules/[id]/retry
-export async function POST({ params, request }) {
+export const POST: RequestHandler = async ({ params, request }) => {
 	const { id: moduleId } = params;
 
 	try {
@@ -59,7 +60,6 @@ export async function POST({ params, request }) {
 
 		// Trigger background module generation immediately
 		const authHeader = request.headers.get('Authorization');
-		const internalKey = process.env.ML_BACKEND_API_KEY || '';
 		const origin = new URL(request.url).origin;
 
 		(async () => {
@@ -68,10 +68,6 @@ export async function POST({ params, request }) {
 					'Content-Type': 'application/json'
 				};
 				if (authHeader) headers['Authorization'] = authHeader;
-				if (internalKey) {
-					headers['X-Internal-Service-Key'] = internalKey;
-					headers['X-Internal-User-UID'] = user.uid;
-				}
 
 				await fetch(`${origin}/api/modules/${moduleId}/generate`, {
 					method: 'POST',
@@ -95,4 +91,4 @@ export async function POST({ params, request }) {
 			{ status: 500 }
 		);
 	}
-}
+};

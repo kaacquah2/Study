@@ -31,6 +31,9 @@ self.addEventListener('fetch', (event) => {
 
 	// Cache-first for static assets, stale-while-revalidate for navigation
 	if (url.origin === self.location.origin) {
+		// Network-only for authenticated API requests
+		if (url.pathname.startsWith('/api/')) return;
+
 		event.respondWith(
 			caches.match(event.request).then((cached) => {
 				const networked = fetch(event.request)

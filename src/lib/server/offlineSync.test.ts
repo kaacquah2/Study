@@ -19,10 +19,7 @@ export function replayOfflineReviews(initialCard: FSRSCard, logs: PendingReviewL
 
 	for (const log of sortedLogs) {
 		const reviewDate = new Date(log.reviewedAt);
-		const result = calculateFSRS(
-			{ quality: log.rating, card: currentCard },
-			reviewDate
-		);
+		const result = calculateFSRS({ quality: log.rating, card: currentCard }, reviewDate);
 		currentCard = result.card;
 	}
 

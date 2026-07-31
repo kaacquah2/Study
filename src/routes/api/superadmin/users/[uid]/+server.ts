@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import {
 	verifySuperAdmin,
@@ -5,7 +6,7 @@ import {
 	updateUserAdminState
 } from '$lib/server/superadmin/user';
 
-export async function GET({ request, params }) {
+export const GET: RequestHandler = async ({ request, params }) => {
 	try {
 		await verifySuperAdmin(request);
 		const user = await getUserDetails(params.uid);
@@ -20,9 +21,9 @@ export async function GET({ request, params }) {
 		}
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};
 
-export async function PATCH({ request, params }) {
+export const PATCH: RequestHandler = async ({ request, params }) => {
 	try {
 		await verifySuperAdmin(request);
 
@@ -46,4 +47,4 @@ export async function PATCH({ request, params }) {
 		}
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

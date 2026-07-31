@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
@@ -11,7 +12,7 @@ const SaveQuizStateZod = z.object({
 });
 
 // GET /api/modules/[id]/quiz-state?courseId=xxx
-export async function GET({ params, request, url }) {
+export const GET: RequestHandler = async ({ params, request, url }) => {
 	const { id: moduleId } = params;
 	const courseId = url.searchParams.get('courseId');
 
@@ -49,10 +50,10 @@ export async function GET({ params, request, url }) {
 			{ status: 500 }
 		);
 	}
-}
+};
 
 // POST /api/modules/[id]/quiz-state
-export async function POST({ params, request }) {
+export const POST: RequestHandler = async ({ params, request }) => {
 	const { id: moduleId } = params;
 
 	try {
@@ -99,4 +100,4 @@ export async function POST({ params, request }) {
 			{ status: 500 }
 		);
 	}
-}
+};

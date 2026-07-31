@@ -1,8 +1,9 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
 
-export async function GET({ request }) {
+export const GET: RequestHandler = async ({ request }) => {
 	try {
 		const user = await verifySessionUser(request);
 		const todayStr = new Date().toISOString().split('T')[0];
@@ -88,4 +89,4 @@ export async function GET({ request }) {
 			{ status: 500 }
 		);
 	}
-}
+};

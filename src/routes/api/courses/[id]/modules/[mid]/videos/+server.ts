@@ -1,10 +1,11 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
 import { getModuleVideos } from '$lib/server/youtube';
 
 // GET /api/courses/[id]/modules/[mid]/videos
-export async function GET({ params, url, request }) {
+export const GET: RequestHandler = async ({ params, url, request }) => {
 	const { id: courseId, mid: moduleId } = params;
 
 	try {
@@ -46,10 +47,10 @@ export async function GET({ params, url, request }) {
 		// Graceful degradation: return empty videos list on server error rather than breaking page
 		return json({ videos: [] });
 	}
-}
+};
 
 // POST /api/courses/[id]/modules/[mid]/videos (Reroll / Force Refresh)
-export async function POST({ params, request }) {
+export const POST: RequestHandler = async ({ params, request }) => {
 	const { id: courseId, mid: moduleId } = params;
 
 	try {
@@ -74,4 +75,4 @@ export async function POST({ params, request }) {
 		console.error('Refresh module videos API error:', err);
 		return json({ videos: [] });
 	}
-}
+};

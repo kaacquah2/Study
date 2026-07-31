@@ -41,10 +41,37 @@ const BLOCKED_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
 	}
 ];
 
+import { adminDb, FieldValue } from '$lib/server/admin';
+
+/**
+ * Logs flagged or blocked moderation inputs asynchronously to Firestore.
+ */
+export function logModerationFlag(
+	topic: string,
+	reason: string,
+	userId?: string | null,
+	pastedNotes?: string | null
+): void {
+	adminDb
+		.collection('moderationFlags')
+		.add({
+			topic,
+			pastedNotesSnippet: pastedNotes ? pastedNotes.slice(0, 300) : null,
+			reason,
+			userId: userId || null,
+			flaggedAt: FieldValue.serverTimestamp()
+		})
+		.catch((err) => console.warn('[Moderation] Could not log moderation flag to Firestore:', err));
+}
+
 /**
  * Validates text inputs (topic + pasted notes) against safety rules.
  */
-export function moderateInput(topic: string, pastedNotes?: string | null): ModerationResult {
+export function moderateInput(
+	topic: string,
+	pastedNotes?: string | null,
+	userId?: string | null
+): ModerationResult {
 	const combinedText = `${topic || ''}\n${pastedNotes || ''}`.trim();
 
 	if (!combinedText) {
@@ -53,6 +80,7 @@ export function moderateInput(topic: string, pastedNotes?: string | null): Moder
 
 	for (const rule of BLOCKED_PATTERNS) {
 		if (rule.pattern.test(combinedText)) {
+			logModerationFlag(topic, rule.reason, userId, pastedNotes);
 			return {
 				safe: false,
 				reason: rule.reason
@@ -61,4 +89,16 @@ export function moderateInput(topic: string, pastedNotes?: string | null): Moder
 	}
 
 	return { safe: true };
+}
+
+/**
+ * Moderates standalone text string (returns safe, flagged, and optional reason).
+ */
+export function moderateText(text: string): { safe: boolean; flagged: boolean; reason?: string } {
+	const res = moderateInput(text);
+	return {
+		safe: res.safe,
+		flagged: !res.safe,
+		reason: res.reason
+	};
 }

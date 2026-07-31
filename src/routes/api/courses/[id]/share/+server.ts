@@ -1,10 +1,11 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
 import crypto from 'crypto';
 
 // POST /api/courses/[id]/share
-export async function POST({ params, url, request }) {
+export const POST: RequestHandler = async ({ params, url, request }) => {
 	const { id: courseId } = params;
 
 	try {
@@ -103,10 +104,10 @@ export async function POST({ params, url, request }) {
 			{ status: 500 }
 		);
 	}
-}
+};
 
 // DELETE /api/courses/[id]/share (Revokes all shared links generated for this course)
-export async function DELETE({ params, request }) {
+export const DELETE: RequestHandler = async ({ params, request }) => {
 	const { id: courseId } = params;
 
 	try {
@@ -152,4 +153,4 @@ export async function DELETE({ params, request }) {
 			{ status: 500 }
 		);
 	}
-}
+};

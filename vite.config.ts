@@ -15,6 +15,9 @@ export default defineConfig({
 			adapter: adapter()
 		})
 	],
+	build: {
+		chunkSizeWarningLimit: 1000
+	},
 	test: {
 		expect: { requireAssertions: true },
 		projects: [

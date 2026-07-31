@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
@@ -27,7 +28,7 @@ const UpdateDraftZod = z.object({
 });
 
 // PATCH /api/courses/[id]/draft - Save edited draft outline
-export async function PATCH({ params, request }) {
+export const PATCH: RequestHandler = async ({ params, request }) => {
 	const { id: courseId } = params;
 
 	try {
@@ -124,10 +125,10 @@ export async function PATCH({ params, request }) {
 			{ status: 500 }
 		);
 	}
-}
+};
 
 // POST /api/courses/[id]/draft - Confirm draft and start full course generation
-export async function POST({ params, request, url }) {
+export const POST: RequestHandler = async ({ params, request, url }) => {
 	const { id: courseId } = params;
 
 	try {
@@ -154,9 +155,7 @@ export async function POST({ params, request, url }) {
 		const modulesSnap = await courseRef.collection('modules').orderBy('order', 'asc').get();
 		const moduleIds = modulesSnap.docs.map((doc) => doc.id);
 
-		// Trigger background module generation server-side
 		const authHeader = request.headers.get('Authorization');
-		const internalKey = process.env.ML_BACKEND_API_KEY || '';
 		const origin = url.origin;
 
 		(async () => {
@@ -165,10 +164,6 @@ export async function POST({ params, request, url }) {
 			const makeHeaders = () => {
 				const h: Record<string, string> = { 'Content-Type': 'application/json' };
 				if (authHeader) h['Authorization'] = authHeader;
-				if (internalKey) {
-					h['X-Internal-Service-Key'] = internalKey;
-					h['X-Internal-User-UID'] = user.uid;
-				}
 				return h;
 			};
 
@@ -214,4 +209,4 @@ export async function POST({ params, request, url }) {
 			{ status: 500 }
 		);
 	}
-}
+};

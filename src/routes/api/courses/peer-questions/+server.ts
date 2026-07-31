@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 /**
  * /api/courses/peer-questions — Peer-Authored Quiz Questions submission & listing endpoint.
  *
@@ -9,7 +10,7 @@ import { verifySessionUser } from '$lib/server/auth';
 import { adminDb } from '$lib/server/admin';
 import { moderateText } from '$lib/server/ai/moderation';
 
-export async function POST({ request }) {
+export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const user = await verifySessionUser(request);
 		const body = await request.json();
@@ -64,9 +65,9 @@ export async function POST({ request }) {
 		}
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};
 
-export async function GET({ request, url }) {
+export const GET: RequestHandler = async ({ request, url }) => {
 	try {
 		await verifySessionUser(request);
 		const courseId = url.searchParams.get('courseId');
@@ -87,4 +88,4 @@ export async function GET({ request, url }) {
 		}
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

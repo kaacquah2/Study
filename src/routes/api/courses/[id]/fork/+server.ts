@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
@@ -7,7 +8,7 @@ import { verifySessionUser } from '$lib/server/auth';
  * Clones/Forks a course template into the authenticated user's library.
  * Reuses existing pre-generated module content to save AI generation costs.
  */
-export async function POST({ params, request }) {
+export const POST: RequestHandler = async ({ params, request }) => {
 	const { id: sourceCourseId } = params;
 
 	try {
@@ -102,4 +103,4 @@ export async function POST({ params, request }) {
 			{ status: 500 }
 		);
 	}
-}
+};

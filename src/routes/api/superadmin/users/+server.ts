@@ -1,7 +1,8 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { verifySuperAdmin, listUsers } from '$lib/server/superadmin/user';
 
-export async function GET({ request, url }) {
+export const GET: RequestHandler = async ({ request, url }) => {
 	try {
 		await verifySuperAdmin(request);
 
@@ -22,4 +23,4 @@ export async function GET({ request, url }) {
 		}
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

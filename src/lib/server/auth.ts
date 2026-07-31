@@ -21,18 +21,6 @@ function isValidTimezone(tz: string): boolean {
  * Throws an error if authentication fails.
  */
 export async function verifySessionUser(request: Request): Promise<AuthenticatedUser> {
-	const internalKey = request.headers.get('X-Internal-Service-Key');
-	const internalUid = request.headers.get('X-Internal-User-UID');
-	const expectedKey = process.env.ML_BACKEND_API_KEY || '';
-
-	if (internalKey && expectedKey && internalKey === expectedKey && internalUid) {
-		return {
-			uid: internalUid,
-			email: request.headers.get('X-Internal-User-Email') || 'internal@service.local',
-			name: 'Internal System'
-		};
-	}
-
 	const authHeader = request.headers.get('Authorization');
 	if (!authHeader || !authHeader.startsWith('Bearer ')) {
 		throw new Error('Unauthorized: Missing or malformed Authorization header');

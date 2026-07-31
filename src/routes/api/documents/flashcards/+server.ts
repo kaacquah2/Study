@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 /**
  * /api/documents/flashcards — Auto-generate flashcards from RAG documents.
  *
@@ -10,7 +11,7 @@ import { verifySessionUser } from '$lib/server/auth';
 import { generateAICompletion } from '$lib/server/ai/provider';
 import { adminDb } from '$lib/server/admin';
 
-export async function POST({ request }) {
+export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const user = await verifySessionUser(request);
 		const body = await request.json();
@@ -93,4 +94,4 @@ ${documentText.slice(0, 3000)}`;
 		}
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

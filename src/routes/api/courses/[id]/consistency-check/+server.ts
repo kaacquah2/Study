@@ -1,10 +1,11 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
 import { summarize } from '$lib/server/ai/provider';
 
 // POST /api/courses/[id]/consistency-check
-export async function POST({ params, request }) {
+export const POST: RequestHandler = async ({ params, request }) => {
 	const { id: courseId } = params;
 
 	try {
@@ -49,4 +50,4 @@ export async function POST({ params, request }) {
 		const message = err instanceof Error ? err.message : 'Consistency check failed';
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

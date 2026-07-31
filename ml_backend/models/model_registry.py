@@ -35,6 +35,11 @@ def get_inference_lock(model_id: str) -> threading.Lock:
             _inference_locks[model_id] = threading.Lock()
         return _inference_locks[model_id]
 
+def is_any_inference_busy() -> bool:
+    """Check if any per-model or global inference lock is currently held."""
+    with _registry_lock:
+        return any(lock.locked() for lock in _inference_locks.values()) or inference_lock.locked()
+
 # Store of cached pipelines, keyed by "task:model_id"
 _pipelines: dict[str, Pipeline] = {}
 

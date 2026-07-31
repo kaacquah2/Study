@@ -87,14 +87,40 @@ Lesson page body:"""
         )
 
     pages = []
-    for i, (key_point, res) in enumerate(zip(effective_key_points, results)):
+    for i, (key_point, res, prompt) in enumerate(zip(effective_key_points, results, prompts)):
         body: str = res[0]["generated_text"].strip() if isinstance(res, list) else res["generated_text"].strip()
 
         word_count = len(body.split())
         if word_count < 40 or len(body) < 200:
+            logger.warning(
+                f"Lesson page {i} ('{key_point}') output short ({word_count} words). Attempting individual retry..."
+            )
+            # Retry up to 2 times for this specific page
+            for attempt in range(2):
+                with model_lock, torch.inference_mode():
+                    retry_res = model(
+                        prompt,
+                        max_new_tokens=300,
+                        do_sample=False,
+                        repetition_penalty=1.5,
+                        no_repeat_ngram_size=3,
+                    )
+                retry_body: str = (
+                    retry_res[0]["generated_text"].strip()
+                    if isinstance(retry_res, list)
+                    else retry_res["generated_text"].strip()
+                )
+                retry_words = len(retry_body.split())
+                if retry_words >= 40 and len(retry_body) >= 200:
+                    body = retry_body
+                    word_count = retry_words
+                    logger.info(f"Lesson page {i} retry attempt {attempt + 1} succeeded ({word_count} words).")
+                    break
+
+        if word_count < 40 or len(body) < 200:
             logger.error(
                 f"Lesson generation failed for module '{module_title}', page {i} ('{key_point}'): "
-                f"generated text too short ({word_count} words, {len(body)} chars). Marking module as failed."
+                f"generated text too short after retries ({word_count} words, {len(body)} chars). Marking module as failed."
             )
             raise RuntimeError(
                 f"Lesson generation produced insufficient content for key point '{key_point}' ({word_count} words)."

@@ -1,10 +1,11 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb } from '$lib/server/admin';
 import { enforceRateLimit } from '$lib/server/rateLimiter';
 import crypto from 'crypto';
 
 // GET /api/share/[token]
-export async function GET({ params, getClientAddress }) {
+export const GET: RequestHandler = async ({ params, getClientAddress }) => {
 	const { token } = params;
 
 	try {
@@ -67,4 +68,4 @@ export async function GET({ params, getClientAddress }) {
 		const message = err instanceof Error ? err.message : 'Internal Server Error';
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

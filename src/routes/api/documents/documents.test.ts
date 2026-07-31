@@ -20,7 +20,7 @@ describe('/api/documents RAG Proxy Integration Tests', () => {
 			vi.mocked(verifySessionUser).mockRejectedValue(new Error('Unauthorized'));
 
 			const req = new Request('http://localhost/api/documents', { method: 'GET' });
-			const res = await GET({ request: req } as any);
+			const res = await GET({ request: req } as unknown as Parameters<typeof GET>[0]);
 
 			expect(res.status).toBe(401);
 		});
@@ -32,7 +32,7 @@ describe('/api/documents RAG Proxy Integration Tests', () => {
 			);
 
 			const req = new Request('http://localhost/api/documents', { method: 'GET' });
-			const res = await GET({ request: req } as any);
+			const res = await GET({ request: req } as unknown as Parameters<typeof GET>[0]);
 			const json = await res.json();
 
 			expect(res.status).toBe(200);
@@ -50,7 +50,7 @@ describe('/api/documents RAG Proxy Integration Tests', () => {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ texts: [] })
 			});
-			const res = await POST({ request: req } as any);
+			const res = await POST({ request: req } as unknown as Parameters<typeof POST>[0]);
 
 			expect(res.status).toBe(400);
 		});
@@ -68,7 +68,7 @@ describe('/api/documents RAG Proxy Integration Tests', () => {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ texts: [validText] })
 			});
-			const res = await POST({ request: req } as any);
+			const res = await POST({ request: req } as unknown as Parameters<typeof POST>[0]);
 			const json = await res.json();
 
 			expect(res.status).toBe(201);
@@ -84,7 +84,7 @@ describe('/api/documents RAG Proxy Integration Tests', () => {
 			);
 
 			const req = new Request('http://localhost/api/documents', { method: 'DELETE' });
-			const res = await DELETE({ request: req } as any);
+			const res = await DELETE({ request: req } as unknown as Parameters<typeof DELETE>[0]);
 			const json = await res.json();
 
 			expect(res.status).toBe(200);

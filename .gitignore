@@ -43,6 +43,7 @@ test-results
 
 # ML Models, Weights & Vector Index Artifacts
 ml_backend/fine_tuned_models/
+ml_backend/my_pdfs/
 *.safetensors
 *.bin
 *.onnx

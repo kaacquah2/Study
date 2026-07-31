@@ -1,3 +1,4 @@
+import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
@@ -35,7 +36,7 @@ function sanitizePromptInput(text?: string): string | undefined {
 }
 
 // POST /api/courses
-export async function POST({ request }) {
+export const POST: RequestHandler = async ({ request }) => {
 	try {
 		// 1. Verify User Session
 		const user = await verifySessionUser(request);
@@ -112,7 +113,13 @@ export async function POST({ request }) {
 		let domainConfidenceScore: number | undefined;
 
 		try {
-			const outlineRes = await generateOutline(cleanTopic, moduleCount, format, cleanRefText);
+			const outlineRes = await generateOutline(
+				cleanTopic,
+				moduleCount,
+				format,
+				cleanRefText,
+				user.uid
+			);
 			outline = outlineRes.result;
 			servingProvider = outlineRes.provider;
 			domainConfidenceScore = outlineRes.domainConfidenceScore;
@@ -229,7 +236,7 @@ export async function POST({ request }) {
 					attempts: 0,
 					pages: null,
 					questions: null,
-					model: servingProvider === 'gemini' ? 'gemini-1.5-flash' : 'flan-t5-large',
+					model: servingProvider,
 					generatedAt: null,
 					tokensIn: 0,
 					tokensOut: 0,
@@ -285,4 +292,4 @@ export async function POST({ request }) {
 				: message || 'Internal Server Error';
 		return json({ error: { code: 'SERVER_ERROR', message: clientMessage } }, { status: 500 });
 	}
-}
+};

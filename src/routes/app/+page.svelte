@@ -39,7 +39,6 @@
 	};
 
 	let dueReviewsCount = $state(0);
-	let firstCourseIdWithDue = $state<string | null>(null);
 
 	// Item #15: Categorize In-Progress vs Completed courses
 	let inProgressCourses = $derived(
@@ -118,7 +117,6 @@
 			if (res.ok) {
 				const data = await res.json();
 				dueReviewsCount = data.count || 0;
-				firstCourseIdWithDue = data.firstCourseIdWithDue || null;
 			}
 		} catch (e) {
 			console.error('Error loading due reviews:', e);

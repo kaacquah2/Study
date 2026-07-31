@@ -13,7 +13,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-v1.60-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![Deploy Netlify](https://img.shields.io/badge/Deploy-Netlify-00AD9F?logo=netlify&logoColor=white)](https://www.netlify.com/)
 
-**AI Study Buddy** is an intelligent, personalized e-learning platform powered by a multi-provider Generative AI engine, spaced repetition memory schedulers (SM-2 & FSRS), custom document RAG search, interactive study microservices, and gamified daily streak mechanisms. Developed as a Final Year Project for the Department of Computer Science at **Kwame Nkrumah University of Science & Technology (KNUST)**.
+**AI Study Buddy** is an intelligent, personalized e-learning platform powered by a multi-provider Generative AI engine, spaced repetition memory schedulers (SM-2 & FSRS), weak topic detection, custom document RAG search, interactive study microservices, peer study groups, and gamified daily streak mechanisms. Developed as a Final Year Project for the Department of Computer Science at **Kwame Nkrumah University of Science & Technology (KNUST)**.
 
 ---
 
@@ -34,26 +34,30 @@
 - **Self-Hosted AI Course Generation & Draft Outline Editor:** Instantly generate structured multi-module course outlines from any topic or prompt. Features an interactive draft editor (`DraftOutlineEditor.svelte`) to review, reorder, add, or customize modules before committing course creation.
 - **Asynchronous Serverless Workflows:** Instantly renders skeletal course containers and module placeholders while generating lesson content and interactive multiple-choice quizzes on-demand with built-in retry mechanisms and background generation queueing (`generationQueue.ts`).
 - **Spaced Repetition Knowledge Hub (`/app/review`, `/api/spaced-repetition`):** Features personalized flashcard review scheduling powered by **SuperMemo 2 (SM-2)** (`sm2.ts`) and **Free Spaced Repetition Scheduler (FSRS)** (`fsrs.ts`) algorithms for optimal long-term memory retention.
+- **Weak Topic Detection (`weakTopicDetector.ts`):** Automatically analyzes quiz attempt histories to pinpoint student knowledge gaps and prioritize weak concepts for review.
 - **Custom Document RAG Ingestion (`/app/knowledge`, `/api/documents`):** Upload custom PDF/text reference documents into a vector store to ground AI course outline generation, lesson content, and assistant queries in user-provided study materials.
 - **Gamified Daily Streaks & Milestones:** Keeps students motivated with an interactive streak counter computed authoritatively on the server based on client IANA timezone headers (`X-Client-Timezone`). Includes daily goal activity rings (`DailyGoalRing.svelte`), calendar heatmaps (`StreakHeatmap.svelte`), and target badge progression (`BadgeStrip.svelte`).
 - **Interactive AI Study Buddy & Microservices:**
   - **Assistant Chat (`AssistantChat.svelte`):** Context-aware in-app chatbot to answer course questions in real time.
   - **Text Summarizer (`/api/summarize`):** Condenses dense lesson material into actionable bullet points and key takeaways.
   - **Text Paraphraser (`/api/paraphrase`):** Rephrases complex sentences into **Academic**, **Simple**, or **Formal** tone options.
+  - **Quiz Step Explanation (`/api/quiz/explain`):** Provides detailed step-by-step AI explanations for quiz questions and answers.
   - **Educational Video Finder (`youtube.ts`):** On-demand lookup of relevant YouTube educational videos per module with 90-day Firestore caching and stampede prevention locks.
   - **Lesson Audio Player (`LessonAudioPlayer.svelte`):** Listen to generated lesson text via built-in audio playback.
   - **Interactive Mermaid Visualizer (`MermaidDiagram.svelte`):** Automatically renders interactive visual diagrams and flowcharts within lesson content.
+- **Study Groups & Peer Collaboration (`/api/study-groups`, `/api/study-groups/join`):** Create and join collaborative study groups for peer learning and joint progress tracking.
 - **Course Sharing & Community Catalog:**
-  - **Share Links & Token Generation:** Create secure share links (`ShareModal.svelte`) for public course distribution.
+  - **Share Links & Token Generation:** Create secure share links (`ShareModal.svelte`) for public course distribution (`/share/[token]`).
   - **Public Explore Catalog (`/app/explore`):** Browse public courses created by peers.
   - **Course Cloning (`/shared/[shareId]`):** Clone public shared courses directly into your personal user workspace.
   - **Course Completion Certificates (`CertificateModal.svelte`):** Generate and download official certificates upon completing course modules and quizzes.
-- **Multi-Provider AI Resiliency Architecture:** High-availability AI layer supporting Google Gemini as the primary provider, local Ollama models (`llama3.2`), and a dedicated Python FastAPI inference pipeline (`ml_backend`) with domain classification, memorization guards, and moderation filters (`moderation.ts`).
-- **Superadmin Portal & System Administration (`/superadmin`, `/app/admin`):** Comprehensive admin dashboard for platform metrics, user management, role control, content moderation flag reviews (`ContentFlagModal.svelte`), and classifier calibration.
+- **Multi-Provider AI Resiliency Architecture:** High-availability AI layer supporting Google Gemini as the primary provider, local Ollama models (`llama3.2`), and a dedicated Python FastAPI inference pipeline (`ml_backend`) with domain classification (`domainClassifier.ts`), memorization guards (`memorizationGuard.ts`), moderation filters (`moderation.ts`), and pricing configuration (`pricingConfig.ts`).
+- **Superadmin Portal & Platform Administration (`/superadmin`, `/app/admin`, `/api/admin/analytics`):** Comprehensive admin dashboard for platform metrics, user management, role control, content moderation flag reviews (`ContentFlagModal.svelte`), analytics, and classifier calibration.
 - **Multi-Provider Authentication & User Settings:**
   - Secure Email/Password registration & Google OAuth SSO via Firebase Authentication.
   - Interactive profile menu with email verification badge, direct access to user settings (`/app/settings`), theme switching, and instant logout.
   - Email verification workflow (`/app/verify-email`) with resend confirmation capabilities.
+  - User data deletion and privacy compliance endpoints (`deleteUserData.ts`, `/api/user`).
 - **Curated Theme System & Security:**
   - Dynamic style switching between curated color palettes (**Calm**, **Sage**, **Focus Dark**).
   - Client-side XSS sanitization via `isomorphic-dompurify`.
@@ -77,7 +81,7 @@
 - **Ollama Local LLM:** Local model provider (`llama3.2`) for offline/tier-2 inference
 - **Python FastAPI Microservice (`ml_backend`):** PyTorch, Hugging Face Transformers, Sentence-Transformers, and FAISS for vector embedding & RAG retrieval
 - **Spaced Repetition Engines:** Custom TypeScript implementations of SuperMemo 2 (`sm2.ts`) and FSRS (`fsrs.ts`)
-- **Content Moderation & Guardrails:** Domain classifier (`domainClassifier.ts`), memorization guard (`memorizationGuard.ts`), and moderation pipeline (`moderation.ts`)
+- **Content Moderation & Guardrails:** Domain classifier (`domainClassifier.ts`), memorization guard (`memorizationGuard.ts`), weak topic detector (`weakTopicDetector.ts`), pricing tracker (`pricingConfig.ts`), and moderation pipeline (`moderation.ts`)
 
 ### Distributed Caching & External APIs
 
@@ -99,21 +103,26 @@ Study/
 ├── docs/                       # Project documentation & specs
 │   ├── API.md                  # Complete REST API endpoint specification
 │   ├── CODEBASE_AUDIT.md       # Comprehensive codebase quality review & metrics
+│   ├── Group_13_documentation_redone.pdf # Final academic project thesis document
 │   ├── MULTI_PROVIDER_AND_RAG_ARCHITECTURE.md # Multi-provider decision tree & RAG vector pipeline spec
 │   ├── PROJECT_FEATURES.md     # Feature list, roadmap, and architecture notes
 │   ├── PROJECT_LIMITATIONS_AND_EVALUATION.md # Academic limitations, evaluation methodology & future work
 │   └── production_readiness_audit.md # Production deployment checklist
 ├── ml_backend/                 # Python FastAPI ML Microservice
 │   ├── app/                    # FastAPI routers & inference logic
+│   ├── fine_tuned_models/      # Fine-tuned model checkpoints
 │   ├── fine_tuning/            # Fine-tuning scripts & datasets
 │   ├── models/                 # Model cache & local checkpoints
+│   ├── my_pdfs/                # Source PDFs for RAG ingestion
 │   ├── schemas/                # Data models and Pydantic schemas
 │   ├── vector_store/           # FAISS vector database store
 │   ├── cache.py                # Embedding & inference result caching
-│   ├── convert_pdfs.py         # PDF processing script
+│   ├── convert_pdfs.py         # PDF text extraction & processing script
+│   ├── download_models.py      # Hugging Face model pre-downloader
 │   ├── ingest_sciq.py          # SciQ dataset ingestion script
 │   ├── main.py                 # FastAPI application entrypoint
-│   ├── download_models.py      # Hugging Face model pre-downloader
+│   ├── test_cache.py           # ML cache test suite
+│   ├── test_ml_backend.py      # FastAPI endpoint unit test suite
 │   ├── Dockerfile              # Container deployment manifest
 │   └── requirements.txt        # Python backend dependencies
 ├── scripts/                    # Development & administrative utility scripts
@@ -155,40 +164,62 @@ Study/
 │   │   │   └── rules.test.ts   # Firestore security rules unit tests
 │   │   ├── server/             # Server-only utilities
 │   │   │   ├── admin.ts        # Firebase Admin SDK initialization
+│   │   │   ├── auth.test.ts    # Session token authentication unit tests
 │   │   │   ├── auth.ts         # Server-side auth & session token verification
+│   │   │   ├── fsrs.test.ts    # FSRS scheduling unit tests
 │   │   │   ├── fsrs.ts         # Free Spaced Repetition Scheduler algorithm
+│   │   │   ├── offlineSync.test.ts # Offline synchronization test suite
+│   │   │   ├── outlineCache.test.ts # Outline cache test suite
 │   │   │   ├── outlineCache.ts # Course outline caching layer
+│   │   │   ├── rateLimiter.test.ts  # Rate limiter test suite
 │   │   │   ├── rateLimiter.ts  # In-memory sliding-window rate limiter
 │   │   │   ├── redis.ts        # Upstash Redis REST client for distributed caching
+│   │   │   ├── sm2.test.ts     # SM-2 scheduling unit tests
 │   │   │   ├── sm2.ts          # SuperMemo 2 spaced repetition algorithm
+│   │   │   ├── youtube.test.ts # YouTube API fetcher unit tests
 │   │   │   ├── youtube.ts      # YouTube Data API video fetcher & cacher
 │   │   │   ├── ai/             # Multi-provider AI abstraction layer
+│   │   │   │   ├── burnin.test.ts # Provider burn-in load test suite
 │   │   │   │   ├── client.ts   # AI client initialization
+│   │   │   │   ├── domainClassifier.test.ts # Domain classifier unit tests
 │   │   │   │   ├── domainClassifier.ts # Subject domain classifier
 │   │   │   │   ├── gemini.ts   # Google Gemini provider integration
 │   │   │   │   ├── generationQueue.ts # Module generation queuing system
+│   │   │   │   ├── memorizationGuard.test.ts # Memorization guard unit tests
 │   │   │   │   ├── memorizationGuard.ts # Grounding & anti-hallucination guard
+│   │   │   │   ├── moderation.test.ts # Moderation filter unit tests
 │   │   │   │   ├── moderation.ts # AI output content moderation
 │   │   │   │   ├── ollama.ts   # Ollama local LLM provider integration
+│   │   │   │   ├── pricingConfig.ts # Provider token pricing and cost tracking
+│   │   │   │   ├── provider.test.ts # AI orchestrator unit tests
 │   │   │   │   ├── provider.ts # Unified AI provider orchestrator
-│   │   │   │   └── providerStats.ts # Provider metrics & health tracker
-│   │   │   └── superadmin/     # Superadmin management backend service
-│   │   │       └── user.ts     # User management & platform admin utilities
+│   │   │   │   ├── providerStats.ts # Provider metrics & health tracker
+│   │   │   │   ├── weakTopicDetector.test.ts # Weak topic detector unit tests
+│   │   │   │   └── weakTopicDetector.ts # Quiz analytics weak topic identification
+│   │   │   ├── superadmin/     # Superadmin management backend service
+│   │   │   │   ├── user.test.ts # Superadmin user management unit tests
+│   │   │   │   └── user.ts     # User management & platform admin utilities
+│   │   │   └── user/           # User account server utilities
+│   │   │       └── deleteUserData.ts # User data deletion & privacy handler
 │   │   └── stores/             # Svelte stores for app, auth, & theme state
 │   └── routes/                 # SvelteKit page routes & API endpoints
 │       ├── +layout.svelte      # Root layout & global style setup
 │       ├── +page.svelte        # Landing page & Authentication (Login / Sign-Up)
+│       ├── layout.css          # Tailwind CSS v4 design tokens & theme classes
 │       ├── api/                # REST API endpoints
-│       │   ├── admin/          # Admin management API
+│       │   ├── admin/          # Admin management & analytics API (`/analytics`)
 │       │   ├── chat/           # AI Study Assistant chat endpoint
 │       │   ├── courses/        # Course creation, listing, retrieval, & sharing API
 │       │   ├── documents/      # RAG custom document upload & indexing API
 │       │   ├── flag/           # Content moderation flagging API
 │       │   ├── health/         # System health check API
+│       │   ├── microservices.test.ts # API microservices test suite
 │       │   ├── modules/        # On-demand module content & quiz generation API
 │       │   ├── paraphrase/     # Text paraphrasing microservice API
+│       │   ├── quiz/           # Quiz explanation API (`/explain`)
 │       │   ├── share/          # Shared course token resolution API
 │       │   ├── spaced-repetition/ # Spaced repetition review & queue API
+│       │   ├── study-groups/   # Study groups creation & join API (`/join`)
 │       │   ├── summarize/      # Text summarization microservice API
 │       │   ├── superadmin/     # Superadmin stats & user management API
 │       │   └── user/           # User profile management API
@@ -202,6 +233,7 @@ Study/
 │       │   ├── review/         # Spaced repetition flashcard review queue
 │       │   ├── settings/       # User account settings & theme options
 │       │   └── verify-email/   # Email verification alert & resend screen
+│       ├── courses/            # Public course viewing & quiz routes ([id])
 │       ├── share/              # Public share link resolver route ([token])
 │       ├── shared/             # Shared course preview & clone handler ([shareId])
 │       └── superadmin/         # Platform superadmin control portal
@@ -351,7 +383,7 @@ Database access is secured using declarative Firestore security rules (`firestor
 
 ## 📖 API Documentation
 
-Detailed REST API specifications for all routes (`/api/courses`, `/api/modules`, `/api/chat`, `/api/summarize`, `/api/paraphrase`, `/api/share`, `/api/documents`, `/api/spaced-repetition`, `/api/flag`) are available in [docs/API.md](docs/API.md).
+Detailed REST API specifications for all routes (`/api/courses`, `/api/modules`, `/api/chat`, `/api/summarize`, `/api/paraphrase`, `/api/quiz/explain`, `/api/study-groups`, `/api/share`, `/api/documents`, `/api/spaced-repetition`, `/api/flag`, `/api/superadmin`, `/api/admin/analytics`) are available in [docs/API.md](docs/API.md).
 
 ---
 

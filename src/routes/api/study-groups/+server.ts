@@ -1,12 +1,13 @@
+import type { RequestHandler } from './$types';
 /**
  * /api/study-groups — Study Group management endpoint.
  */
 
 import { json } from '@sveltejs/kit';
 import { verifySessionUser } from '$lib/server/auth';
-import { adminDb, FieldValue } from '$lib/server/admin';
+import { adminDb } from '$lib/server/admin';
 
-export async function POST({ request }) {
+export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const user = await verifySessionUser(request);
 		const body = await request.json();
@@ -46,9 +47,9 @@ export async function POST({ request }) {
 		}
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};
 
-export async function GET({ request }) {
+export const GET: RequestHandler = async ({ request }) => {
 	try {
 		const user = await verifySessionUser(request);
 
@@ -67,4 +68,4 @@ export async function GET({ request }) {
 		}
 		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
 	}
-}
+};

@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { classifyTopicDomain, DEFAULT_CONFIDENCE_THRESHOLD } from './domainClassifier';
-import { calculateDomainConfidence } from '../../../../scripts/calibrate_domain_classifier';
+import {
+	classifyTopicDomain,
+	DEFAULT_CONFIDENCE_THRESHOLD,
+	calculateDomainConfidence
+} from './domainClassifier';
 
 describe('Domain Classifier & Threshold Calibration', () => {
 	it('correctly classifies CS core topics as in-domain', () => {

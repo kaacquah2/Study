@@ -12,7 +12,7 @@ function getOllamaUrl(): string {
 }
 
 function getOllamaModel(): string {
-	return env.OLLAMA_MODEL || process.env.OLLAMA_MODEL || 'glm-5.2:cloud';
+	return env.OLLAMA_MODEL || process.env.OLLAMA_MODEL || 'llama3.2';
 }
 
 /** Health check for Ollama REST server */

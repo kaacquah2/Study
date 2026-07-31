@@ -66,31 +66,62 @@ export const handle: Handle = async ({ event, resolve }) => {
 	) {
 		const origin = event.request.headers.get('origin');
 		const host = event.request.headers.get('host');
+		const referer = event.request.headers.get('referer');
 
-		if (origin && host) {
+		if (!host) {
+			return json(
+				{ error: { code: 'BAD_REQUEST', message: 'Missing Host header.' } },
+				{ status: 400 }
+			);
+		}
+
+		let checkOriginHost: string | null = null;
+		if (origin) {
 			try {
-				const originHost = new URL(origin).host;
-				if (originHost !== host) {
-					// Allow localhost origin matching during local dev if ports differ (e.g. dev tool proxying)
-					const isLocal =
-						(host.startsWith('localhost:') || host.startsWith('127.0.0.1:')) &&
-						(originHost.startsWith('localhost:') || originHost.startsWith('127.0.0.1:'));
-					if (!isLocal) {
-						return json(
-							{
-								error: {
-									code: 'FORBIDDEN_CSRF',
-									message: 'Cross-site request forgery protection triggered.'
-								}
-							},
-							{ status: 403 }
-						);
-					}
-				}
+				checkOriginHost = new URL(origin).host;
 			} catch {
 				return json(
 					{ error: { code: 'BAD_REQUEST', message: 'Invalid Origin header.' } },
 					{ status: 400 }
+				);
+			}
+		} else if (referer) {
+			try {
+				checkOriginHost = new URL(referer).host;
+			} catch {
+				return json(
+					{ error: { code: 'BAD_REQUEST', message: 'Invalid Referer header.' } },
+					{ status: 400 }
+				);
+			}
+		}
+
+		if (!checkOriginHost) {
+			// Fail closed: reject state-changing requests missing Origin/Referer
+			return json(
+				{
+					error: {
+						code: 'FORBIDDEN_CSRF',
+						message: 'Cross-site request forgery protection triggered: Origin header missing.'
+					}
+				},
+				{ status: 403 }
+			);
+		}
+
+		if (checkOriginHost !== host) {
+			const isLocal =
+				(host.startsWith('localhost:') || host.startsWith('127.0.0.1:')) &&
+				(checkOriginHost.startsWith('localhost:') || checkOriginHost.startsWith('127.0.0.1:'));
+			if (!isLocal) {
+				return json(
+					{
+						error: {
+							code: 'FORBIDDEN_CSRF',
+							message: 'Cross-site request forgery protection triggered.'
+						}
+					},
+					{ status: 403 }
 				);
 			}
 		}

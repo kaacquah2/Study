@@ -42,7 +42,9 @@ function openDB(): Promise<IDBDatabase> {
 /**
  * Buffer a review completed while offline.
  */
-export async function bufferOfflineReview(log: Omit<OfflineReviewLog, 'id' | 'synced'>): Promise<string> {
+export async function bufferOfflineReview(
+	log: Omit<OfflineReviewLog, 'id' | 'synced'>
+): Promise<string> {
 	const db = await openDB();
 	return new Promise((resolve, reject) => {
 		const tx = db.transaction(STORE_REVIEWS, 'readwrite');

@@ -4,8 +4,27 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { themeStore } from '$lib/stores/theme.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
+	import { apiFetch } from '$lib/api/client';
+
+	interface DraftOutlineResponse {
+		courseId: string;
+		outline: {
+			title: string;
+			description: string;
+			modules: ModuleItem[];
+		};
+		_status?: number;
+		queued?: boolean;
+		message?: string;
+		jobId?: string;
+	}
+
+	interface QueueStatusResponse {
+		status: 'completed' | 'failed' | 'processing';
+		courseId?: string;
+		errorMessage?: string;
+	}
 
 	interface ModuleItem {
 		id?: string;
@@ -236,32 +255,59 @@
 		startLoadingProgress();
 
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-
-			const res = await fetch('/api/courses', {
+			const result = await apiFetch<DraftOutlineResponse>('/api/courses', {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json',
-					'X-Client-Theme': themeStore.current,
-					'X-Client-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone
-				},
-				body: JSON.stringify({
+				body: {
 					topic: topic.trim(),
 					moduleCount,
 					format,
 					referenceText: referenceText.trim() || undefined,
 					level,
 					goal
-				})
+				}
 			});
 
-			const result = await res.json();
-
-			if (!res.ok) {
-				throw new Error(result.error?.message || 'Failed to generate outline');
+			if (result._status === 202 || result.queued) {
+				toastStore.info(
+					result.message ||
+						'Course generation queued due to high demand. Processing in background...'
+				);
+				// Poll job status until completed
+				const jobId = result.jobId;
+				let attempts = 0;
+				const pollInterval = setInterval(async () => {
+					attempts += 1;
+					try {
+						const jobData = await apiFetch<QueueStatusResponse>(`/api/courses/queue/${jobId}`);
+						if (jobData.status === 'completed' && jobData.courseId) {
+							clearInterval(pollInterval);
+							stopLoadingProgress();
+							loading = false;
+							toastStore.success('Background course generation completed!');
+							const targetUrl = resolve('/app/courses/[id]', { id: jobData.courseId });
+							goto(targetUrl);
+							return;
+						} else if (jobData.status === 'failed') {
+							clearInterval(pollInterval);
+							stopLoadingProgress();
+							loading = false;
+							toastStore.error(jobData.errorMessage || 'Background course generation failed.');
+							return;
+						}
+					} catch {
+						// Continue polling up to 60 attempts (5 minutes)
+					}
+					if (attempts >= 60) {
+						clearInterval(pollInterval);
+						stopLoadingProgress();
+						loading = false;
+						toastStore.warning(
+							'Generation taking longer than expected. Check your dashboard shortly.'
+						);
+					}
+				}, 5000);
+				return;
 			}
-
 			draftCourseId = result.courseId;
 			draftTitle = result.outline.title;
 			draftDescription = result.outline.description;
@@ -722,7 +768,7 @@
 						></div>
 					</div>
 					<div class="flex flex-col gap-1.5 pt-1">
-						{#each ['Analyzing topic & reference materials...', 'Structuring curriculum layout & module hierarchy...', 'Generating learning objectives & key points...', 'Finalizing course draft outline...'] as stepLabel, idx}
+						{#each ['Analyzing topic & reference materials...', 'Structuring curriculum layout & module hierarchy...', 'Generating learning objectives & key points...', 'Finalizing course draft outline...'] as stepLabel, idx (idx)}
 							<div
 								class="flex items-center gap-2 text-xs font-semibold {idx <= loadingProgressStep
 									? 'text-primary'
