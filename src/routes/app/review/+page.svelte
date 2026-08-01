@@ -101,6 +101,26 @@
 			dueQuestions = [];
 		}
 	}
+
+	async function handleExportCSV() {
+		try {
+			const token = await getToken();
+			const res = await fetch('/api/spaced-repetition/export?format=csv', {
+				headers: { Authorization: `Bearer ${token}` }
+			});
+			if (!res.ok) throw new Error('Failed to export cards');
+			const blob = await res.blob();
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'flashcards.csv';
+			a.click();
+			window.URL.revokeObjectURL(url);
+			toastStore.success('Flashcards exported to CSV!');
+		} catch {
+			toastStore.error('Export failed');
+		}
+	}
 </script>
 
 <svelte:head>
@@ -125,11 +145,22 @@
 			</p>
 		</div>
 
-		{#if dueQuestions.length > 0}
-			<span class="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-400">
-				{currentIndex + 1} of {dueQuestions.length} due
-			</span>
-		{/if}
+		<div class="flex items-center gap-2">
+			<button
+				type="button"
+				onclick={handleExportCSV}
+				class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text shadow-xs transition-colors hover:border-primary"
+				title="Export Flashcards to CSV"
+			>
+				📥 Export CSV
+			</button>
+
+			{#if dueQuestions.length > 0}
+				<span class="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-400">
+					{currentIndex + 1} of {dueQuestions.length} due
+				</span>
+			{/if}
+		</div>
 	</div>
 
 	{#if loading}

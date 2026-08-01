@@ -32,32 +32,31 @@ This document provides a transparent, academic assessment of the AI Study Buddy 
 
 ---
 
-## 📊 Evaluation Methodology
+## 📊 Fine-Tuning & Evaluation Methodology
 
-To rigorously validate the platform's AI course generation, RAG retrieval accuracy, and spaced repetition memory performance, a multi-tiered evaluation methodology was conducted:
+To validate the platform's AI course generation, custom model performance, and spaced repetition scheduling, a domain-specific evaluation and fine-tuning pipeline was constructed:
 
-### 1. Course Generation Quality & Schema Adherence
+### 1. Custom Model Fine-Tuning Datasets
 
-- **Test Corpus**: 50 benchmark academic subjects across Computer Science, Natural Sciences, Mathematics, and Humanities.
-- **Rubric Criteria**:
-  1. _Structural Integrity_: $100\%$ valid JSON schema output matching Zod schemas (`OutlineZodSchema`, `LessonZodSchema`, `QuizZodSchema`).
-  2. _Pedagogical Flow_: Prerequisite concepts sequenced logically before advanced modules.
-  3. _Distractor Quality_: Quiz distractor choices verified for plausibility without ambiguous double-correct options.
-- **Results**: Google Gemini Flash achieved a $98.0\%$ first-pass schema validation rate, with automatic retry handling resolving remaining edge cases.
+Domain-adapted HuggingFace models (`FLAN-T5-base`, `FLAN-T5-large`) were trained on curated academic datasets located in `ml_backend/fine_tuning/data/`:
 
-### 2. RAG Context Retrieval Accuracy
+- **Summarization Dataset (`summarization.jsonl`)**: 311+ structured academic input/summary training pairs for chunk-level document compression.
+- **Paraphrasing Dataset (`paraphrasing.jsonl`)**: 315+ domain-specific question/explanation rephrasing pairs to vary study materials.
+- **Course Outlines Dataset (`outlines.jsonl`)**: Curated course structure specifications for multi-module syllabus planning.
+- **Lesson Content Dataset (`lessons.jsonl`)**: In-depth lesson module pairs structured for pedagogical hierarchy.
 
-- **Dataset**: 20 uploaded PDF lecture documents with 150 factual test queries.
-- **Metrics**:
-  - **Precision@3**: Proportion of top-3 retrieved chunks containing relevant information to answer the prompt ($89.3\%$).
-  - **Recall@3**: Proportion of ground-truth information retrieved from uploaded materials ($85.7\%$).
-- **Anti-Hallucination Verification**: `memorizationGuard.ts` successfully detected ungrounded model outputs and flagged exact sequence matches exceeding $85\%$ verbatim thresholds for automatic re-phrasing.
+### 2. Evaluation Scripts & Metrics
+
+Model evaluation is automated via `ml_backend/fine_tuning/evaluate_models.py` and `prepare_hf_datasets.py`:
+
+- **Schema Adherence**: $100\%$ JSON schema validation enforcing strict TypeScript/Zod structures across course outline, lesson, and quiz outputs.
+- **ROUGE Evaluation**: Automated ROUGE-1, ROUGE-2, and ROUGE-L metric scoring against reference validation splits.
+- **Anti-Hallucination Guard**: `memorizationGuard.ts` screens model generations against source text to detect ungrounded text and enforce verbatim similarity boundaries ($< 85\%$).
 
 ### 3. Spaced Repetition Memory Recall Efficiency
 
-- **Algorithm Comparison**: SuperMemo 2 (SM-2) vs Free Spaced Repetition Scheduler (FSRS).
-- **Simulated Learning Curves**: Evaluated item review intervals across 1,000 simulated flashcard review sessions.
-- **Findings**: FSRS demonstrated a $14.2\%$ reduction in required review count while maintaining target memory retention rates above $90\%$.
+- **Algorithm Comparison**: SuperMemo 2 (SM-2) vs Free Spaced Repetition Scheduler (FSRS-4.5).
+- **Scheduler Validation**: Unit testing (`fsrs.test.ts`, `sm2.test.ts`) verifies optimal review interval expansion across initial learning, review, and lapse states.
 
 ---
 

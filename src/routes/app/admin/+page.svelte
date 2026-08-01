@@ -147,12 +147,15 @@
 
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				<div class="flex flex-col gap-1 rounded-xl border border-border/60 bg-surface-muted/30 p-4">
-					<span class="text-[11px] font-bold text-text-muted uppercase"
-						>RAG Vector Store Chunks</span
+					<span class="text-[11px] font-bold text-text-muted uppercase">RAG Vector Store Index</span
 					>
-					<span class="font-display text-2xl font-black text-primary">64,571</span>
+					<span class="font-display text-2xl font-black text-primary">
+						{analytics.mlBackendHealth?.models_loaded?.rag_index ? 'Active' : 'Standby'}
+					</span>
 					<span class="text-[10px] font-medium text-text-muted"
-						>Indexed across user document bases</span
+						>{analytics.mlBackendHealth?.models_loaded?.rag_index
+							? 'Documents indexed'
+							: 'No active index'}</span
 					>
 				</div>
 
@@ -166,7 +169,13 @@
 
 				<div class="flex flex-col gap-1 rounded-xl border border-border/60 bg-surface-muted/30 p-4">
 					<span class="text-[11px] font-bold text-text-muted uppercase">Circuit Breaker</span>
-					<span class="font-display text-xl font-bold text-emerald-400">CLOSED (Normal)</span>
+					<span
+						class="font-display text-xl font-bold {analytics.mlBackendHealth
+							? 'text-emerald-400'
+							: 'text-amber-400'}"
+					>
+						{analytics.mlBackendHealth ? 'CLOSED (Normal)' : 'OPEN / Standby'}
+					</span>
 					<span class="text-[10px] font-medium text-text-muted">3-Tier Fallback Ready</span>
 				</div>
 			</div>
