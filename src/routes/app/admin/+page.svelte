@@ -13,11 +13,22 @@
 			mlBackendCount: number;
 			fallbackPercentage: number;
 		};
+		mlBackendHealth?: {
+			status: string;
+			models_loaded: Record<string, boolean>;
+			inference_busy: boolean;
+		} | null;
 	}
 
 	let analytics = $state<AnalyticsData | null>(null);
 	let loading = $state(true);
 	let errorMsg = $state('');
+
+	const getModelStatus = (key: string) => {
+		if (!analytics?.mlBackendHealth) return 'Standby';
+		return analytics.mlBackendHealth.models_loaded[key] ? 'Ready' : 'Loading';
+	};
+
 
 	$effect(() => {
 		if (authStore.user) {
@@ -162,20 +173,29 @@
 			</div>
 
 			<div class="grid grid-cols-2 gap-3 pt-2 sm:grid-cols-3 md:grid-cols-6">
-				{#each [{ name: 'Summarizer', id: 'flan-t5-scitldr', status: 'Ready' }, { name: 'Paraphraser', id: 'flan-t5-base', status: 'Ready' }, { name: 'Outline Gen', id: 'flan-t5-large', status: 'Ready' }, { name: 'Lesson Gen', id: 'flan-t5-large', status: 'Ready' }, { name: 'Quiz Pipeline', id: 'mixqg-base', status: 'Ready' }, { name: 'AI Chat', id: 'TinyLlama-1.1B', status: 'Ready' }] as m (m.name)}
+				{#each [
+					{ name: 'Summarizer', id: 'flan-t5-base', key: 'summarizer' },
+					{ name: 'Paraphraser', id: 'flan-t5-base', key: 'paraphraser' },
+					{ name: 'Outline Gen', id: 'flan-t5-large', key: 'outline_generator' },
+					{ name: 'Lesson Gen', id: 'flan-t5-large', key: 'lesson_generator' },
+					{ name: 'Quiz Pipeline', id: 'mixqg-base', key: 'quiz_pipeline' },
+					{ name: 'AI Chat', id: 'TinyLlama-1.1B', key: 'chat_assistant' }
+				] as m (m.name)}
+					{@const status = getModelStatus(m.key)}
 					<div
 						class="flex flex-col gap-1 rounded-xl border border-border/50 bg-surface p-3 text-center"
 					>
 						<span class="text-[11px] font-bold text-text">{m.name}</span>
 						<span class="font-mono text-[9px] text-text-muted">{m.id}</span>
 						<span
-							class="mt-1 rounded-full bg-emerald-500/15 py-0.5 text-[10px] font-bold text-emerald-400"
+							class="mt-1 rounded-full py-0.5 text-[10px] font-bold {status === 'Ready' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}"
 						>
-							● {m.status}
+							● {status}
 						</span>
 					</div>
 				{/each}
 			</div>
+
 		</div>
 	{/if}
 </div>

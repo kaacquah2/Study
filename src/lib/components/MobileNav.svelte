@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { resolve } from '$app/paths';
 
 	interface Props {
 		currentPath: string;
@@ -36,7 +35,7 @@
 							currentPath === item.href ||
 							(item.href !== '/app' && currentPath.startsWith(item.href))}
 						<a
-							href={resolve(item.href as '/app')}
+							href={item.href}
 							onclick={onCloseMenu}
 							class="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold transition-all {active
 								? 'bg-primary text-white'
@@ -60,7 +59,7 @@
 						</a>
 					{/each}
 					<a
-						href={resolve('/app/settings' as '/app')}
+						href="/app/settings"
 						onclick={onCloseMenu}
 						class="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold text-text-muted hover:bg-surface-muted hover:text-text"
 					>
@@ -105,7 +104,7 @@
 		{@const active =
 			currentPath === item.href || (item.href !== '/app' && currentPath.startsWith(item.href))}
 		<a
-			href={resolve(item.href as '/app')}
+			href={item.href}
 			class="flex flex-col items-center gap-1 text-[10px] font-bold transition-colors {active
 				? 'text-primary'
 				: 'text-text-muted hover:text-text'}"

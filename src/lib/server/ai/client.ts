@@ -84,7 +84,7 @@ function recordFailure(): void {
  */
 export async function callML<T>(
 	endpoint: string,
-	body: object,
+	body: object = {},
 	timeoutMs: number = DEFAULT_TIMEOUT_MS,
 	userId?: string
 ): Promise<T> {

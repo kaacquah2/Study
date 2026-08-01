@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { resolve } from '$app/paths';
 
 	interface Suggestion {
 		label: string;
@@ -97,7 +96,7 @@
 		{#if secondaryActionLabel}
 			{#if secondaryActionHref}
 				<a
-					href={resolve(secondaryActionHref as '/app')}
+					href={secondaryActionHref}
 					class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text shadow-2xs transition-all duration-180 hover:border-primary/40 hover:bg-primary-soft/30 hover:text-primary active:scale-[0.98]"
 				>
 					<span>🔍</span>

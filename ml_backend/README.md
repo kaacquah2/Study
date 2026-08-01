@@ -49,23 +49,33 @@ uvicorn main:app --reload --port 8000
 The API will be available at `http://localhost:8000`.
 Interactive docs: `http://localhost:8000/docs`
 
-### 5. (Optional) Add study materials to the RAG vector store
+### 5. Open Data & RAG Seed Setup
+
+To ensure 100% copyright compliance for public repository distribution, reference documents and fine-tuning datasets are separated:
 
 ```bash
-# Place your .txt or .md study notes in a folder, then:
-python vector_store/build_index.py --docs-dir path/to/your/notes
+# Seed vector_store/sample_docs with CC-BY OpenStax, OSTEP, and original student notes:
+python vector_store/seed_open_docs.py
 ```
 
 ## Fine-Tuning (Run on Google Colab)
 
 ### Prepare training data
 
-Add your own examples to:
+Automate open dataset loading (SciQ, SAMSum) from Hugging Face Hub:
+
+```bash
+python fine_tuning/prepare_data.py --fetch-hf
+python fine_tuning/prepare_data.py --validate
+```
+
+Or manually manage examples in:
 
 - `fine_tuning/data/summarization.jsonl` — `{"input": "...", "output": "..."}`
 - `fine_tuning/data/paraphrasing.jsonl` — `{"input": "...", "output": "...", "style": "academic"}`
 
-Aim for 150–200 examples per task for meaningful improvement.
+Aim for 150–300 examples per task for meaningful improvement.
+
 
 ### Run fine-tuning
 

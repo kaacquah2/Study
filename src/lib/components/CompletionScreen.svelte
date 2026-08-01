@@ -42,7 +42,40 @@
 		onShareCertificate
 	}: Props = $props();
 
+	import { auth } from '$lib/firebase/client';
+
 	let showQuizReview = $state(false);
+	let explanations = $state<Record<number, string>>({});
+	let explainingIndex = $state<number | null>(null);
+
+	async function fetchExplanation(idx: number, item: QuizReviewItem) {
+		explainingIndex = idx;
+		try {
+			const idToken = await auth.currentUser?.getIdToken();
+			const res = await fetch('/api/quiz/explain', {
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${idToken}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					question: item.prompt,
+					userAnswer: item.selectedIndex !== null ? item.options[item.selectedIndex] : 'Skipped',
+					correctAnswer: item.options[item.correctIndex],
+					lessonContext: item.explanation
+				})
+			});
+			const data = await res.json();
+			if (res.ok && data.explanation) {
+				explanations[idx] = data.explanation;
+			}
+		} catch (err) {
+			console.error('Failed to get AI quiz explanation:', err);
+		} finally {
+			explainingIndex = null;
+		}
+	}
+
 </script>
 
 <div
@@ -151,6 +184,25 @@
 										{item.explanation}
 									</div>
 								{/if}
+								{#if !isCorrect}
+									{#if explanations[idx]}
+										<div class="mt-1.5 rounded-md border border-primary/30 bg-primary-soft/40 p-2.5 text-xs text-text leading-relaxed">
+											<span class="font-bold text-primary">🤖 AI Detailed Mistake Explanation:</span>
+											<p class="mt-1">{explanations[idx]}</p>
+										</div>
+									{:else}
+										<button
+											type="button"
+											onclick={() => fetchExplanation(idx, item)}
+											disabled={explainingIndex === idx}
+											class="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline cursor-pointer disabled:opacity-50"
+										>
+											<span>💡</span>
+											<span>{explainingIndex === idx ? 'Generating Explanation...' : 'Explain My Mistake with AI'}</span>
+										</button>
+									{/if}
+								{/if}
+
 							</div>
 						</div>
 					{/each}

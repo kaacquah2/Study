@@ -7,7 +7,6 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { db, auth } from '$lib/firebase/client';
 	import { collection, query, where, onSnapshot } from 'firebase/firestore';
-	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import type { CourseDoc } from '$lib/firebase/converters';
 
@@ -35,7 +34,7 @@
 	];
 
 	const handleSelectSuggestion = (topic: string) => {
-		goto(resolve(`/app/courses/createCourse?topic=${encodeURIComponent(topic)}`));
+		goto(`/app/courses/createCourse?topic=${encodeURIComponent(topic)}`);
 	};
 
 	let dueReviewsCount = $state(0);
@@ -155,7 +154,7 @@
 			</div>
 
 			<a
-				href={resolve('/app/courses/createCourse')}
+				href="/app/courses/createCourse"
 				class="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3 text-xs font-bold text-indigo-900 shadow-lg transition-all duration-180 hover:bg-indigo-50 active:scale-95"
 			>
 				<svg
@@ -198,7 +197,7 @@
 				</div>
 			</div>
 			<a
-				href={resolve('/app/review' as '/app')}
+				href="/app/review"
 				class="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-xs transition-all hover:bg-amber-400 active:scale-95"
 			>
 				Start Review Session &rarr;
@@ -227,7 +226,7 @@
 				</div>
 			</div>
 			<a
-				href={resolve(`/app/courses/${abandonedCourse.id}` as '/app')}
+				href={`/app/courses/${abandonedCourse.id}`}
 				class="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-500 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-600 active:scale-95"
 			>
 				Resume Course &rarr;
@@ -269,9 +268,9 @@
 				title="No courses created yet"
 				description="Start by creating your first AI-powered course on any topic, or browse courses created by the community."
 				actionLabel="+ Create New Course"
-				onAction={() => goto(resolve('/app/courses/createCourse'))}
+				onAction={() => goto('/app/courses/createCourse')}
 				secondaryActionLabel="or browse a course someone else made"
-				secondaryActionHref={resolve('/app/explore')}
+				secondaryActionHref="/app/explore"
 				suggestions={topicSuggestions}
 				onSelectSuggestion={handleSelectSuggestion}
 			/>
@@ -318,7 +317,7 @@
 
 					<div class="flex shrink-0 flex-col items-stretch gap-3 sm:flex-row md:flex-col">
 						<a
-							href={resolve(`/app/courses/${recentCourse.id}` as '/app')}
+							href={`/app/courses/${recentCourse.id}`}
 							class="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-xs font-bold text-white shadow-lg shadow-primary/25 transition-all duration-180 hover:scale-[1.02] hover:bg-primary-hover active:scale-95"
 						>
 							<span>Resume Learning</span>

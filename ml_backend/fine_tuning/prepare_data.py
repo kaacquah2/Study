@@ -62,6 +62,7 @@ def append_record(file_path: Path, record: dict):
 def main():
     parser = argparse.ArgumentParser(description="Dataset management tool for fine-tuning.")
     parser.add_argument("--validate", action="store_true", help="Validate existing JSONL files.")
+    parser.add_argument("--fetch-hf", action="store_true", help="Fetch and format Hugging Face open datasets (SciQ, SAMSum) for fine-tuning.")
     parser.add_argument("--add-summarization", action="store_true", help="Add summarization example.")
     parser.add_argument("--add-paraphrasing", action="store_true", help="Add paraphrasing example.")
     parser.add_argument("--input", type=str, help="Input text from lecture notes or exam paper.")
@@ -83,6 +84,9 @@ def main():
             validate_lesson_file()
         except ImportError:
             pass
+    elif args.fetch_hf:
+        from prepare_hf_datasets import main as fetch_hf_main
+        fetch_hf_main()
     elif args.add_summarization:
         if not args.input or not args.output:
             print("Error: Both --input and --output are required.")
@@ -103,3 +107,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

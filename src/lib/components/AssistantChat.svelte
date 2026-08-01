@@ -21,6 +21,7 @@
 	]);
 	let inputMessage = $state('');
 	let loading = $state(false);
+	let socraticMode = $state(true);
 	let messagesContainer = $state<HTMLDivElement | null>(null);
 
 	// Derive route params
@@ -72,9 +73,11 @@
 				body: JSON.stringify({
 					messages: messages.slice(0, -1).slice(-8),
 					courseId: courseId || undefined,
-					moduleId: moduleId || undefined
+					moduleId: moduleId || undefined,
+					socraticMode
 				})
 			});
+
 
 			if (!res.ok) {
 				const result = await res.json().catch(() => ({}));
@@ -224,9 +227,21 @@
 					</div>
 					<div>
 						<h3 class="font-display text-sm font-bold text-text">AI Study Assistant</h3>
-						<span class="text-[10px] font-bold tracking-wider text-success uppercase">Online</span>
+						<div class="flex items-center gap-2 mt-0.5">
+							<span class="text-[10px] font-bold tracking-wider text-success uppercase">● Online</span>
+							<button
+								type="button"
+								onclick={() => (socraticMode = !socraticMode)}
+								class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-all cursor-pointer {socraticMode ? 'bg-primary-soft text-primary border border-primary/30' : 'bg-surface-muted text-text-muted border border-border'}"
+								title={socraticMode ? 'Socratic Mode ON: Asks guiding questions' : 'Direct Mode: Gives immediate answers'}
+							>
+								<span>💡</span>
+								<span>{socraticMode ? 'Socratic' : 'Direct'}</span>
+							</button>
+						</div>
 					</div>
 				</div>
+
 				<button
 					type="button"
 					class="cursor-pointer rounded-full p-3 text-text-muted transition-all hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"

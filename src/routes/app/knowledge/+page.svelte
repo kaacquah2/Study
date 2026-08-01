@@ -18,9 +18,117 @@
 	// Staged files: list of { name, content } objects
 	let stagedFiles = $state<{ name: string; content: string }[]>([]);
 
+	// Active Tab State
+	let activeTab = $state<'documents' | 'summarizer' | 'paraphraser' | 'flashcards'>('documents');
+
 	// Clear confirmation
 	let showClearConfirm = $state(false);
 	let clearing = $state(false);
+
+	// ── Summarizer State & Action ──────────────────────────────────────────────
+	let summarizeText = $state('');
+	let summaryResult = $state('');
+	let summaryProvider = $state('');
+	let summarizing = $state(false);
+
+	async function handleSummarize() {
+		if (summarizeText.trim().length < 50) {
+			toastStore.error('Text must be at least 50 characters.');
+			return;
+		}
+		summarizing = true;
+		summaryResult = '';
+		try {
+			const token = await getToken();
+			const res = await fetch('/api/summarize', {
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ text: summarizeText })
+			});
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.error?.message || 'Summarization failed');
+			summaryResult = data.summary;
+			summaryProvider = data.provider || '';
+			toastStore.success('Summary generated successfully!');
+		} catch (err) {
+			toastStore.error(err instanceof Error ? err.message : 'Summarization failed');
+		} finally {
+			summarizing = false;
+		}
+	}
+
+	// ── Paraphraser State & Action ──────────────────────────────────────────────
+	let paraphraseText = $state('');
+	let paraphraseStyle = $state<'academic' | 'simple' | 'formal'>('academic');
+	let paraphraseResult = $state('');
+	let paraphraseProvider = $state('');
+	let paraphrasing = $state(false);
+
+	async function handleParaphrase() {
+		if (paraphraseText.trim().length < 10) {
+			toastStore.error('Text must be at least 10 characters.');
+			return;
+		}
+		paraphrasing = true;
+		paraphraseResult = '';
+		try {
+			const token = await getToken();
+			const res = await fetch('/api/paraphrase', {
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ text: paraphraseText, style: paraphraseStyle })
+			});
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.error?.message || 'Paraphrasing failed');
+			paraphraseResult = data.paraphrase;
+			paraphraseProvider = data.provider || '';
+			toastStore.success('Text paraphrased successfully!');
+		} catch (err) {
+			toastStore.error(err instanceof Error ? err.message : 'Paraphrasing failed');
+		} finally {
+			paraphrasing = false;
+		}
+	}
+
+	// ── Flashcard Generator State & Action ────────────────────────────────────
+	let flashcardText = $state('');
+	let generatedCards = $state<Array<{ front: string; back: string }>>([]);
+	let generatingCards = $state(false);
+
+	async function handleGenerateFlashcards() {
+		if (flashcardText.trim().length < 50) {
+			toastStore.error('Document text must be at least 50 characters.');
+			return;
+		}
+		generatingCards = true;
+		generatedCards = [];
+		try {
+			const token = await getToken();
+			const res = await fetch('/api/documents/flashcards', {
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ documentText: flashcardText })
+			});
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.error?.message || 'Flashcards generation failed');
+			generatedCards = data.flashcards || [];
+			toastStore.success(`Created ${generatedCards.length} flashcards in your deck!`);
+		} catch (err) {
+			toastStore.error(err instanceof Error ? err.message : 'Flashcards generation failed');
+		} finally {
+			generatingCards = false;
+		}
+	}
+
 
 	// ── Auth helper ───────────────────────────────────────────────────────────
 	async function getToken(): Promise<string> {
@@ -253,11 +361,45 @@
 		</div>
 	</div>
 
+	<!-- Tab Bar Navigation -->
+	<div class="flex flex-wrap items-center gap-2 border-b border-border pb-3">
+		<button
+			type="button"
+			onclick={() => (activeTab = 'documents')}
+			class="rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer {activeTab === 'documents' ? 'bg-primary text-white shadow-xs' : 'bg-surface border border-border text-text-muted hover:text-text'}"
+		>
+			📚 RAG Knowledge Base
+		</button>
+		<button
+			type="button"
+			onclick={() => (activeTab = 'summarizer')}
+			class="rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer {activeTab === 'summarizer' ? 'bg-primary text-white shadow-xs' : 'bg-surface border border-border text-text-muted hover:text-text'}"
+		>
+			⚡ Summarizer
+		</button>
+		<button
+			type="button"
+			onclick={() => (activeTab = 'paraphraser')}
+			class="rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer {activeTab === 'paraphraser' ? 'bg-primary text-white shadow-xs' : 'bg-surface border border-border text-text-muted hover:text-text'}"
+		>
+			✍️ Paraphraser
+		</button>
+		<button
+			type="button"
+			onclick={() => (activeTab = 'flashcards')}
+			class="rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer {activeTab === 'flashcards' ? 'bg-primary text-white shadow-xs' : 'bg-surface border border-border text-text-muted hover:text-text'}"
+		>
+			🎴 Flashcard Generator
+		</button>
+	</div>
+
+	{#if activeTab === 'documents'}
 	<!-- How it works banner -->
 	<div
 		class="rounded-2xl border border-primary/20 bg-primary-soft/40 p-4 text-xs leading-relaxed text-primary"
 	>
 		<span class="font-bold">How it works:</span> Documents you upload are split into chunks, embedded
+
 		with a semantic model, and stored in a FAISS index on disk. When you generate lessons or quizzes,
 		the AI retrieves the most relevant chunks and uses them as grounded context — producing far more accurate
 		and specific content.
@@ -527,4 +669,126 @@
 			</li>
 		</ul>
 	</div>
+	{:else if activeTab === 'summarizer'}
+		<!-- Summarizer Panel -->
+		<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-xs">
+			<div>
+				<h2 class="font-display text-lg font-bold text-text">Text Summarizer</h2>
+				<p class="text-xs text-text-muted">Generate concise AI summaries from textbook passages or notes.</p>
+			</div>
+			<textarea
+				bind:value={summarizeText}
+				placeholder="Paste text to summarize (minimum 50 characters)..."
+				class="min-h-36 w-full rounded-xl border border-border bg-surface-muted p-4 text-xs font-sans text-text focus:outline-none focus:ring-2 focus:ring-primary"
+			></textarea>
+			<div class="flex items-center justify-between">
+				<span class="text-[11px] text-text-muted">{summarizeText.length} characters</span>
+				<button
+					type="button"
+					onclick={handleSummarize}
+					disabled={summarizing || summarizeText.trim().length < 50}
+					class="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
+				>
+					{summarizing ? 'Summarizing...' : 'Generate Summary'}
+				</button>
+			</div>
+			{#if summaryResult}
+				<div class="mt-4 rounded-xl border border-primary/20 bg-primary-soft/30 p-4">
+					<div class="flex items-center justify-between mb-2">
+						<span class="text-[11px] font-bold text-primary uppercase">Summary Output</span>
+						{#if summaryProvider}
+							<span class="text-[10px] text-text-muted">Powered by {summaryProvider}</span>
+						{/if}
+					</div>
+					<p class="text-xs leading-relaxed text-text whitespace-pre-wrap">{summaryResult}</p>
+				</div>
+			{/if}
+		</div>
+	{:else if activeTab === 'paraphraser'}
+		<!-- Paraphraser Panel -->
+		<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-xs">
+			<div>
+				<h2 class="font-display text-lg font-bold text-text">Text Paraphraser</h2>
+				<p class="text-xs text-text-muted">Rewrite study notes into Academic, Simple, or Formal styles.</p>
+			</div>
+			<div class="flex items-center gap-2">
+				<span class="text-xs font-bold text-text-muted">Select Tone:</span>
+				{#each ['academic', 'simple', 'formal'] as s}
+					<button
+						type="button"
+						onclick={() => (paraphraseStyle = s as any)}
+						class="rounded-lg px-3 py-1 text-xs font-bold capitalize transition-all cursor-pointer {paraphraseStyle === s ? 'bg-primary text-white' : 'bg-surface-muted border border-border text-text-muted'}"
+					>
+						{s}
+					</button>
+				{/each}
+			</div>
+			<textarea
+				bind:value={paraphraseText}
+				placeholder="Paste text to paraphrase (minimum 10 characters)..."
+				class="min-h-32 w-full rounded-xl border border-border bg-surface-muted p-4 text-xs font-sans text-text focus:outline-none focus:ring-2 focus:ring-primary"
+			></textarea>
+			<div class="flex items-center justify-between">
+				<span class="text-[11px] text-text-muted">{paraphraseText.length} characters</span>
+				<button
+					type="button"
+					onclick={handleParaphrase}
+					disabled={paraphrasing || paraphraseText.trim().length < 10}
+					class="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
+				>
+					{paraphrasing ? 'Paraphrasing...' : 'Paraphrase Text'}
+				</button>
+			</div>
+			{#if paraphraseResult}
+				<div class="mt-4 rounded-xl border border-primary/20 bg-primary-soft/30 p-4">
+					<div class="flex items-center justify-between mb-2">
+						<span class="text-[11px] font-bold text-primary uppercase">{paraphraseStyle} Paraphrase</span>
+						{#if paraphraseProvider}
+							<span class="text-[10px] text-text-muted">Powered by {paraphraseProvider}</span>
+						{/if}
+					</div>
+					<p class="text-xs leading-relaxed text-text whitespace-pre-wrap">{paraphraseResult}</p>
+				</div>
+			{/if}
+		</div>
+	{:else if activeTab === 'flashcards'}
+		<!-- Flashcards Generator Panel -->
+		<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-xs">
+			<div>
+				<h2 class="font-display text-lg font-bold text-text">AI Flashcard Generator</h2>
+				<p class="text-xs text-text-muted">Extract atomic spaced-repetition flashcards directly from study text.</p>
+			</div>
+			<textarea
+				bind:value={flashcardText}
+				placeholder="Paste textbook excerpt or notes to extract flashcards (minimum 50 characters)..."
+				class="min-h-36 w-full rounded-xl border border-border bg-surface-muted p-4 text-xs font-sans text-text focus:outline-none focus:ring-2 focus:ring-primary"
+			></textarea>
+			<div class="flex items-center justify-between">
+				<span class="text-[11px] text-text-muted">{flashcardText.length} characters</span>
+				<button
+					type="button"
+					onclick={handleGenerateFlashcards}
+					disabled={generatingCards || flashcardText.trim().length < 50}
+					class="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
+				>
+					{generatingCards ? 'Generating Flashcards...' : 'Generate Flashcards'}
+				</button>
+			</div>
+			{#if generatedCards.length > 0}
+				<div class="mt-4 flex flex-col gap-3">
+					<span class="text-xs font-bold text-text">Generated Flashcards ({generatedCards.length})</span>
+					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+						{#each generatedCards as card, idx}
+							<div class="flex flex-col gap-2 rounded-xl border border-border bg-surface-muted p-4 shadow-2xs">
+								<span class="text-[10px] font-bold text-primary uppercase">Card #{idx + 1}</span>
+								<p class="text-xs font-bold text-text">Q: {card.front}</p>
+								<p class="text-xs text-text-muted">A: {card.back}</p>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+		</div>
+	{/if}
 </div>
+

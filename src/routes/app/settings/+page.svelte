@@ -3,6 +3,8 @@
 	import StreakHeatmap from '$lib/components/StreakHeatmap.svelte';
 	import BadgeStrip from '$lib/components/BadgeStrip.svelte';
 	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
+	import { auth } from '$lib/firebase/client';
+	import { toastStore } from '$lib/stores/toast.svelte';
 
 	let displayName = $derived(
 		authStore.user?.displayName || authStore.profile?.displayName || 'Student'
@@ -25,8 +27,58 @@
 				.toUpperCase()
 				.slice(0, 2);
 		}
-		return email.slice(0, 2).toUpperCase();
+		if (email) {
+			return email.slice(0, 2).toUpperCase();
+		}
+		return '??';
 	});
+
+	let exporting = $state(false);
+	let deleting = $state(false);
+	let showDeleteModal = $state(false);
+
+	async function handleExportData() {
+		exporting = true;
+		try {
+			const idToken = await auth.currentUser?.getIdToken();
+			const res = await fetch('/api/user/export', {
+				headers: { Authorization: `Bearer ${idToken}` }
+			});
+			if (!res.ok) throw new Error('Failed to export data');
+			const blob = await res.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `study_buddy_export_${Date.now()}.json`;
+			a.click();
+			URL.revokeObjectURL(url);
+			toastStore.success('User data exported successfully!');
+		} catch (err) {
+			toastStore.error('Data export failed.');
+		} finally {
+			exporting = false;
+		}
+	}
+
+	async function handleDeleteAccount() {
+		deleting = true;
+		try {
+			const idToken = await auth.currentUser?.getIdToken();
+			const res = await fetch('/api/user/delete-account', {
+				method: 'POST',
+				headers: { Authorization: `Bearer ${idToken}` }
+			});
+			if (!res.ok) throw new Error('Account deletion failed');
+			toastStore.success('Account successfully deleted.');
+			await authStore.logout();
+		} catch (err) {
+			toastStore.error('Failed to delete account.');
+		} finally {
+			deleting = false;
+			showDeleteModal = false;
+		}
+	}
+
 </script>
 
 <svelte:head>
@@ -160,4 +212,73 @@
 		</div>
 		<BadgeStrip badges={userBadges} />
 	</div>
+
+	<!-- Data & Privacy (GDPR/CCPA Compliance) -->
+	<div class="flex flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-sm">
+		<h3 class="flex items-center gap-2 font-display text-base font-bold text-text">
+			<span>🛡️</span>
+			<span>Data & Privacy Controls</span>
+		</h3>
+		<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			<div>
+				<span class="block text-xs font-bold text-text">Export Study Data</span>
+				<span class="block text-[11px] text-text-muted">Download a complete JSON export of your progress, courses, and quiz attempts</span>
+			</div>
+			<button
+				type="button"
+				onclick={handleExportData}
+				disabled={exporting}
+				class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-5 py-2.5 text-xs font-bold text-text hover:bg-surface-muted disabled:opacity-50"
+			>
+				<span>📥</span>
+				<span>{exporting ? 'Exporting...' : 'Export JSON Data'}</span>
+			</button>
+		</div>
+
+		<hr class="border-border/50" />
+
+		<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			<div>
+				<span class="block text-xs font-bold text-danger">Delete Account & Data</span>
+				<span class="block text-[11px] text-text-muted">Permanently delete your profile, generated courses, and progress metrics</span>
+			</div>
+			<button
+				type="button"
+				onclick={() => (showDeleteModal = true)}
+				class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-danger-soft px-5 py-2.5 text-xs font-bold text-danger hover:bg-danger/20"
+			>
+				<span>🗑️</span>
+				<span>Delete Account</span>
+			</button>
+		</div>
+	</div>
+
+	{#if showDeleteModal}
+		<div class="fixed inset-0 z-50 flex items-center justify-center bg-text/30 backdrop-blur-xs p-4">
+			<div class="flex max-w-md flex-col gap-4 rounded-3xl border border-danger/30 bg-surface p-6 shadow-2xl">
+				<h3 class="font-display text-lg font-bold text-danger">Confirm Account Deletion</h3>
+				<p class="text-xs text-text-muted leading-relaxed">
+					This action is permanent and cannot be undone. All your generated courses, custom RAG documents, quiz attempts, and spaced repetition cards will be purged.
+				</p>
+				<div class="flex justify-end gap-3 pt-2">
+					<button
+						type="button"
+						onclick={() => (showDeleteModal = false)}
+						class="rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text cursor-pointer"
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						onclick={handleDeleteAccount}
+						disabled={deleting}
+						class="rounded-xl bg-danger px-4 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50 cursor-pointer"
+					>
+						{deleting ? 'Deleting...' : 'Yes, Delete Everything'}
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
 </div>
+

@@ -5,7 +5,6 @@
 	import { db, auth } from '$lib/firebase/client';
 	import { collection, query, where, getDocs } from 'firebase/firestore';
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import type { SharedCourseDoc } from '$lib/firebase/converters';
 
@@ -91,7 +90,7 @@
 			}
 
 			toastStore.success('Course imported successfully!');
-			goto(resolve(`/app/courses/${data.courseId}`));
+			goto(`/app/courses/${data.courseId}`);
 		} catch (err) {
 			console.error('Import course error:', err);
 			toastStore.error('Failed to import course');
@@ -182,7 +181,7 @@
 					searchQuery = '';
 					selectedTag = 'All';
 				} else {
-					goto(resolve('/app/courses/createCourse'));
+					goto('/app/courses/createCourse');
 				}
 			}}
 		/>

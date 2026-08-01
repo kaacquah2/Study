@@ -119,15 +119,30 @@ export const GET: RequestHandler = async ({ request }) => {
 			};
 		}
 
+		// Query live ML Backend Health if available
+		const { callML } = await import('$lib/server/ai/client');
+		let mlHealthData = null;
+		try {
+			mlHealthData = await callML<{
+				status: string;
+				models_loaded: Record<string, boolean>;
+				inference_busy: boolean;
+			}>('/healthcheck', undefined, 5000);
+		} catch (e) {
+			console.warn('[analytics] Live ML backend query skipped:', e);
+		}
+
 		return json({
 			analytics: {
 				coursesGenerated: totalCourses,
 				completionRate,
 				averageQuizAccuracy,
 				flaggedContentCount,
-				fallbackFrequency: fallbackStats
+				fallbackFrequency: fallbackStats,
+				mlBackendHealth: mlHealthData
 			}
 		});
+
 	} catch (err) {
 		console.error('Admin Analytics API error:', err);
 		const message = err instanceof Error ? err.message : '';

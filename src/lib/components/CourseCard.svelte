@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	export interface Course {
 		id: string;
 		title: string;
@@ -259,7 +258,7 @@
 
 		<!-- Start Learning Button -->
 		<a
-			href={resolve(`/app/courses/${course.id}` as '/app')}
+			href={`/app/courses/${course.id}`}
 			class="flex w-full items-center justify-center rounded-md bg-primary-soft px-4 py-3 text-xs font-bold text-primary shadow-sm transition-all duration-180 hover:bg-primary hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
 		>
 			{#if percent === 0}

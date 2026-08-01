@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { resolve } from '$app/paths';
 	import StreakHeatmap from '$lib/components/StreakHeatmap.svelte';
 	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 
@@ -34,7 +33,7 @@
 >
 	<!-- Fixed Top Zone -->
 	<div class="flex shrink-0 flex-col gap-6 p-5 pb-3">
-		<a href={resolve('/app')} class="flex items-center gap-3">
+		<a href="/app" class="flex items-center gap-3">
 			<div
 				class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20"
 			>
@@ -65,7 +64,7 @@
 				{@const active =
 					currentPath === item.href || (item.href !== '/app' && currentPath.startsWith(item.href))}
 				<a
-					href={resolve(item.href as '/app')}
+					href={item.href}
 					class="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold transition-all duration-180 {active
 						? 'bg-primary text-white shadow-md shadow-primary/20'
 						: 'text-text-muted hover:bg-surface-muted hover:text-text'}"
@@ -131,7 +130,7 @@
 
 					<div class="flex flex-col gap-1 text-xs font-semibold">
 						<a
-							href={resolve('/app/settings' as '/app')}
+							href="/app/settings"
 							onclick={() => (sidebarProfileOpen = false)}
 							class="flex items-center justify-between rounded-xl px-3 py-2 text-text transition-colors hover:bg-surface-muted"
 						>

@@ -38,8 +38,9 @@ from schemas.types import (
     LessonRequest, LessonResponse, LessonPage,
     QuizRequest, QuizResponse, QuizQuestion,
     ChatRequest, ChatResponse, DocumentsRequest,
-    HealthResponse,
+    HealthResponse, CompletionRequest, CompletionResponse,
 )
+
 import models.summarizer as summarizer_model
 import models.paraphraser as paraphraser_model
 import models.outline_generator as outline_model
@@ -473,6 +474,45 @@ async def chat(body: ChatRequest, request: Request, response: Response = None):
         _MODEL_STATUS["chat_assistant"] = f"error: {str(e)}"
         logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── AI Completion ─────────────────────────────────────────────────────────────
+
+@app.post("/completion", response_model=CompletionResponse, dependencies=[Depends(verify_api_key)], tags=["AI"])
+async def completion(body: CompletionRequest, request: Request, response: Response = None):
+    """
+    Generic AI completion endpoint used for quiz explanations and flashcard generation.
+    """
+    if response is None:
+        response = Response()
+    try:
+        user_id = request.headers.get("X-User-ID", "default_user")
+        cache_key = cache.generate_key("completion", {**body.model_dump(), "user_id": user_id})
+        cached_val, status = cache.get(cache_key)
+        response.headers["X-Cache"] = status
+        if status == "HIT" and cached_val:
+            return CompletionResponse(**cached_val)
+
+        # Delegate to chat assistant model with optional system instruction context
+        messages = []
+        if body.system_instruction:
+            messages.append({"role": "user", "content": f"[System Context: {body.system_instruction}]\n\n{body.prompt}"})
+        else:
+            messages.append({"role": "user", "content": body.prompt})
+
+        reply, _ = await asyncio.to_thread(
+            chat_model.chat,
+            messages=messages,
+            course_context=None,
+            user_id=user_id,
+        )
+        res_obj = CompletionResponse(text=reply)
+        cache.set(cache_key, res_obj.model_dump(), ttl=300)
+        return res_obj
+    except Exception as e:
+        logger.error(f"Completion error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 # ── Documents (RAG ingestion) ──────────────────────────────────────────────────

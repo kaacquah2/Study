@@ -2,7 +2,6 @@
 	import { page } from '$app/state';
 	import { db, auth } from '$lib/firebase/client';
 	import { doc, collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-	import { resolve } from '$app/paths';
 	import ProgressBar from '$lib/components/ProgressBar.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import ShareModal from '$lib/components/ShareModal.svelte';
@@ -201,7 +200,7 @@
 	<!-- Back Link & Action Bar -->
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<a
-			href={resolve('/app')}
+			href="/app"
 			class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
 		>
 			&larr; Back to Courses
@@ -351,7 +350,7 @@
 								>🚀 Module 1 is ready! Start reading now while remaining modules finish building.</span
 							>
 							<a
-								href={resolve(`/app/courses/${courseId}/${modules[0].id}` as '/app')}
+								href={`/app/courses/${courseId}/${modules[0].id}`}
 								class="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-primary-hover active:scale-95"
 							>
 								Start Module 1 &rarr;
@@ -496,7 +495,7 @@
 						<div class="shrink-0">
 							{#if isReady}
 								<a
-									href={resolve(`/app/courses/${courseId}/${mod.id}` as '/app')}
+									href={`/app/courses/${courseId}/${mod.id}`}
 									class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-primary-hover active:scale-95"
 								>
 									<span>{isCompleted ? 'Review' : 'Start'}</span>

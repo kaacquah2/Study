@@ -10,7 +10,6 @@
 		type DocumentSnapshot
 	} from 'firebase/firestore';
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { marked } from 'marked';
 	import DOMPurify from 'isomorphic-dompurify';
 	import PageIndicator from '$lib/components/PageIndicator.svelte';
@@ -400,7 +399,7 @@
 	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
 		<div class="flex items-center gap-3">
 			<a
-				href={resolve(`/app/courses/${courseId}` as '/app')}
+				href={`/app/courses/${courseId}`}
 				class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
 			>
 				&larr; Course Overview
@@ -507,8 +506,8 @@
 			nextModuleId={nextModule?.id}
 			nextModuleTitle={nextModule?.title}
 			{quizReviewItems}
-			onContinue={() => goto(resolve(`/app/courses/${courseId}`))}
-			onNextModule={(nextId) => goto(resolve(`/app/courses/${courseId}/${nextId}`))}
+			onContinue={() => goto(`/app/courses/${courseId}`)}
+			onNextModule={(nextId) => goto(`/app/courses/${courseId}/${nextId}`)}
 		/>
 	{:else if moduleData.type === 'lesson'}
 		<!-- LESSON VIEW -->

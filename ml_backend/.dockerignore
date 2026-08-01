@@ -1,0 +1,12 @@
+my_pdfs/
+vector_store/
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+*.pyd
+*.faiss
+*.json
+!.gitignore

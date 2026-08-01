@@ -7,6 +7,8 @@ import { adminDb } from '$lib/server/admin';
 import { enforceRateLimit } from '$lib/server/rateLimiter';
 import { MLBackendError } from '$lib/server/ai/client';
 
+import { moderateInput } from '$lib/server/ai/moderation';
+
 const ChatBodySchema = z.object({
 	messages: z
 		.array(
@@ -19,7 +21,8 @@ const ChatBodySchema = z.object({
 		.max(8),
 	courseId: z.string().optional(),
 	moduleId: z.string().optional(),
-	courseContext: z.string().max(1_000).optional()
+	courseContext: z.string().max(1_000).optional(),
+	socraticMode: z.boolean().optional()
 });
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -62,7 +65,23 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 
-		const { messages, courseId, moduleId, courseContext: rawClientContext } = parsed.data;
+		const { messages, courseId, moduleId, courseContext: rawClientContext, socraticMode } = parsed.data;
+
+		// Input Safety Moderation Check
+		const latestUserMsg = messages[messages.length - 1]?.content || '';
+		const modResult = moderateInput(latestUserMsg, undefined, user.uid);
+		if (!modResult.safe) {
+			return json(
+				{
+					error: {
+						code: 'CONTENT_FLAGGED',
+						message: modResult.reason || 'Input content flagged by safety policy.'
+					}
+				},
+				{ status: 400 }
+			);
+		}
+
 
 		let contextToUse: string | undefined = undefined;
 
@@ -98,8 +117,15 @@ export const POST: RequestHandler = async ({ request }) => {
 			contextToUse = rawClientContext.slice(0, 1_000);
 		}
 
+		if (socraticMode !== false) {
+			const socraticInstruction =
+				'\n[Pedagogy Instruction: Socratic Mode Active. Act as an encouraging Socratic tutor. Provide hints, ask guiding questions, and help the student derive answers independently rather than revealing direct answers immediately.]';
+			contextToUse = contextToUse ? contextToUse + socraticInstruction : socraticInstruction;
+		}
+
 		// Execute chat inference
 		const { result: chatResult, provider } = await chat(messages, contextToUse, user.uid);
+
 
 		// Construct SSE stream using ReadableStream
 		const encoder = new TextEncoder();

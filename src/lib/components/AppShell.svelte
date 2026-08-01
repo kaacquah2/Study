@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import Header from './Header.svelte';
@@ -19,7 +18,7 @@
 	$effect(() => {
 		if (authStore.authResolved && requireAuth && !authStore.user) {
 			const currentUrl = page.url.pathname + page.url.search;
-			goto(resolve(`/?redirect=${encodeURIComponent(currentUrl)}`));
+			goto(`/?redirect=${encodeURIComponent(currentUrl)}`);
 		}
 	});
 

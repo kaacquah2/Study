@@ -2,7 +2,6 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import ThemeSwitcher from './ThemeSwitcher.svelte';
 	import StreakChip from './StreakChip.svelte';
-	import { resolve } from '$app/paths';
 
 	let initials = $derived.by(() => {
 		if (authStore.user?.displayName) {
@@ -25,7 +24,7 @@
 >
 	<!-- Logo Section -->
 	<a
-		href={resolve('/app')}
+		href="/app"
 		class="flex items-center gap-2 rounded-md text-lg font-bold text-text transition-opacity select-none hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 	>
 		<div

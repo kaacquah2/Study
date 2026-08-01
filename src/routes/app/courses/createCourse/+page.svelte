@@ -2,7 +2,7 @@
 	import DraftOutlineEditor from '$lib/components/DraftOutlineEditor.svelte';
 	import { auth } from '$lib/firebase/client';
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
+	import { resolveRoute } from '$app/paths';
 	import { page } from '$app/state';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { apiFetch } from '$lib/api/client';
@@ -284,7 +284,7 @@
 							stopLoadingProgress();
 							loading = false;
 							toastStore.success('Background course generation completed!');
-							const targetUrl = resolve('/app/courses/[id]', { id: jobData.courseId });
+							const targetUrl = resolveRoute('/app/courses/[id]', { id: jobData.courseId });
 							goto(targetUrl);
 							return;
 						} else if (jobData.status === 'failed') {
@@ -398,7 +398,7 @@
 			}
 
 			toastStore.success('Full course generation started!');
-			goto(resolve(`/app/courses/${draftCourseId}`));
+			goto(`/app/courses/${draftCourseId}`);
 		} catch (err) {
 			console.error('Error confirming course:', err);
 			toastStore.error('Failed to confirm course. Please try again.');
@@ -415,7 +415,7 @@
 	<div class="flex items-center justify-between border-b border-border pb-4">
 		<div>
 			<a
-				href={resolve('/app')}
+				href="/app"
 				class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
 			>
 				&larr; Return to Dashboard

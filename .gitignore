@@ -44,8 +44,11 @@ test-results
 # ML Models, Weights & Vector Index Artifacts
 ml_backend/fine_tuned_models/
 ml_backend/my_pdfs/
+ml_backend/vector_store/
+vector_store/
 *.safetensors
 *.bin
 *.onnx
 *.faiss
 *.pkl
+

@@ -9,7 +9,7 @@
 		level?: 'beginner' | 'intermediate' | 'advanced';
 		tags?: string[];
 		moduleCount?: number;
-		onImport: (shareId: string) => void;
+		onImport: (shareId: string) => void | Promise<void>;
 		loading?: boolean;
 	}
 

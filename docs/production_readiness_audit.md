@@ -59,27 +59,29 @@ graph TD
 
 ---
 
-## 3. Production Readiness Gap Analysis (What's Left to Do)
+## 3. Production Readiness Status & Implemented Hardening
 
-### 🔴 Critical Blockers for Production
+### ✅ Resolved Infrastructure Items
+
+1. **RAG Vector Store Persistence (RESOLVED)**
+   - **Status**: `rag_pipeline.py` persists FAISS index binary (`index.faiss`) and JSON chunk metadata (`docs.json`) to disk (`_save_index` / `_load_index`). Document embeddings survive container restarts cleanly.
+
+2. **Distributed Rate Limiting (RESOLVED)**
+   - **Status**: `rateLimiter.ts` integrates Upstash Redis REST API for serverless environments with atomic Firestore transactions as secondary fallback.
+
+3. **CI/CD Quality Pipeline (RESOLVED)**
+   - **Status**: `.github/workflows/ci.yml` is active and executes `npm run check`, `npm run lint`, Vitest unit tests, `npm audit`, and ML backend Pytest jobs on every push.
+
+---
+
+### 🔴 Host & Infrastructure Deployment Requirements
 
 1. **Serverless Gateway Timeout Mitigation**
-   - **Problem**: Heavy CPU model inference for course outlines or full lessons can take 30–90 seconds on standard CPU hardware. Netlify Serverless Functions (or Vercel) impose a strict **10s to 26s hard timeout** on HTTP requests.
-   - **Action Required**: When calling `/api/courses` or `/api/modules/[id]/generate`, long-running calls will fail if executed synchronously inside standard serverless API routes. You must either:
-     - Use background job execution (e.g. queueing module generation in Firestore and polling status from client), or
-     - Host the SvelteKit application on a long-lived Node.js container (Docker / Render / Cloud Run) rather than serverless functions.
+   - Heavy CPU inference (Flan-T5-large / TinyLlama) can take 15–40s on CPU. SvelteKit uses `generationQueue.ts` to background-process modules, decoupling client rendering from serverless function limits.
 
-2. **RAG Vector Store Persistence**
-   - **Problem**: In [`ml_backend/main.py`](file:///c:/Users/OSCARPACK/Downloads/Study/ml_backend/main.py#L314-L326), uploaded reference documents are added to an in-memory FAISS index. If the ML container restarts or scales horizontally, uploaded course references are lost.
-   - **Action Required**: Modify `rag_pipeline.py` to persist the FAISS index to disk or connect to a persistent vector store (e.g., ChromaDB, PGVector, Qdrant, or Pinecone).
+2. **Hardware Provisioning for ML Backend**
+   - Hugging Face models (`google/flan-t5-large` and `TinyLlama-1.1B-Chat`) require **4 GB+ RAM**. Deploy `ml_backend` via `ml_backend/Dockerfile` to Docker-capable hosts (Cloud Run, Render 4GB+, AWS EC2).
 
-3. **In-Memory Rate Limiter in Serverless Environment**
-   - **Problem**: [`src/lib/server/rateLimiter.ts`](file:///c:/Users/OSCARPACK/Downloads/Study/src/lib/server/rateLimiter.ts) stores hit counts in a Node.js process `Map`. In serverless deployments, each lambda request may spawn a separate isolate, rendering in-memory rate limiting ineffective.
-   - **Action Required**: Rely on the existing Firestore transactional rate-limiting in `/api/courses` or connect `rateLimiter.ts` to Upstash Redis for multi-region rate limiting.
-
-4. **Hardware Provisioning for ML Backend**
-   - **Problem**: Hugging Face models (`google/flan-t5-large` and `TinyLlama-1.1B-Chat`) require at least **4 GB of RAM** (or 8 GB recommended) to avoid Out-Of-Memory (OOM) host crashes. Free-tier hosts (e.g., Render 512MB RAM) will crash immediately upon model load.
-   - **Action Required**: Deploy `ml_backend` using the included [`ml_backend/Dockerfile`](file:///c:/Users/OSCARPACK/Downloads/Study/ml_backend/Dockerfile) to a host with adequate RAM (e.g., Render Starter 4GB+, AWS EC2, Cloud Run with 4-8GB RAM, or GPU instances like Modal/RunPod).
 
 ---
 

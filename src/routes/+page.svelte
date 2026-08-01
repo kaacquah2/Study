@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import HeroPanel from '$lib/components/HeroPanel.svelte';
 	import AuthForm from '$lib/components/AuthForm.svelte';
@@ -10,7 +9,7 @@
 	$effect(() => {
 		const redirect = page.url.searchParams.get('redirect');
 		if (authStore.authResolved && authStore.user && redirect) {
-			goto(resolve(redirect as '/app'));
+			goto(redirect);
 		}
 	});
 </script>
@@ -81,7 +80,7 @@
 
 					<div class="mt-6 flex flex-col gap-3">
 						<a
-							href={resolve('/app')}
+							href="/app"
 							class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-xs font-bold text-white shadow-md transition-all duration-180 hover:bg-primary-hover sm:text-sm"
 						>
 							<span>Go to Dashboard</span>

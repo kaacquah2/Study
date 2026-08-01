@@ -109,22 +109,22 @@ Study/
 │   ├── PROJECT_LIMITATIONS_AND_EVALUATION.md # Academic limitations, evaluation methodology & future work
 │   └── production_readiness_audit.md # Production deployment checklist
 ├── ml_backend/                 # Python FastAPI ML Microservice
-│   ├── app/                    # FastAPI routers & inference logic
-│   ├── fine_tuned_models/      # Fine-tuned model checkpoints
 │   ├── fine_tuning/            # Fine-tuning scripts & datasets
-│   ├── models/                 # Model cache & local checkpoints
-│   ├── my_pdfs/                # Source PDFs for RAG ingestion
+│   ├── models/                 # Model inference modules & registries
 │   ├── schemas/                # Data models and Pydantic schemas
-│   ├── vector_store/           # FAISS vector database store
+│   ├── vector_store/           # FAISS vector database & sample_docs
 │   ├── cache.py                # Embedding & inference result caching
 │   ├── convert_pdfs.py         # PDF text extraction & processing script
 │   ├── download_models.py      # Hugging Face model pre-downloader
+│   ├── evaluate_models.py      # Model benchmarking evaluation script
 │   ├── ingest_sciq.py          # SciQ dataset ingestion script
 │   ├── main.py                 # FastAPI application entrypoint
 │   ├── test_cache.py           # ML cache test suite
 │   ├── test_ml_backend.py      # FastAPI endpoint unit test suite
 │   ├── Dockerfile              # Container deployment manifest
+│   ├── .dockerignore           # Excludes local virtual environment and vector caches
 │   └── requirements.txt        # Python backend dependencies
+
 ├── scripts/                    # Development & administrative utility scripts
 │   └── calibrate_domain_classifier.ts # Calibrates domain classifier thresholds
 ├── src/                        # SvelteKit Application Source

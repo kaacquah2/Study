@@ -130,3 +130,15 @@ class HealthResponse(BaseModel):
     status: str
     models_loaded: dict[str, bool]
     inference_busy: bool = False
+
+
+# ── AI Completion ─────────────────────────────────────────────────────────────
+
+class CompletionRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=15_000)
+    system_instruction: Optional[str] = Field(default=None, max_length=5_000)
+
+
+class CompletionResponse(BaseModel):
+    text: str
+
