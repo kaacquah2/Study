@@ -78,7 +78,6 @@
 				})
 			});
 
-
 			if (!res.ok) {
 				const result = await res.json().catch(() => ({}));
 				const errMsg =
@@ -227,13 +226,19 @@
 					</div>
 					<div>
 						<h3 class="font-display text-sm font-bold text-text">AI Study Assistant</h3>
-						<div class="flex items-center gap-2 mt-0.5">
-							<span class="text-[10px] font-bold tracking-wider text-success uppercase">● Online</span>
+						<div class="mt-0.5 flex items-center gap-2">
+							<span class="text-[10px] font-bold tracking-wider text-success uppercase"
+								>● Online</span
+							>
 							<button
 								type="button"
 								onclick={() => (socraticMode = !socraticMode)}
-								class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-all cursor-pointer {socraticMode ? 'bg-primary-soft text-primary border border-primary/30' : 'bg-surface-muted text-text-muted border border-border'}"
-								title={socraticMode ? 'Socratic Mode ON: Asks guiding questions' : 'Direct Mode: Gives immediate answers'}
+								class="inline-flex cursor-pointer items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-all {socraticMode
+									? 'border border-primary/30 bg-primary-soft text-primary'
+									: 'border border-border bg-surface-muted text-text-muted'}"
+								title={socraticMode
+									? 'Socratic Mode ON: Asks guiding questions'
+									: 'Direct Mode: Gives immediate answers'}
 							>
 								<span>💡</span>
 								<span>{socraticMode ? 'Socratic' : 'Direct'}</span>

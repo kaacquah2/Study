@@ -129,7 +129,6 @@
 		}
 	}
 
-
 	// ── Auth helper ───────────────────────────────────────────────────────────
 	async function getToken(): Promise<string> {
 		const token = await auth.currentUser?.getIdToken();
@@ -366,203 +365,253 @@
 		<button
 			type="button"
 			onclick={() => (activeTab = 'documents')}
-			class="rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer {activeTab === 'documents' ? 'bg-primary text-white shadow-xs' : 'bg-surface border border-border text-text-muted hover:text-text'}"
+			class="cursor-pointer rounded-xl px-4 py-2 text-xs font-bold transition-all {activeTab ===
+			'documents'
+				? 'bg-primary text-white shadow-xs'
+				: 'border border-border bg-surface text-text-muted hover:text-text'}"
 		>
 			📚 RAG Knowledge Base
 		</button>
 		<button
 			type="button"
 			onclick={() => (activeTab = 'summarizer')}
-			class="rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer {activeTab === 'summarizer' ? 'bg-primary text-white shadow-xs' : 'bg-surface border border-border text-text-muted hover:text-text'}"
+			class="cursor-pointer rounded-xl px-4 py-2 text-xs font-bold transition-all {activeTab ===
+			'summarizer'
+				? 'bg-primary text-white shadow-xs'
+				: 'border border-border bg-surface text-text-muted hover:text-text'}"
 		>
 			⚡ Summarizer
 		</button>
 		<button
 			type="button"
 			onclick={() => (activeTab = 'paraphraser')}
-			class="rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer {activeTab === 'paraphraser' ? 'bg-primary text-white shadow-xs' : 'bg-surface border border-border text-text-muted hover:text-text'}"
+			class="cursor-pointer rounded-xl px-4 py-2 text-xs font-bold transition-all {activeTab ===
+			'paraphraser'
+				? 'bg-primary text-white shadow-xs'
+				: 'border border-border bg-surface text-text-muted hover:text-text'}"
 		>
 			✍️ Paraphraser
 		</button>
 		<button
 			type="button"
 			onclick={() => (activeTab = 'flashcards')}
-			class="rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer {activeTab === 'flashcards' ? 'bg-primary text-white shadow-xs' : 'bg-surface border border-border text-text-muted hover:text-text'}"
+			class="cursor-pointer rounded-xl px-4 py-2 text-xs font-bold transition-all {activeTab ===
+			'flashcards'
+				? 'bg-primary text-white shadow-xs'
+				: 'border border-border bg-surface text-text-muted hover:text-text'}"
 		>
 			🎴 Flashcard Generator
 		</button>
 	</div>
 
 	{#if activeTab === 'documents'}
-	<!-- How it works banner -->
-	<div
-		class="rounded-2xl border border-primary/20 bg-primary-soft/40 p-4 text-xs leading-relaxed text-primary"
-	>
-		<span class="font-bold">How it works:</span> Documents you upload are split into chunks, embedded
-
-		with a semantic model, and stored in a FAISS index on disk. When you generate lessons or quizzes,
-		the AI retrieves the most relevant chunks and uses them as grounded context — producing far more accurate
-		and specific content.
-	</div>
-
-	<!-- Upload Section -->
-	<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-		<h2 class="font-display text-base font-bold text-text">Add Documents</h2>
-
-		<!-- Drag & Drop Zone -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- How it works banner -->
 		<div
-			class="relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 text-center transition-colors
-				{dragOver
-				? 'border-primary bg-primary-soft/30'
-				: 'border-border bg-surface-muted/50 hover:border-primary/50'}"
-			ondragover={(e) => {
-				e.preventDefault();
-				dragOver = true;
-			}}
-			ondragleave={() => {
-				dragOver = false;
-			}}
-			ondrop={handleDrop}
+			class="rounded-2xl border border-primary/20 bg-primary-soft/40 p-4 text-xs leading-relaxed text-primary"
 		>
-			<div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft">
-				<svg
-					class="h-6 w-6 text-primary"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-					stroke-width="2"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-					/>
-				</svg>
-			</div>
-			<div>
-				<p class="text-sm font-bold text-text">Drag &amp; drop files here</p>
-				<p class="text-xs text-text-muted">
-					Supports <code class="rounded bg-surface-muted px-1 font-mono">.txt</code> and
-					<code class="rounded bg-surface-muted px-1 font-mono">.md</code> files
-				</p>
-			</div>
-			<label
-				class="cursor-pointer rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text transition-colors hover:border-primary hover:text-primary"
+			<span class="font-bold">How it works:</span> Documents you upload are split into chunks, embedded
+			with a semantic model, and stored in a FAISS index on disk. When you generate lessons or quizzes,
+			the AI retrieves the most relevant chunks and uses them as grounded context — producing far more
+			accurate and specific content.
+		</div>
+
+		<!-- Upload Section -->
+		<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+			<h2 class="font-display text-base font-bold text-text">Add Documents</h2>
+
+			<!-- Drag & Drop Zone -->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div
+				class="relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 text-center transition-colors
+				{dragOver
+					? 'border-primary bg-primary-soft/30'
+					: 'border-border bg-surface-muted/50 hover:border-primary/50'}"
+				ondragover={(e) => {
+					e.preventDefault();
+					dragOver = true;
+				}}
+				ondragleave={() => {
+					dragOver = false;
+				}}
+				ondrop={handleDrop}
 			>
-				Browse Files
-				<input type="file" accept=".txt,.md" multiple class="hidden" onchange={handleFilePick} />
-			</label>
-		</div>
-
-		<!-- Paste Text -->
-		<div class="flex flex-col gap-2 border-t border-border/40 pt-4">
-			<label for="paste-input" class="text-xs font-bold tracking-wider text-text-muted uppercase">
-				Or paste text directly
-			</label>
-			<textarea
-				id="paste-input"
-				bind:value={pasteText}
-				rows="4"
-				placeholder="Paste lecture notes, textbook excerpts, or any study material here..."
-				class="w-full resize-none rounded-xl border border-border bg-surface-muted/50 px-4 py-3 text-xs leading-relaxed text-text focus:border-primary focus:outline-none"
-			></textarea>
-			{#if uploadError}
-				<p class="text-[11px] font-semibold text-danger">{uploadError}</p>
-			{/if}
-			<div class="flex justify-end">
-				<button
-					type="button"
-					onclick={addPasteText}
-					disabled={pasteText.trim().length < 20}
-					class="cursor-pointer rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
-				>
-					+ Stage Text
-				</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Staged Files Queue -->
-	{#if stagedFiles.length > 0}
-		<div class="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-			<div class="flex items-center justify-between">
-				<h2 class="font-display text-base font-bold text-text">
-					Staged for Upload
-					<span
-						class="ml-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white"
+				<div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft">
+					<svg
+						class="h-6 w-6 text-primary"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						stroke-width="2"
 					>
-						{stagedFiles.length}
-					</span>
-				</h2>
-				<button
-					type="button"
-					onclick={() => {
-						stagedFiles = [];
-					}}
-					class="text-xs font-bold text-text-muted transition-colors hover:text-danger"
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+						/>
+					</svg>
+				</div>
+				<div>
+					<p class="text-sm font-bold text-text">Drag &amp; drop files here</p>
+					<p class="text-xs text-text-muted">
+						Supports <code class="rounded bg-surface-muted px-1 font-mono">.txt</code> and
+						<code class="rounded bg-surface-muted px-1 font-mono">.md</code> files
+					</p>
+				</div>
+				<label
+					class="cursor-pointer rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text transition-colors hover:border-primary hover:text-primary"
 				>
-					Clear all
-				</button>
+					Browse Files
+					<input type="file" accept=".txt,.md" multiple class="hidden" onchange={handleFilePick} />
+				</label>
 			</div>
 
-			<ul class="flex flex-col gap-2">
-				{#each stagedFiles as file, i (file.name + i)}
-					<li
-						class="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-muted/50 px-4 py-2.5"
+			<!-- Paste Text -->
+			<div class="flex flex-col gap-2 border-t border-border/40 pt-4">
+				<label for="paste-input" class="text-xs font-bold tracking-wider text-text-muted uppercase">
+					Or paste text directly
+				</label>
+				<textarea
+					id="paste-input"
+					bind:value={pasteText}
+					rows="4"
+					placeholder="Paste lecture notes, textbook excerpts, or any study material here..."
+					class="w-full resize-none rounded-xl border border-border bg-surface-muted/50 px-4 py-3 text-xs leading-relaxed text-text focus:border-primary focus:outline-none"
+				></textarea>
+				{#if uploadError}
+					<p class="text-[11px] font-semibold text-danger">{uploadError}</p>
+				{/if}
+				<div class="flex justify-end">
+					<button
+						type="button"
+						onclick={addPasteText}
+						disabled={pasteText.trim().length < 20}
+						class="cursor-pointer rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
 					>
-						<div class="flex min-w-0 items-center gap-2">
-							<svg
-								class="h-4 w-4 shrink-0 text-primary"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-								/>
-							</svg>
-							<span class="truncate text-xs font-semibold text-text">{file.name}</span>
-						</div>
-						<div class="flex shrink-0 items-center gap-3">
-							<span class="text-[11px] text-text-muted"
-								>{(file.content.length / 1000).toFixed(1)}k chars</span
-							>
-							<button
-								type="button"
-								onclick={() => removeStaged(i)}
-								class="text-text-muted transition-colors hover:text-danger"
-								aria-label="Remove {file.name}"
-							>
+						+ Stage Text
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Staged Files Queue -->
+		{#if stagedFiles.length > 0}
+			<div class="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+				<div class="flex items-center justify-between">
+					<h2 class="font-display text-base font-bold text-text">
+						Staged for Upload
+						<span
+							class="ml-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white"
+						>
+							{stagedFiles.length}
+						</span>
+					</h2>
+					<button
+						type="button"
+						onclick={() => {
+							stagedFiles = [];
+						}}
+						class="text-xs font-bold text-text-muted transition-colors hover:text-danger"
+					>
+						Clear all
+					</button>
+				</div>
+
+				<ul class="flex flex-col gap-2">
+					{#each stagedFiles as file, i (file.name + i)}
+						<li
+							class="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-muted/50 px-4 py-2.5"
+						>
+							<div class="flex min-w-0 items-center gap-2">
 								<svg
-									class="h-4 w-4"
+									class="h-4 w-4 shrink-0 text-primary"
 									fill="none"
 									viewBox="0 0 24 24"
 									stroke="currentColor"
 									stroke-width="2"
 								>
-									<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+									/>
 								</svg>
-							</button>
-						</div>
-					</li>
-				{/each}
-			</ul>
+								<span class="truncate text-xs font-semibold text-text">{file.name}</span>
+							</div>
+							<div class="flex shrink-0 items-center gap-3">
+								<span class="text-[11px] text-text-muted"
+									>{(file.content.length / 1000).toFixed(1)}k chars</span
+								>
+								<button
+									type="button"
+									onclick={() => removeStaged(i)}
+									class="text-text-muted transition-colors hover:text-danger"
+									aria-label="Remove {file.name}"
+								>
+									<svg
+										class="h-4 w-4"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+									</svg>
+								</button>
+							</div>
+						</li>
+					{/each}
+				</ul>
 
-			<button
-				type="button"
-				onclick={uploadAll}
-				disabled={uploading}
-				class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50"
-			>
-				{#if uploading}
-					<span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
-					></span>
-					Indexing documents...
-				{:else}
+				<button
+					type="button"
+					onclick={uploadAll}
+					disabled={uploading}
+					class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50"
+				>
+					{#if uploading}
+						<span
+							class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+						></span>
+						Indexing documents...
+					{:else}
+						<svg
+							class="h-4 w-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+							/>
+						</svg>
+						Index {stagedFiles.length} Document{stagedFiles.length > 1 ? 's' : ''}
+					{/if}
+				</button>
+			</div>
+		{/if}
+
+		<!-- Danger Zone — Clear Store -->
+		<div class="flex flex-col gap-3 rounded-2xl border border-danger/20 bg-danger-soft/30 p-6">
+			<div>
+				<h2 class="font-display text-base font-bold text-danger">Danger Zone</h2>
+				<p class="mt-0.5 text-xs text-text-muted">
+					Clearing the knowledge base permanently deletes all indexed document chunks from the FAISS
+					vector store. Sample documents will be re-seeded on next server restart.
+				</p>
+			</div>
+
+			{#if !showClearConfirm}
+				<button
+					type="button"
+					onclick={() => {
+						showClearConfirm = true;
+					}}
+					disabled={!hasDocuments}
+					class="inline-flex items-center gap-2 self-start rounded-xl border border-danger/40 bg-danger-soft px-4 py-2 text-xs font-bold text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-40"
+				>
 					<svg
 						class="h-4 w-4"
 						fill="none"
@@ -573,113 +622,83 @@
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
-							d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+							d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
 						/>
 					</svg>
-					Index {stagedFiles.length} Document{stagedFiles.length > 1 ? 's' : ''}
-				{/if}
-			</button>
-		</div>
-	{/if}
-
-	<!-- Danger Zone — Clear Store -->
-	<div class="flex flex-col gap-3 rounded-2xl border border-danger/20 bg-danger-soft/30 p-6">
-		<div>
-			<h2 class="font-display text-base font-bold text-danger">Danger Zone</h2>
-			<p class="mt-0.5 text-xs text-text-muted">
-				Clearing the knowledge base permanently deletes all indexed document chunks from the FAISS
-				vector store. Sample documents will be re-seeded on next server restart.
-			</p>
-		</div>
-
-		{#if !showClearConfirm}
-			<button
-				type="button"
-				onclick={() => {
-					showClearConfirm = true;
-				}}
-				disabled={!hasDocuments}
-				class="inline-flex items-center gap-2 self-start rounded-xl border border-danger/40 bg-danger-soft px-4 py-2 text-xs font-bold text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-40"
-			>
-				<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-					/>
-				</svg>
-				Clear Knowledge Base
-			</button>
-		{:else}
-			<div class="flex flex-col gap-2">
-				<p class="text-xs font-bold text-danger">
-					Are you sure? This will delete all {chunkCount.toLocaleString()} indexed chunks.
-				</p>
-				<div class="flex gap-2">
-					<button
-						type="button"
-						onclick={clearStore}
-						disabled={clearing}
-						class="inline-flex items-center gap-2 rounded-xl bg-danger px-4 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
-					>
-						{#if clearing}
-							<span
-								class="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"
-							></span>
-							Clearing...
-						{:else}
-							Yes, Clear Everything
-						{/if}
-					</button>
-					<button
-						type="button"
-						onclick={() => {
-							showClearConfirm = false;
-						}}
-						class="rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted transition-colors hover:text-text"
-					>
-						Cancel
-					</button>
+					Clear Knowledge Base
+				</button>
+			{:else}
+				<div class="flex flex-col gap-2">
+					<p class="text-xs font-bold text-danger">
+						Are you sure? This will delete all {chunkCount.toLocaleString()} indexed chunks.
+					</p>
+					<div class="flex gap-2">
+						<button
+							type="button"
+							onclick={clearStore}
+							disabled={clearing}
+							class="inline-flex items-center gap-2 rounded-xl bg-danger px-4 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
+						>
+							{#if clearing}
+								<span
+									class="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"
+								></span>
+								Clearing...
+							{:else}
+								Yes, Clear Everything
+							{/if}
+						</button>
+						<button
+							type="button"
+							onclick={() => {
+								showClearConfirm = false;
+							}}
+							class="rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted transition-colors hover:text-text"
+						>
+							Cancel
+						</button>
+					</div>
 				</div>
-			</div>
-		{/if}
-	</div>
+			{/if}
+		</div>
 
-	<!-- Tips -->
-	<div
-		class="rounded-2xl border border-border bg-surface p-5 text-xs leading-relaxed text-text-muted"
-	>
-		<p class="mb-2 font-bold text-text">Tips for best results</p>
-		<ul class="flex list-inside list-disc flex-col gap-1.5">
-			<li>Upload topic-specific materials that match what you'll be generating courses about</li>
-			<li>
-				Longer, well-structured documents (textbook chapters, lecture notes) produce the best
-				grounding
-			</li>
-			<li>
-				The knowledge base is <span class="font-semibold text-text"
-					>shared across all your courses</span
-				> — it's not per-course
-			</li>
-			<li>Documents persist on disk across ML backend restarts</li>
-			<li>
-				You can also use the <code class="rounded bg-surface-muted px-1 font-mono"
-					>build_index.py</code
-				> script to bulk-index a folder of files
-			</li>
-		</ul>
-	</div>
+		<!-- Tips -->
+		<div
+			class="rounded-2xl border border-border bg-surface p-5 text-xs leading-relaxed text-text-muted"
+		>
+			<p class="mb-2 font-bold text-text">Tips for best results</p>
+			<ul class="flex list-inside list-disc flex-col gap-1.5">
+				<li>Upload topic-specific materials that match what you'll be generating courses about</li>
+				<li>
+					Longer, well-structured documents (textbook chapters, lecture notes) produce the best
+					grounding
+				</li>
+				<li>
+					The knowledge base is <span class="font-semibold text-text"
+						>shared across all your courses</span
+					> — it's not per-course
+				</li>
+				<li>Documents persist on disk across ML backend restarts</li>
+				<li>
+					You can also use the <code class="rounded bg-surface-muted px-1 font-mono"
+						>build_index.py</code
+					> script to bulk-index a folder of files
+				</li>
+			</ul>
+		</div>
 	{:else if activeTab === 'summarizer'}
 		<!-- Summarizer Panel -->
 		<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-xs">
 			<div>
 				<h2 class="font-display text-lg font-bold text-text">Text Summarizer</h2>
-				<p class="text-xs text-text-muted">Generate concise AI summaries from textbook passages or notes.</p>
+				<p class="text-xs text-text-muted">
+					Generate concise AI summaries from textbook passages or notes.
+				</p>
 			</div>
 			<textarea
 				bind:value={summarizeText}
 				placeholder="Paste text to summarize (minimum 50 characters)..."
-				class="min-h-36 w-full rounded-xl border border-border bg-surface-muted p-4 text-xs font-sans text-text focus:outline-none focus:ring-2 focus:ring-primary"
+				class="min-h-36 w-full rounded-xl border border-border bg-surface-muted p-4 font-sans text-xs text-text focus:ring-2 focus:ring-primary focus:outline-none"
 			></textarea>
 			<div class="flex items-center justify-between">
 				<span class="text-[11px] text-text-muted">{summarizeText.length} characters</span>
@@ -687,20 +706,20 @@
 					type="button"
 					onclick={handleSummarize}
 					disabled={summarizing || summarizeText.trim().length < 50}
-					class="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
+					class="cursor-pointer rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-primary-hover disabled:opacity-50"
 				>
 					{summarizing ? 'Summarizing...' : 'Generate Summary'}
 				</button>
 			</div>
 			{#if summaryResult}
 				<div class="mt-4 rounded-xl border border-primary/20 bg-primary-soft/30 p-4">
-					<div class="flex items-center justify-between mb-2">
+					<div class="mb-2 flex items-center justify-between">
 						<span class="text-[11px] font-bold text-primary uppercase">Summary Output</span>
 						{#if summaryProvider}
 							<span class="text-[10px] text-text-muted">Powered by {summaryProvider}</span>
 						{/if}
 					</div>
-					<p class="text-xs leading-relaxed text-text whitespace-pre-wrap">{summaryResult}</p>
+					<p class="text-xs leading-relaxed whitespace-pre-wrap text-text">{summaryResult}</p>
 				</div>
 			{/if}
 		</div>
@@ -709,15 +728,20 @@
 		<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-xs">
 			<div>
 				<h2 class="font-display text-lg font-bold text-text">Text Paraphraser</h2>
-				<p class="text-xs text-text-muted">Rewrite study notes into Academic, Simple, or Formal styles.</p>
+				<p class="text-xs text-text-muted">
+					Rewrite study notes into Academic, Simple, or Formal styles.
+				</p>
 			</div>
 			<div class="flex items-center gap-2">
 				<span class="text-xs font-bold text-text-muted">Select Tone:</span>
-				{#each ['academic', 'simple', 'formal'] as s}
+				{#each ['academic', 'simple', 'formal'] as const as s (s)}
 					<button
 						type="button"
-						onclick={() => (paraphraseStyle = s as any)}
-						class="rounded-lg px-3 py-1 text-xs font-bold capitalize transition-all cursor-pointer {paraphraseStyle === s ? 'bg-primary text-white' : 'bg-surface-muted border border-border text-text-muted'}"
+						onclick={() => (paraphraseStyle = s)}
+						class="cursor-pointer rounded-lg px-3 py-1 text-xs font-bold capitalize transition-all {paraphraseStyle ===
+						s
+							? 'bg-primary text-white'
+							: 'border border-border bg-surface-muted text-text-muted'}"
 					>
 						{s}
 					</button>
@@ -726,7 +750,7 @@
 			<textarea
 				bind:value={paraphraseText}
 				placeholder="Paste text to paraphrase (minimum 10 characters)..."
-				class="min-h-32 w-full rounded-xl border border-border bg-surface-muted p-4 text-xs font-sans text-text focus:outline-none focus:ring-2 focus:ring-primary"
+				class="min-h-32 w-full rounded-xl border border-border bg-surface-muted p-4 font-sans text-xs text-text focus:ring-2 focus:ring-primary focus:outline-none"
 			></textarea>
 			<div class="flex items-center justify-between">
 				<span class="text-[11px] text-text-muted">{paraphraseText.length} characters</span>
@@ -734,20 +758,22 @@
 					type="button"
 					onclick={handleParaphrase}
 					disabled={paraphrasing || paraphraseText.trim().length < 10}
-					class="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
+					class="cursor-pointer rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-primary-hover disabled:opacity-50"
 				>
 					{paraphrasing ? 'Paraphrasing...' : 'Paraphrase Text'}
 				</button>
 			</div>
 			{#if paraphraseResult}
 				<div class="mt-4 rounded-xl border border-primary/20 bg-primary-soft/30 p-4">
-					<div class="flex items-center justify-between mb-2">
-						<span class="text-[11px] font-bold text-primary uppercase">{paraphraseStyle} Paraphrase</span>
+					<div class="mb-2 flex items-center justify-between">
+						<span class="text-[11px] font-bold text-primary uppercase"
+							>{paraphraseStyle} Paraphrase</span
+						>
 						{#if paraphraseProvider}
 							<span class="text-[10px] text-text-muted">Powered by {paraphraseProvider}</span>
 						{/if}
 					</div>
-					<p class="text-xs leading-relaxed text-text whitespace-pre-wrap">{paraphraseResult}</p>
+					<p class="text-xs leading-relaxed whitespace-pre-wrap text-text">{paraphraseResult}</p>
 				</div>
 			{/if}
 		</div>
@@ -756,12 +782,14 @@
 		<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-xs">
 			<div>
 				<h2 class="font-display text-lg font-bold text-text">AI Flashcard Generator</h2>
-				<p class="text-xs text-text-muted">Extract atomic spaced-repetition flashcards directly from study text.</p>
+				<p class="text-xs text-text-muted">
+					Extract atomic spaced-repetition flashcards directly from study text.
+				</p>
 			</div>
 			<textarea
 				bind:value={flashcardText}
 				placeholder="Paste textbook excerpt or notes to extract flashcards (minimum 50 characters)..."
-				class="min-h-36 w-full rounded-xl border border-border bg-surface-muted p-4 text-xs font-sans text-text focus:outline-none focus:ring-2 focus:ring-primary"
+				class="min-h-36 w-full rounded-xl border border-border bg-surface-muted p-4 font-sans text-xs text-text focus:ring-2 focus:ring-primary focus:outline-none"
 			></textarea>
 			<div class="flex items-center justify-between">
 				<span class="text-[11px] text-text-muted">{flashcardText.length} characters</span>
@@ -769,17 +797,21 @@
 					type="button"
 					onclick={handleGenerateFlashcards}
 					disabled={generatingCards || flashcardText.trim().length < 50}
-					class="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
+					class="cursor-pointer rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-primary-hover disabled:opacity-50"
 				>
 					{generatingCards ? 'Generating Flashcards...' : 'Generate Flashcards'}
 				</button>
 			</div>
 			{#if generatedCards.length > 0}
 				<div class="mt-4 flex flex-col gap-3">
-					<span class="text-xs font-bold text-text">Generated Flashcards ({generatedCards.length})</span>
+					<span class="text-xs font-bold text-text"
+						>Generated Flashcards ({generatedCards.length})</span
+					>
 					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-						{#each generatedCards as card, idx}
-							<div class="flex flex-col gap-2 rounded-xl border border-border bg-surface-muted p-4 shadow-2xs">
+						{#each generatedCards as card, idx (idx)}
+							<div
+								class="flex flex-col gap-2 rounded-xl border border-border bg-surface-muted p-4 shadow-2xs"
+							>
 								<span class="text-[10px] font-bold text-primary uppercase">Card #{idx + 1}</span>
 								<p class="text-xs font-bold text-text">Q: {card.front}</p>
 								<p class="text-xs text-text-muted">A: {card.back}</p>
@@ -791,4 +823,3 @@
 		</div>
 	{/if}
 </div>
-

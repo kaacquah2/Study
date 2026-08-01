@@ -82,7 +82,6 @@ graph TD
 2. **Hardware Provisioning for ML Backend**
    - Hugging Face models (`google/flan-t5-large` and `TinyLlama-1.1B-Chat`) require **4 GB+ RAM**. Deploy `ml_backend` via `ml_backend/Dockerfile` to Docker-capable hosts (Cloud Run, Render 4GB+, AWS EC2).
 
-
 ---
 
 ### 🟡 High-Priority Recommendations

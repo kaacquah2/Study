@@ -75,7 +75,6 @@
 			explainingIndex = null;
 		}
 	}
-
 </script>
 
 <div
@@ -186,8 +185,11 @@
 								{/if}
 								{#if !isCorrect}
 									{#if explanations[idx]}
-										<div class="mt-1.5 rounded-md border border-primary/30 bg-primary-soft/40 p-2.5 text-xs text-text leading-relaxed">
-											<span class="font-bold text-primary">🤖 AI Detailed Mistake Explanation:</span>
+										<div
+											class="mt-1.5 rounded-md border border-primary/30 bg-primary-soft/40 p-2.5 text-xs leading-relaxed text-text"
+										>
+											<span class="font-bold text-primary">🤖 AI Detailed Mistake Explanation:</span
+											>
 											<p class="mt-1">{explanations[idx]}</p>
 										</div>
 									{:else}
@@ -195,14 +197,17 @@
 											type="button"
 											onclick={() => fetchExplanation(idx, item)}
 											disabled={explainingIndex === idx}
-											class="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline cursor-pointer disabled:opacity-50"
+											class="mt-1 inline-flex cursor-pointer items-center gap-1 text-[11px] font-bold text-primary hover:underline disabled:opacity-50"
 										>
 											<span>💡</span>
-											<span>{explainingIndex === idx ? 'Generating Explanation...' : 'Explain My Mistake with AI'}</span>
+											<span
+												>{explainingIndex === idx
+													? 'Generating Explanation...'
+													: 'Explain My Mistake with AI'}</span
+											>
 										</button>
 									{/if}
 								{/if}
-
 							</div>
 						</div>
 					{/each}

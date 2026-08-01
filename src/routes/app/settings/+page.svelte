@@ -53,7 +53,7 @@
 			a.click();
 			URL.revokeObjectURL(url);
 			toastStore.success('User data exported successfully!');
-		} catch (err) {
+		} catch {
 			toastStore.error('Data export failed.');
 		} finally {
 			exporting = false;
@@ -71,14 +71,13 @@
 			if (!res.ok) throw new Error('Account deletion failed');
 			toastStore.success('Account successfully deleted.');
 			await authStore.logout();
-		} catch (err) {
+		} catch {
 			toastStore.error('Failed to delete account.');
 		} finally {
 			deleting = false;
 			showDeleteModal = false;
 		}
 	}
-
 </script>
 
 <svelte:head>
@@ -222,7 +221,9 @@
 		<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 			<div>
 				<span class="block text-xs font-bold text-text">Export Study Data</span>
-				<span class="block text-[11px] text-text-muted">Download a complete JSON export of your progress, courses, and quiz attempts</span>
+				<span class="block text-[11px] text-text-muted"
+					>Download a complete JSON export of your progress, courses, and quiz attempts</span
+				>
 			</div>
 			<button
 				type="button"
@@ -240,7 +241,9 @@
 		<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 			<div>
 				<span class="block text-xs font-bold text-danger">Delete Account & Data</span>
-				<span class="block text-[11px] text-text-muted">Permanently delete your profile, generated courses, and progress metrics</span>
+				<span class="block text-[11px] text-text-muted"
+					>Permanently delete your profile, generated courses, and progress metrics</span
+				>
 			</div>
 			<button
 				type="button"
@@ -254,17 +257,22 @@
 	</div>
 
 	{#if showDeleteModal}
-		<div class="fixed inset-0 z-50 flex items-center justify-center bg-text/30 backdrop-blur-xs p-4">
-			<div class="flex max-w-md flex-col gap-4 rounded-3xl border border-danger/30 bg-surface p-6 shadow-2xl">
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-text/30 p-4 backdrop-blur-xs"
+		>
+			<div
+				class="flex max-w-md flex-col gap-4 rounded-3xl border border-danger/30 bg-surface p-6 shadow-2xl"
+			>
 				<h3 class="font-display text-lg font-bold text-danger">Confirm Account Deletion</h3>
-				<p class="text-xs text-text-muted leading-relaxed">
-					This action is permanent and cannot be undone. All your generated courses, custom RAG documents, quiz attempts, and spaced repetition cards will be purged.
+				<p class="text-xs leading-relaxed text-text-muted">
+					This action is permanent and cannot be undone. All your generated courses, custom RAG
+					documents, quiz attempts, and spaced repetition cards will be purged.
 				</p>
 				<div class="flex justify-end gap-3 pt-2">
 					<button
 						type="button"
 						onclick={() => (showDeleteModal = false)}
-						class="rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text cursor-pointer"
+						class="cursor-pointer rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text"
 					>
 						Cancel
 					</button>
@@ -272,7 +280,7 @@
 						type="button"
 						onclick={handleDeleteAccount}
 						disabled={deleting}
-						class="rounded-xl bg-danger px-4 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50 cursor-pointer"
+						class="cursor-pointer rounded-xl bg-danger px-4 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
 					>
 						{deleting ? 'Deleting...' : 'Yes, Delete Everything'}
 					</button>
@@ -281,4 +289,3 @@
 		</div>
 	{/if}
 </div>
-

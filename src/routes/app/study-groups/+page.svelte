@@ -114,7 +114,9 @@
 
 <div class="mx-auto flex w-full max-w-4xl flex-col gap-6 py-4">
 	<!-- Header -->
-	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
+	<div
+		class="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between"
+	>
 		<div>
 			<a
 				href={resolve('/app')}
@@ -151,24 +153,27 @@
 			<div class="h-32 animate-pulse rounded-2xl bg-surface-muted"></div>
 		</div>
 	{:else if groups.length === 0}
-		<div class="flex flex-col items-center justify-center rounded-3xl border border-border bg-surface p-12 text-center shadow-xs">
+		<div
+			class="flex flex-col items-center justify-center rounded-3xl border border-border bg-surface p-12 text-center shadow-xs"
+		>
 			<div class="mb-3 text-4xl">👥</div>
 			<h3 class="font-display text-lg font-bold text-text">No Study Groups Yet</h3>
 			<p class="mt-1 max-w-sm text-xs text-text-muted">
-				Create a group to study with peers or enter an invite code from a classmate to join an existing group.
+				Create a group to study with peers or enter an invite code from a classmate to join an
+				existing group.
 			</p>
 			<div class="mt-6 flex gap-3">
 				<button
 					type="button"
 					onclick={() => (showJoinModal = true)}
-					class="rounded-xl border border-border px-4 py-2 text-xs font-bold text-text hover:bg-surface-muted cursor-pointer"
+					class="cursor-pointer rounded-xl border border-border px-4 py-2 text-xs font-bold text-text hover:bg-surface-muted"
 				>
 					Join Group
 				</button>
 				<button
 					type="button"
 					onclick={() => (showCreateModal = true)}
-					class="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary-hover cursor-pointer"
+					class="cursor-pointer rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary-hover"
 				>
 					Create Group
 				</button>
@@ -177,11 +182,15 @@
 	{:else}
 		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 			{#each groups as group (group.id)}
-				<div class="flex flex-col justify-between rounded-2xl border border-border bg-surface p-6 shadow-xs">
+				<div
+					class="flex flex-col justify-between rounded-2xl border border-border bg-surface p-6 shadow-xs"
+				>
 					<div>
-						<div class="flex items-center justify-between mb-2">
+						<div class="mb-2 flex items-center justify-between">
 							<span class="text-xs font-bold text-primary uppercase">Study Group</span>
-							<span class="rounded-full bg-primary-soft px-2.5 py-0.5 font-mono text-[10px] font-bold text-primary">
+							<span
+								class="rounded-full bg-primary-soft px-2.5 py-0.5 font-mono text-[10px] font-bold text-primary"
+							>
 								Code: {group.inviteCode}
 							</span>
 						</div>
@@ -190,7 +199,9 @@
 							👥 {group.memberUids.length} member{group.memberUids.length > 1 ? 's' : ''}
 						</p>
 					</div>
-					<div class="mt-4 flex items-center justify-between border-t border-border/50 pt-3 text-[11px] text-text-muted">
+					<div
+						class="mt-4 flex items-center justify-between border-t border-border/50 pt-3 text-[11px] text-text-muted"
+					>
 						<span>Created {new Date(group.createdAt).toLocaleDateString()}</span>
 						<span class="font-bold text-success">● Active</span>
 					</div>
@@ -201,20 +212,24 @@
 
 	<!-- Create Group Modal -->
 	{#if showCreateModal}
-		<div class="fixed inset-0 z-50 flex items-center justify-center bg-text/30 backdrop-blur-xs p-4">
-			<div class="flex w-full max-w-md flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-2xl">
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-text/30 p-4 backdrop-blur-xs"
+		>
+			<div
+				class="flex w-full max-w-md flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-2xl"
+			>
 				<h3 class="font-display text-lg font-bold text-text">Create Study Group</h3>
 				<input
 					type="text"
 					bind:value={newGroupName}
 					placeholder="Group Name (e.g. Operating Systems Study Circle)..."
-					class="w-full rounded-xl border border-border bg-surface-muted p-3 text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary"
+					class="w-full rounded-xl border border-border bg-surface-muted p-3 text-xs text-text focus:ring-2 focus:ring-primary focus:outline-none"
 				/>
 				<div class="flex justify-end gap-3 pt-2">
 					<button
 						type="button"
 						onclick={() => (showCreateModal = false)}
-						class="rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text cursor-pointer"
+						class="cursor-pointer rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text"
 					>
 						Cancel
 					</button>
@@ -222,7 +237,7 @@
 						type="button"
 						onclick={handleCreateGroup}
 						disabled={creating || newGroupName.trim().length < 3}
-						class="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
+						class="cursor-pointer rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary-hover disabled:opacity-50"
 					>
 						{creating ? 'Creating...' : 'Create Group'}
 					</button>
@@ -233,20 +248,24 @@
 
 	<!-- Join Group Modal -->
 	{#if showJoinModal}
-		<div class="fixed inset-0 z-50 flex items-center justify-center bg-text/30 backdrop-blur-xs p-4">
-			<div class="flex w-full max-w-md flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-2xl">
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-text/30 p-4 backdrop-blur-xs"
+		>
+			<div
+				class="flex w-full max-w-md flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-2xl"
+			>
 				<h3 class="font-display text-lg font-bold text-text">Join Study Group</h3>
 				<input
 					type="text"
 					bind:value={inviteCodeInput}
 					placeholder="Enter 6-character Invite Code (e.g. AB12CD)..."
-					class="w-full rounded-xl border border-border bg-surface-muted p-3 font-mono text-sm uppercase text-text focus:outline-none focus:ring-2 focus:ring-primary"
+					class="w-full rounded-xl border border-border bg-surface-muted p-3 font-mono text-sm text-text uppercase focus:ring-2 focus:ring-primary focus:outline-none"
 				/>
 				<div class="flex justify-end gap-3 pt-2">
 					<button
 						type="button"
 						onclick={() => (showJoinModal = false)}
-						class="rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text cursor-pointer"
+						class="cursor-pointer rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text"
 					>
 						Cancel
 					</button>
@@ -254,7 +273,7 @@
 						type="button"
 						onclick={handleJoinGroup}
 						disabled={joining || !inviteCodeInput.trim()}
-						class="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
+						class="cursor-pointer rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary-hover disabled:opacity-50"
 					>
 						{joining ? 'Joining...' : 'Join Group'}
 					</button>

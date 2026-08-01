@@ -65,7 +65,13 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 
-		const { messages, courseId, moduleId, courseContext: rawClientContext, socraticMode } = parsed.data;
+		const {
+			messages,
+			courseId,
+			moduleId,
+			courseContext: rawClientContext,
+			socraticMode
+		} = parsed.data;
 
 		// Input Safety Moderation Check
 		const latestUserMsg = messages[messages.length - 1]?.content || '';
@@ -81,7 +87,6 @@ export const POST: RequestHandler = async ({ request }) => {
 				{ status: 400 }
 			);
 		}
-
 
 		let contextToUse: string | undefined = undefined;
 
@@ -125,7 +130,6 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		// Execute chat inference
 		const { result: chatResult, provider } = await chat(messages, contextToUse, user.uid);
-
 
 		// Construct SSE stream using ReadableStream
 		const encoder = new TextEncoder();

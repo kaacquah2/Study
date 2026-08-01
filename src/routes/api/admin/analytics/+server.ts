@@ -142,7 +142,6 @@ export const GET: RequestHandler = async ({ request }) => {
 				mlBackendHealth: mlHealthData
 			}
 		});
-
 	} catch (err) {
 		console.error('Admin Analytics API error:', err);
 		const message = err instanceof Error ? err.message : '';
