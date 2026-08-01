@@ -60,6 +60,30 @@ def calculate_ngram_similarity(text1: str, text2: str, n: int = 4) -> float:
     return len(intersection) / len(union)
 
 
+import json
+from pathlib import Path
+
+def _load_training_corpus() -> list[str]:
+    questions = list(_CORPUS_QUESTIONS)
+    data_dir = Path(__file__).parent.parent / "fine_tuning" / "data"
+    if data_dir.exists():
+        for jsonl_file in data_dir.glob("*.jsonl"):
+            try:
+                with open(jsonl_file, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if not line.strip():
+                            continue
+                        row = json.loads(line)
+                        text = row.get("output") or row.get("input") or ""
+                        if text and len(text) > 20:
+                            questions.append(text[:200])
+            except Exception as e:
+                logger.debug(f"Could not load memorization corpus file {jsonl_file}: {e}")
+    return questions
+
+_ACTIVE_CORPUS: list[str] = _load_training_corpus()
+
+
 def check_verbatim_leakage(
     question_prompt: str,
     threshold: Optional[float] = None,
@@ -76,7 +100,7 @@ def check_verbatim_leakage(
     max_sim = 0.0
     matched_q: Optional[str] = None
 
-    for corpus_q in _CORPUS_QUESTIONS:
+    for corpus_q in _ACTIVE_CORPUS:
         sim = calculate_ngram_similarity(question_prompt, corpus_q, n=4)
         if sim > max_sim:
             max_sim = sim

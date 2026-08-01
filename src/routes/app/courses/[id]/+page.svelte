@@ -191,30 +191,6 @@
 		toastStore.success('Anki Deck exported (.txt format ready for Anki Import)!');
 	};
 
-	const handleForkCourse = async () => {
-		if (!courseId) return;
-		actionLoading = true;
-		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch(`/api/courses/${courseId}/fork`, {
-				method: 'POST',
-				headers: { Authorization: `Bearer ${idToken}` }
-			});
-			const data = await res.json();
-			if (res.ok && data.courseId) {
-				toastStore.success('Course successfully forked!');
-				window.location.href = `/app/courses/${data.courseId}`;
-			} else {
-				toastStore.error(data.error?.message || 'Failed to fork course');
-			}
-		} catch (err) {
-			console.error('Fork course error:', err);
-			toastStore.error('Failed to fork course');
-		} finally {
-			actionLoading = false;
-		}
-	};
-
 	const handleConsistencyCheck = async () => {
 		if (!courseId) return;
 		actionLoading = true;
@@ -257,16 +233,6 @@
 		</a>
 
 		<div class="flex items-center gap-2">
-			<button
-				type="button"
-				onclick={handleForkCourse}
-				disabled={actionLoading}
-				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text shadow-xs transition-colors hover:border-primary disabled:opacity-50"
-				title="Fork this course into your library"
-			>
-				<span>🍴 Fork</span>
-			</button>
-
 			<button
 				type="button"
 				onclick={handleConsistencyCheck}

@@ -223,3 +223,43 @@ export async function validateMLBackendConnection(): Promise<{ ok: boolean; stat
 		return { ok: false, status: err instanceof Error ? err.message : 'UNREACHABLE' };
 	}
 }
+
+export interface MLBackendHealthData {
+	status: string;
+	models_loaded: Record<string, boolean>;
+	inference_busy: boolean;
+}
+
+/**
+ * Perform an HTTP GET request to /healthcheck to fetch live ML backend health & model status.
+ */
+export async function getMLBackendHealth(timeoutMs = 5_000): Promise<MLBackendHealthData | null> {
+	if (await isCircuitOpenAsync()) {
+		return null;
+	}
+
+	try {
+		const backendUrl = getMLBackendUrl();
+		const apiKey = getMLBackendApiKey();
+		const headers: Record<string, string> = {};
+		if (apiKey) headers['X-API-Key'] = apiKey;
+
+		const res = await fetch(`${backendUrl}/healthcheck`, {
+			method: 'GET',
+			headers,
+			signal: AbortSignal.timeout(timeoutMs)
+		});
+
+		if (!res.ok) {
+			recordFailure();
+			return null;
+		}
+
+		recordSuccess();
+		const data = (await res.json()) as MLBackendHealthData;
+		return data;
+	} catch {
+		recordFailure();
+		return null;
+	}
+}

@@ -1,0 +1,23 @@
+# Docker build ignore list
+.git
+.gitignore
+.github
+.env
+.env.*
+!.env.example
+node_modules
+.svelte-kit
+build
+dist
+Coverage
+test-results
+
+# ML Backend & Large Data files
+ml_backend/my_pdfs
+ml_backend/vector_store
+ml_backend/__pycache__
+ml_backend/*/__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { POST as chatHandler } from './chat/+server';
+import { POST as chatHandler } from './chat/stream/+server';
 import { POST as summarizeHandler } from './summarize/+server';
 import { POST as paraphraseHandler } from './paraphrase/+server';
 import { verifySessionUser } from '$lib/server/auth';
@@ -84,10 +84,12 @@ describe('Microservices API Integration Tests', () => {
 			});
 
 			const res = await chatHandler(mockEvent<Parameters<typeof chatHandler>[0]>(req));
-			const json = await res.json();
+			const text = await res.text();
 
 			expect(res.status).toBe(200);
-			expect(json.reply).toBe('Here is your study answer.');
+			expect(res.headers.get('Content-Type')).toBe('text/event-stream');
+			expect(text).toContain('"type":"delta"');
+			expect(text).toContain('"type":"done"');
 		});
 
 		it('returns 503 MODEL_WARMING_UP when ML model is warming up', async () => {

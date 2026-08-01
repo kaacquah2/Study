@@ -119,15 +119,11 @@ export const GET: RequestHandler = async ({ request }) => {
 			};
 		}
 
-		// Query live ML Backend Health if available
-		const { callML } = await import('$lib/server/ai/client');
+		// Query live ML Backend Health if available via HTTP GET
+		const { getMLBackendHealth } = await import('$lib/server/ai/client');
 		let mlHealthData = null;
 		try {
-			mlHealthData = await callML<{
-				status: string;
-				models_loaded: Record<string, boolean>;
-				inference_busy: boolean;
-			}>('/healthcheck', undefined, 5000);
+			mlHealthData = await getMLBackendHealth(5000);
 		} catch (e) {
 			console.warn('[analytics] Live ML backend query skipped:', e);
 		}
