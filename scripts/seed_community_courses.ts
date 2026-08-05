@@ -15,7 +15,10 @@ function loadEnv() {
 			if (eqIdx !== -1) {
 				const key = trimmed.slice(0, eqIdx).trim();
 				let val = trimmed.slice(eqIdx + 1).trim();
-				if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+				if (
+					(val.startsWith('"') && val.endsWith('"')) ||
+					(val.startsWith("'") && val.endsWith("'"))
+				) {
 					val = val.slice(1, -1);
 				}
 				if (!process.env[key]) {
@@ -29,7 +32,8 @@ function loadEnv() {
 loadEnv();
 
 const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
-const projectId = process.env.PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'study-fd50d';
+const projectId =
+	process.env.PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'study-fd50d';
 
 if (!serviceAccountJson) {
 	console.error('ERROR: FIREBASE_SERVICE_ACCOUNT is missing in environment or .env!');
@@ -64,14 +68,16 @@ export const COMMUNITY_COURSES = [
 		revoked: false,
 		snapshot: {
 			title: 'CS229: Deep Learning & Neural Network Architectures',
-			description: 'Master mathematical foundations of supervised learning, deep convolutional neural networks, transformer self-attention, loss functions, and optimization.',
+			description:
+				'Master mathematical foundations of supervised learning, deep convolutional neural networks, transformer self-attention, loss functions, and optimization.',
 			format: 'lessons_and_quizzes',
 			modules: [
 				{
 					order: 1,
 					type: 'lesson',
 					title: 'Supervised Learning, Loss Functions & Gradient Descent',
-					summary: 'Explore parametric learning models, Mean Squared Error, Binary Cross-Entropy loss, and stochastic gradient descent optimization algorithms.',
+					summary:
+						'Explore parametric learning models, Mean Squared Error, Binary Cross-Entropy loss, and stochastic gradient descent optimization algorithms.',
 					pages: [
 						{
 							order: 1,
@@ -91,10 +97,12 @@ export const COMMUNITY_COURSES = [
 					order: 2,
 					type: 'quiz',
 					title: 'Supervised Learning & Optimization Assessment',
-					summary: 'Test your understanding of cost functions, gradient descent mechanics, and activation functions.',
+					summary:
+						'Test your understanding of cost functions, gradient descent mechanics, and activation functions.',
 					questions: [
 						{
-							question: 'What happens to Gradient Descent if the learning rate alpha is set too large?',
+							question:
+								'What happens to Gradient Descent if the learning rate alpha is set too large?',
 							options: [
 								'It converges to the global minimum much faster without error',
 								'It may overshoot the minimum and diverge or oscillate indefinitely',
@@ -103,10 +111,12 @@ export const COMMUNITY_COURSES = [
 							],
 							correctIndex: 1,
 							answerIndex: 1,
-							explanation: 'An excessively large learning rate causes step sizes to exceed the valley bounds, leading parameters to overshoot the minimum and potentially diverge.'
+							explanation:
+								'An excessively large learning rate causes step sizes to exceed the valley bounds, leading parameters to overshoot the minimum and potentially diverge.'
 						},
 						{
-							question: 'Which loss function is standard for binary classification neural networks?',
+							question:
+								'Which loss function is standard for binary classification neural networks?',
 							options: [
 								'Mean Absolute Error (MAE)',
 								'Binary Cross-Entropy (Log Loss)',
@@ -115,7 +125,8 @@ export const COMMUNITY_COURSES = [
 							],
 							correctIndex: 1,
 							answerIndex: 1,
-							explanation: 'Binary Cross-Entropy measures the performance of a classification model whose output is a probability value between 0 and 1.'
+							explanation:
+								'Binary Cross-Entropy measures the performance of a classification model whose output is a probability value between 0 and 1.'
 						}
 					]
 				},
@@ -123,7 +134,8 @@ export const COMMUNITY_COURSES = [
 					order: 3,
 					type: 'lesson',
 					title: 'Deep Neural Networks & Transformer Self-Attention',
-					summary: 'Delve into multi-layer perceptrons, convolutional layers for computer vision, and Scaled Dot-Product Attention in modern LLM architectures.',
+					summary:
+						'Delve into multi-layer perceptrons, convolutional layers for computer vision, and Scaled Dot-Product Attention in modern LLM architectures.',
 					pages: [
 						{
 							order: 1,
@@ -143,10 +155,12 @@ export const COMMUNITY_COURSES = [
 					order: 4,
 					type: 'quiz',
 					title: 'Neural Network Architectures & Transformers Quiz',
-					summary: 'Evaluate knowledge of CNN filter operations, attention equations, and deep network training.',
+					summary:
+						'Evaluate knowledge of CNN filter operations, attention equations, and deep network training.',
 					questions: [
 						{
-							question: 'In Scaled Dot-Product Attention, why is the matrix product QK^T scaled by 1/sqrt(d_k)?',
+							question:
+								'In Scaled Dot-Product Attention, why is the matrix product QK^T scaled by 1/sqrt(d_k)?',
 							options: [
 								'To reduce the total number of matrix multiplications',
 								'To prevent dot products from growing excessively large for high dimensions, which would push softmax into regions with small gradients',
@@ -155,7 +169,8 @@ export const COMMUNITY_COURSES = [
 							],
 							correctIndex: 1,
 							answerIndex: 1,
-							explanation: 'For large values of d_k, dot products grow large in magnitude, causing softmax to yield vanishing gradients during backpropagation. Scaling mitigates this effect.'
+							explanation:
+								'For large values of d_k, dot products grow large in magnitude, causing softmax to yield vanishing gradients during backpropagation. Scaling mitigates this effect.'
 						}
 					]
 				}
@@ -175,14 +190,16 @@ export const COMMUNITY_COURSES = [
 		revoked: false,
 		snapshot: {
 			title: 'CS50x: Introduction to Computer Science',
-			description: 'Harvard’s iconic introduction to computational thinking, C programming, manual memory management, data structures, algorithm complexity, Python, and SQL.',
+			description:
+				'Harvard’s iconic introduction to computational thinking, C programming, manual memory management, data structures, algorithm complexity, Python, and SQL.',
 			format: 'lessons_and_quizzes',
 			modules: [
 				{
 					order: 1,
 					type: 'lesson',
 					title: 'Computational Thinking, C Syntax & Memory Management',
-					summary: 'Learn low-level programming concepts in C: data types, control flow, functions, memory layout, stack frames, and pointer arithmetic.',
+					summary:
+						'Learn low-level programming concepts in C: data types, control flow, functions, memory layout, stack frames, and pointer arithmetic.',
 					pages: [
 						{
 							order: 1,
@@ -202,7 +219,8 @@ export const COMMUNITY_COURSES = [
 					order: 2,
 					type: 'quiz',
 					title: 'C Fundamentals & Memory Management Quiz',
-					summary: 'Test knowledge of pointers, memory allocation, and stack vs heap behavior in C.',
+					summary:
+						'Test knowledge of pointers, memory allocation, and stack vs heap behavior in C.',
 					questions: [
 						{
 							question: 'What is the outcome of invoking malloc(sizeof(int) * 10) in C?',
@@ -214,7 +232,8 @@ export const COMMUNITY_COURSES = [
 							],
 							correctIndex: 1,
 							answerIndex: 1,
-							explanation: 'malloc allocates requested bytes on the Heap dynamically and returns a void pointer to the memory block.'
+							explanation:
+								'malloc allocates requested bytes on the Heap dynamically and returns a void pointer to the memory block.'
 						}
 					]
 				},
@@ -222,13 +241,14 @@ export const COMMUNITY_COURSES = [
 					order: 3,
 					type: 'lesson',
 					title: 'Data Structures, Hash Tables & Big-O Algorithm Analysis',
-					summary: 'Examine asymptotic time complexity, linked lists, hash functions, collision resolution, and binary search trees.',
+					summary:
+						'Examine asymptotic time complexity, linked lists, hash functions, collision resolution, and binary search trees.',
 					pages: [
 						{
 							order: 1,
 							heading: 'Asymptotic Analysis & Big-O Notation',
 							subheading: 'Quantifying theoretical running time and space efficiency',
-							body: 'Big-O notation describes the upper bound of an algorithm\'s growth rate as input size $n$ approaches infinity:\n\n- $O(1)$: Constant time (array index lookup)\n- $O(\\log n)$: Logarithmic time (binary search in a sorted array)\n- $O(n)$: Linear time (un-indexed array search)\n- $O(n \\log n)$: Linearithmic time (Merge Sort / Quick Sort average)\n- $O(n^2)$: Quadratic time (Bubble Sort / Insertion Sort)'
+							body: "Big-O notation describes the upper bound of an algorithm's growth rate as input size $n$ approaches infinity:\n\n- $O(1)$: Constant time (array index lookup)\n- $O(\\log n)$: Logarithmic time (binary search in a sorted array)\n- $O(n)$: Linear time (un-indexed array search)\n- $O(n \\log n)$: Linearithmic time (Merge Sort / Quick Sort average)\n- $O(n^2)$: Quadratic time (Bubble Sort / Insertion Sort)"
 						},
 						{
 							order: 2,
@@ -242,14 +262,17 @@ export const COMMUNITY_COURSES = [
 					order: 4,
 					type: 'quiz',
 					title: 'Algorithms & Data Structures Knowledge Check',
-					summary: 'Test concepts of asymptotic time complexity, linked list pointers, and hash table buckets.',
+					summary:
+						'Test concepts of asymptotic time complexity, linked list pointers, and hash table buckets.',
 					questions: [
 						{
-							question: 'What is the worst-case search time complexity for a binary search tree (BST) that has degenerated into a linked list?',
+							question:
+								'What is the worst-case search time complexity for a binary search tree (BST) that has degenerated into a linked list?',
 							options: ['O(1)', 'O(log n)', 'O(n)', 'O(n^2)'],
 							correctIndex: 2,
 							answerIndex: 2,
-							explanation: 'If items are inserted into an unbalanced BST in sorted order, the tree degenerates into a single long line (linked list), taking O(n) linear search time.'
+							explanation:
+								'If items are inserted into an unbalanced BST in sorted order, the tree degenerates into a single long line (linked list), taking O(n) linear search time.'
 						}
 					]
 				}
@@ -269,14 +292,16 @@ export const COMMUNITY_COURSES = [
 		revoked: false,
 		snapshot: {
 			title: '18.06: Linear Algebra & Matrix Decompositions',
-			description: 'MIT’s foundational linear algebra course: elimination matrices, vector subspaces, Gram-Schmidt orthogonalization, Eigenvalues, and Singular Value Decomposition (SVD).',
+			description:
+				'MIT’s foundational linear algebra course: elimination matrices, vector subspaces, Gram-Schmidt orthogonalization, Eigenvalues, and Singular Value Decomposition (SVD).',
 			format: 'lessons_and_quizzes',
 			modules: [
 				{
 					order: 1,
 					type: 'lesson',
 					title: 'The Four Fundamental Subspaces & Solving Ax = b',
-					summary: 'Master matrix equations, Gaussian elimination, matrix rank, Column Space C(A), and Nullspace N(A).',
+					summary:
+						'Master matrix equations, Gaussian elimination, matrix rank, Column Space C(A), and Nullspace N(A).',
 					pages: [
 						{
 							order: 1,
@@ -290,10 +315,12 @@ export const COMMUNITY_COURSES = [
 					order: 2,
 					type: 'quiz',
 					title: 'Vector Subspaces & Matrix Rank Quiz',
-					summary: 'Evaluate matrix rank calculation, nullspace dimension, and vector independence.',
+					summary:
+						'Evaluate matrix rank calculation, nullspace dimension, and vector independence.',
 					questions: [
 						{
-							question: 'If a 4x5 matrix A has a rank r = 3, what is the dimension of its Nullspace N(A)?',
+							question:
+								'If a 4x5 matrix A has a rank r = 3, what is the dimension of its Nullspace N(A)?',
 							options: ['1', '2', '3', '5'],
 							correctIndex: 1,
 							answerIndex: 1,
@@ -305,12 +332,14 @@ export const COMMUNITY_COURSES = [
 					order: 3,
 					type: 'lesson',
 					title: 'Eigenvalues, Diagonalization & Singular Value Decomposition (SVD)',
-					summary: 'Study matrix characteristic equations det(A - lambda*I) = 0, symmetric matrix spectral theorem, and SVD factoring A = U Sigma V^T.',
+					summary:
+						'Study matrix characteristic equations det(A - lambda*I) = 0, symmetric matrix spectral theorem, and SVD factoring A = U Sigma V^T.',
 					pages: [
 						{
 							order: 1,
 							heading: 'Eigenvalues & Diagonalization',
-							subheading: 'Eigenvectors that maintain directional orientation under matrix transformation',
+							subheading:
+								'Eigenvectors that maintain directional orientation under matrix transformation',
 							body: 'An eigenvector $x \\neq 0$ of a square matrix $A$ satisfies $Ax = \\lambda x$, where scalar $\\lambda$ is the eigenvalue. Solving $\\det(A - \\lambda I) = 0$ yields the characteristic polynomial.\n\nIf $A$ has $n$ linearly independent eigenvectors, it can be diagonalized as:\n\n$$A = S \\Lambda S^{-1}$$\n\nWhere $S$ is the matrix of eigenvectors and $\\Lambda$ is the diagonal matrix of eigenvalues.'
 						},
 						{
@@ -325,10 +354,12 @@ export const COMMUNITY_COURSES = [
 					order: 4,
 					type: 'quiz',
 					title: 'Eigen-Decomposition & SVD Practice Test',
-					summary: 'Assess understanding of matrix diagonalization, orthogonality, and singular values.',
+					summary:
+						'Assess understanding of matrix diagonalization, orthogonality, and singular values.',
 					questions: [
 						{
-							question: 'What are the matrices U and V in the Singular Value Decomposition A = U Sigma V^T guaranteed to be?',
+							question:
+								'What are the matrices U and V in the Singular Value Decomposition A = U Sigma V^T guaranteed to be?',
 							options: [
 								'Upper Triangular Matrices',
 								'Orthogonal Matrices (U^T U = I and V^T V = I)',
@@ -337,7 +368,8 @@ export const COMMUNITY_COURSES = [
 							],
 							correctIndex: 1,
 							answerIndex: 1,
-							explanation: 'In SVD, U and V are orthogonal matrices whose columns form orthonormal bases for R^m and R^n respectively.'
+							explanation:
+								'In SVD, U and V are orthogonal matrices whose columns form orthonormal bases for R^m and R^n respectively.'
 						}
 					]
 				}
@@ -357,20 +389,22 @@ export const COMMUNITY_COURSES = [
 		revoked: false,
 		snapshot: {
 			title: '8.04: Quantum Physics I & Wave Mechanics',
-			description: 'MIT’s introductory quantum mechanics: de Broglie wave-particle duality, wave packets, time-dependent Schrödinger equation, 1D potential wells, and harmonic oscillators.',
+			description:
+				'MIT’s introductory quantum mechanics: de Broglie wave-particle duality, wave packets, time-dependent Schrödinger equation, 1D potential wells, and harmonic oscillators.',
 			format: 'lessons_and_quizzes',
 			modules: [
 				{
 					order: 1,
 					type: 'lesson',
 					title: 'Wave Functions, Probability Amplitudes & Schrödinger Equation',
-					summary: 'Learn quantum state postulates, complex wave function Psi(x,t), Born probability interpretation, and linear Hermitian operators.',
+					summary:
+						'Learn quantum state postulates, complex wave function Psi(x,t), Born probability interpretation, and linear Hermitian operators.',
 					pages: [
 						{
 							order: 1,
 							heading: 'The Schrödinger Equation & Born Postulate',
 							subheading: 'Governing the time-evolution of non-relativistic quantum states',
-							body: 'In quantum physics, physical state is described by wave function $\\Psi(x, t) \\in \\mathbb{C}$. The time-dependent Schrödinger equation reads:\n\n$$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x, t) = \\hat{H} \\Psi(x, t) = \\left( -\\frac{\\hbar^2}{2m} \\frac{\\partial^2}{\\partial x^2} + V(x, t) \\right) \\Psi(x, t)$$\n\nMax Born\'s statistical interpretation asserts that $|\\Psi(x, t)|^2 dx$ gives the probability of finding the particle in spatial interval $[x, x + dx]$, requiring normalization $\\int_{-\\infty}^{\\infty} |\\Psi(x, t)|^2 dx = 1$.'
+							body: "In quantum physics, physical state is described by wave function $\\Psi(x, t) \\in \\mathbb{C}$. The time-dependent Schrödinger equation reads:\n\n$$i\\hbar \\frac{\\partial}{\\partial t} \\Psi(x, t) = \\hat{H} \\Psi(x, t) = \\left( -\\frac{\\hbar^2}{2m} \\frac{\\partial^2}{\\partial x^2} + V(x, t) \\right) \\Psi(x, t)$$\n\nMax Born's statistical interpretation asserts that $|\\Psi(x, t)|^2 dx$ gives the probability of finding the particle in spatial interval $[x, x + dx]$, requiring normalization $\\int_{-\\infty}^{\\infty} |\\Psi(x, t)|^2 dx = 1$."
 						}
 					]
 				},
@@ -378,10 +412,12 @@ export const COMMUNITY_COURSES = [
 					order: 2,
 					type: 'quiz',
 					title: 'Quantum Operators & Born Postulate Quiz',
-					summary: 'Test concepts of wave function normalization, expectation values, and momentum operators.',
+					summary:
+						'Test concepts of wave function normalization, expectation values, and momentum operators.',
 					questions: [
 						{
-							question: 'What mathematical property must physical observable operators (such as position x and momentum p) satisfy in quantum mechanics?',
+							question:
+								'What mathematical property must physical observable operators (such as position x and momentum p) satisfy in quantum mechanics?',
 							options: [
 								'They must be Nilpotent operators',
 								'They must be Hermitian operators (self-adjoint) to yield real eigenvalues',
@@ -390,7 +426,8 @@ export const COMMUNITY_COURSES = [
 							],
 							correctIndex: 1,
 							answerIndex: 1,
-							explanation: 'Physical observables must correspond to Hermitian operators because Hermitian operators guarantee real eigenvalues and orthogonal eigenvectors.'
+							explanation:
+								'Physical observables must correspond to Hermitian operators because Hermitian operators guarantee real eigenvalues and orthogonal eigenvectors.'
 						}
 					]
 				},
@@ -398,7 +435,8 @@ export const COMMUNITY_COURSES = [
 					order: 3,
 					type: 'lesson',
 					title: '1D Potential Wells & The Quantum Harmonic Oscillator',
-					summary: 'Solve stationary states for infinite square wells, barrier penetration tunneling, and ladder creation/annihilation operators a and a_dagger.',
+					summary:
+						'Solve stationary states for infinite square wells, barrier penetration tunneling, and ladder creation/annihilation operators a and a_dagger.',
 					pages: [
 						{
 							order: 1,
@@ -412,14 +450,17 @@ export const COMMUNITY_COURSES = [
 					order: 4,
 					type: 'quiz',
 					title: 'Harmonic Oscillator & Quantum Potentials Quiz',
-					summary: 'Test quantized energy levels, ground state zero-point energy, and ladder operator algebra.',
+					summary:
+						'Test quantized energy levels, ground state zero-point energy, and ladder operator algebra.',
 					questions: [
 						{
-							question: 'What is the ground state energy E_0 of a 1D quantum harmonic oscillator with angular frequency omega?',
+							question:
+								'What is the ground state energy E_0 of a 1D quantum harmonic oscillator with angular frequency omega?',
 							options: ['0', '1/2 * hbar * omega', 'hbar * omega', '3/2 * hbar * omega'],
 							correctIndex: 1,
 							answerIndex: 1,
-							explanation: 'Due to Heisenberg uncertainty principle, even in the ground state n=0 the zero-point energy is non-zero: E_0 = (1/2) hbar omega.'
+							explanation:
+								'Due to Heisenberg uncertainty principle, even in the ground state n=0 the zero-point energy is non-zero: E_0 = (1/2) hbar omega.'
 						}
 					]
 				}
@@ -439,20 +480,22 @@ export const COMMUNITY_COURSES = [
 		revoked: false,
 		snapshot: {
 			title: 'History of Modern Computing & The Silicon Revolution',
-			description: 'From Babbage’s mechanical engines and Turing’s paper to ENIAC, the invention of the transistor, microprocessors, Xerox PARC, and the World Wide Web.',
+			description:
+				'From Babbage’s mechanical engines and Turing’s paper to ENIAC, the invention of the transistor, microprocessors, Xerox PARC, and the World Wide Web.',
 			format: 'lessons_and_quizzes',
 			modules: [
 				{
 					order: 1,
 					type: 'lesson',
 					title: 'Mechanical Origins & The Birth of Electronic Computing',
-					summary: 'Explore 19th-century mechanical tabulators, Ada Lovelace, Alan Turing’s theoretical model, Bletchley Park, and the von Neumann architecture.',
+					summary:
+						'Explore 19th-century mechanical tabulators, Ada Lovelace, Alan Turing’s theoretical model, Bletchley Park, and the von Neumann architecture.',
 					pages: [
 						{
 							order: 1,
 							heading: 'Pioneers of Computation: Lovelace, Babbage & Turing',
 							subheading: 'From mechanical difference engines to universal computing machines',
-							body: 'In the 1830s, Charles Babbage designed the Analytical Engine, a mechanical general-purpose computer using punched cards. Ada Lovelace authored the first algorithm intended for execution on the machine, recognizing computation extended beyond numerical calculation to arbitrary symbols.\n\nIn 1936, Alan Turing introduced the mathematical model of the Universal Turing Machine. During World War II, Turing\'s work on the electromechanical Bombe at Bletchley Park broke Enigma ciphers, laying foundations for stored-program digital computers.'
+							body: "In the 1830s, Charles Babbage designed the Analytical Engine, a mechanical general-purpose computer using punched cards. Ada Lovelace authored the first algorithm intended for execution on the machine, recognizing computation extended beyond numerical calculation to arbitrary symbols.\n\nIn 1936, Alan Turing introduced the mathematical model of the Universal Turing Machine. During World War II, Turing's work on the electromechanical Bombe at Bletchley Park broke Enigma ciphers, laying foundations for stored-program digital computers."
 						},
 						{
 							order: 2,
@@ -466,10 +509,12 @@ export const COMMUNITY_COURSES = [
 					order: 2,
 					type: 'quiz',
 					title: 'Early Computing & Codebreaking Knowledge Check',
-					summary: 'Test knowledge of Babbage, Lovelace, vacuum tubes, and stored-program memory concepts.',
+					summary:
+						'Test knowledge of Babbage, Lovelace, vacuum tubes, and stored-program memory concepts.',
 					questions: [
 						{
-							question: 'What defining principle sets the von Neumann Architecture apart from earlier computing setups like ENIAC?',
+							question:
+								'What defining principle sets the von Neumann Architecture apart from earlier computing setups like ENIAC?',
 							options: [
 								'It relies entirely on optical lasers for calculation',
 								'Both program instructions and operational data reside together in the same unified memory space',
@@ -478,7 +523,8 @@ export const COMMUNITY_COURSES = [
 							],
 							correctIndex: 1,
 							answerIndex: 1,
-							explanation: 'The von Neumann architecture introduced the stored-program concept, where executable program instructions share memory with data.'
+							explanation:
+								'The von Neumann architecture introduced the stored-program concept, where executable program instructions share memory with data.'
 						}
 					]
 				},
@@ -486,13 +532,14 @@ export const COMMUNITY_COURSES = [
 					order: 3,
 					type: 'lesson',
 					title: 'The Transistor, Microprocessors & Personal Computing',
-					summary: 'Examine Bell Labs 1947 solid-state transistor, Intel 4004 microprocessor, Xerox PARC GUI, and the emergence of the global Internet.',
+					summary:
+						'Examine Bell Labs 1947 solid-state transistor, Intel 4004 microprocessor, Xerox PARC GUI, and the emergence of the global Internet.',
 					pages: [
 						{
 							order: 1,
 							heading: 'Bell Labs Transistor & Silicon Microprocessors',
 							subheading: 'Replacing fragile vacuum tubes with solid-state semiconductors',
-							body: 'In 1947, John Bardeen, Walter Brattain, and William Shockley invented the point-contact transistor at Bell Labs. Solid-state semiconductors replaced power-hungry vacuum tubes, enabling drastic miniaturization.\n\nIn 1971, Intel released the **Intel 4004**, the first commercial single-chip microprocessor containing 2,300 transistors. Moore\'s Law famously observed that transistor counts on integrated circuits double approximately every two years.'
+							body: "In 1947, John Bardeen, Walter Brattain, and William Shockley invented the point-contact transistor at Bell Labs. Solid-state semiconductors replaced power-hungry vacuum tubes, enabling drastic miniaturization.\n\nIn 1971, Intel released the **Intel 4004**, the first commercial single-chip microprocessor containing 2,300 transistors. Moore's Law famously observed that transistor counts on integrated circuits double approximately every two years."
 						}
 					]
 				},
@@ -500,7 +547,8 @@ export const COMMUNITY_COURSES = [
 					order: 4,
 					type: 'quiz',
 					title: 'Silicon Era & Microprocessor History Quiz',
-					summary: 'Assess understanding of solid-state electronics, Intel microprocessors, and Moore’s Law.',
+					summary:
+						'Assess understanding of solid-state electronics, Intel microprocessors, and Moore’s Law.',
 					questions: [
 						{
 							question: 'What did Moore’s Law empirically predict regarding microchips?',
@@ -512,7 +560,8 @@ export const COMMUNITY_COURSES = [
 							],
 							correctIndex: 1,
 							answerIndex: 1,
-							explanation: 'Co-founder Gordon Moore noted in 1965 that the density of components per microchip doubled approximately every 2 years.'
+							explanation:
+								'Co-founder Gordon Moore noted in 1965 that the density of components per microchip doubled approximately every 2 years.'
 						}
 					]
 				}
@@ -532,14 +581,16 @@ export const COMMUNITY_COURSES = [
 		revoked: false,
 		snapshot: {
 			title: 'Modern Web Engineering with SvelteKit & TypeScript',
-			description: 'Build modern full-stack web applications using Svelte 5 runes ($state, $derived, $effect), server endpoints, SSR, client-side routing, and type-safe forms.',
+			description:
+				'Build modern full-stack web applications using Svelte 5 runes ($state, $derived, $effect), server endpoints, SSR, client-side routing, and type-safe forms.',
 			format: 'lessons_and_quizzes',
 			modules: [
 				{
 					order: 1,
 					type: 'lesson',
 					title: 'Svelte 5 Runes & Reactive State Management',
-					summary: 'Understand fine-grained reactivity in Svelte 5: $state(), $derived(), $effect(), and explicit signals without compiler magic tricks.',
+					summary:
+						'Understand fine-grained reactivity in Svelte 5: $state(), $derived(), $effect(), and explicit signals without compiler magic tricks.',
 					pages: [
 						{
 							order: 1,
@@ -556,11 +607,13 @@ export const COMMUNITY_COURSES = [
 					summary: 'Test understanding of $state, $derived, and $effect behavior in Svelte 5.',
 					questions: [
 						{
-							question: 'Which Svelte 5 rune should be used to calculate a value dependent on another $state variable?',
+							question:
+								'Which Svelte 5 rune should be used to calculate a value dependent on another $state variable?',
 							options: ['$state()', '$derived()', '$effect()', '$bind()'],
 							correctIndex: 1,
 							answerIndex: 1,
-							explanation: '$derived() creates a derived reactive signal that updates whenever any referenced state variable changes.'
+							explanation:
+								'$derived() creates a derived reactive signal that updates whenever any referenced state variable changes.'
 						}
 					]
 				}
@@ -580,18 +633,20 @@ export const COMMUNITY_COURSES = [
 		revoked: false,
 		snapshot: {
 			title: 'Neuroscience of Learning, Memory & Brain Plasticity',
-			description: 'Explore the biological basis of learning: Long-Term Potentiation (LTP), dendritic spine growth, neuromodulators (dopamine/acetylcholine), and sleep consolidation.',
+			description:
+				'Explore the biological basis of learning: Long-Term Potentiation (LTP), dendritic spine growth, neuromodulators (dopamine/acetylcholine), and sleep consolidation.',
 			format: 'lessons_and_quizzes',
 			modules: [
 				{
 					order: 1,
 					type: 'lesson',
 					title: 'Synaptic Plasticity & Long-Term Potentiation (LTP)',
-					summary: 'Discover how high-frequency stimulation strengthens synaptic connections between neurons via NMDA receptor activation and AMPA receptor insertion.',
+					summary:
+						'Discover how high-frequency stimulation strengthens synaptic connections between neurons via NMDA receptor activation and AMPA receptor insertion.',
 					pages: [
 						{
 							order: 1,
-							heading: 'Hebb\'s Postulate & Molecular LTP Mechanisms',
+							heading: "Hebb's Postulate & Molecular LTP Mechanisms",
 							subheading: 'Neurons that fire together wire together',
 							body: 'Synaptic plasticity is the ability of synapses to strengthen or weaken over time in response to changes in activity. Donald Hebb proposed that simultaneous activation of presynaptic and postsynaptic neurons leads to increased synaptic efficiency.\n\nLong-Term Potentiation (LTP) in the hippocampus is mediated by glutamate receptors:\n1. AMPA receptors depolarize the postsynaptic membrane.\n2. Depolarization expels the $Mg^{2+}$ block from NMDA receptor channels.\n3. $Ca^{2+}$ influx triggers intracellular signaling cascades (CaMKII), inserting additional AMPA receptors into the postsynaptic membrane.'
 						}
@@ -601,10 +656,12 @@ export const COMMUNITY_COURSES = [
 					order: 2,
 					type: 'quiz',
 					title: 'Synaptic Mechanisms & Neurobiology Quiz',
-					summary: 'Test concepts of neurotransmitters, LTP, and memory formation in the hippocampus.',
+					summary:
+						'Test concepts of neurotransmitters, LTP, and memory formation in the hippocampus.',
 					questions: [
 						{
-							question: 'What unblocks the NMDA receptor channel to allow Ca2+ influx during LTP induction?',
+							question:
+								'What unblocks the NMDA receptor channel to allow Ca2+ influx during LTP induction?',
 							options: [
 								'Serotonin reuptake inhibition',
 								'Postsynaptic membrane depolarization removing the Mg2+ ion plug',
@@ -613,7 +670,8 @@ export const COMMUNITY_COURSES = [
 							],
 							correctIndex: 1,
 							answerIndex: 1,
-							explanation: 'Strong membrane depolarization removes the voltage-dependent Mg2+ block from the NMDA receptor pore, allowing calcium entry.'
+							explanation:
+								'Strong membrane depolarization removes the voltage-dependent Mg2+ block from the NMDA receptor pore, allowing calcium entry.'
 						}
 					]
 				}
@@ -633,14 +691,16 @@ export const COMMUNITY_COURSES = [
 		revoked: false,
 		snapshot: {
 			title: 'Applied Calculus & Multivariable Gradient Optimization',
-			description: 'A mathematical guide to multi-variable functions, partial derivatives, gradient vector fields, directional derivatives, and Lagrange multipliers.',
+			description:
+				'A mathematical guide to multi-variable functions, partial derivatives, gradient vector fields, directional derivatives, and Lagrange multipliers.',
 			format: 'lessons_and_quizzes',
 			modules: [
 				{
 					order: 1,
 					type: 'lesson',
 					title: 'Partial Derivatives, Gradient Fields & Steepest Ascent',
-					summary: 'Master multivariable differentiation: tangent planes, partial derivatives df/dx, and gradient vector nabla f.',
+					summary:
+						'Master multivariable differentiation: tangent planes, partial derivatives df/dx, and gradient vector nabla f.',
 					pages: [
 						{
 							order: 1,
@@ -654,10 +714,12 @@ export const COMMUNITY_COURSES = [
 					order: 2,
 					type: 'quiz',
 					title: 'Gradient Vector & Multi-Variable Calculus Quiz',
-					summary: 'Assess understanding of directional derivatives, gradients, and level surfaces.',
+					summary:
+						'Assess understanding of directional derivatives, gradients, and level surfaces.',
 					questions: [
 						{
-							question: 'In what direction relative to a function level curve f(x, y) = c does the gradient vector nabla f point?',
+							question:
+								'In what direction relative to a function level curve f(x, y) = c does the gradient vector nabla f point?',
 							options: [
 								'Parallel to the level curve tangent line',
 								'Perpendicular (orthogonal) to the level curve',
@@ -666,7 +728,8 @@ export const COMMUNITY_COURSES = [
 							],
 							correctIndex: 1,
 							answerIndex: 1,
-							explanation: 'The gradient vector nabla f is always orthogonal (perpendicular) to the level curve or level surface at any given point.'
+							explanation:
+								'The gradient vector nabla f is always orthogonal (perpendicular) to the level curve or level surface at any given point.'
 						}
 					]
 				}
@@ -681,11 +744,16 @@ async function seedSharedCourses() {
 
 	for (const courseData of COMMUNITY_COURSES) {
 		const docRef = colRef.doc(courseData.id);
-		await docRef.set({
-			...courseData,
-			createdAt: FieldValue.serverTimestamp()
-		}, { merge: true });
-		console.log(`✓ Successfully seeded shared course: [${courseData.id}] "${courseData.snapshot.title}"`);
+		await docRef.set(
+			{
+				...courseData,
+				createdAt: FieldValue.serverTimestamp()
+			},
+			{ merge: true }
+		);
+		console.log(
+			`✓ Successfully seeded shared course: [${courseData.id}] "${courseData.snapshot.title}"`
+		);
 	}
 
 	console.log('\nAll community courses seeded successfully!');

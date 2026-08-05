@@ -15,7 +15,10 @@ function loadEnv() {
 			if (eqIdx !== -1) {
 				const key = trimmed.slice(0, eqIdx).trim();
 				let val = trimmed.slice(eqIdx + 1).trim();
-				if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+				if (
+					(val.startsWith('"') && val.endsWith('"')) ||
+					(val.startsWith("'") && val.endsWith("'"))
+				) {
 					val = val.slice(1, -1);
 				}
 				if (!process.env[key]) {
@@ -29,7 +32,8 @@ function loadEnv() {
 loadEnv();
 
 const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
-const projectId = process.env.PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'study-fd50d';
+const projectId =
+	process.env.PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'study-fd50d';
 
 if (!serviceAccountJson) {
 	console.error('ERROR: FIREBASE_SERVICE_ACCOUNT is missing in environment or .env!');
@@ -83,7 +87,9 @@ async function main() {
 		console.log(`User [${uid}] currently owns ${userCoursesSnap.size} course(s).`);
 
 		if (userCoursesSnap.size === 0) {
-			console.log(`Assigning / creating courses for user [${uid}] so their Spaced Repetition Drill is populated...`);
+			console.log(
+				`Assigning / creating courses for user [${uid}] so their Spaced Repetition Drill is populated...`
+			);
 			// Pick existing courses without ownerUid or assign community courses
 			let countAssigned = 0;
 			for (const cDoc of coursesSnap.docs) {
@@ -104,7 +110,7 @@ async function main() {
 
 	for (const cDoc of updatedCoursesSnap.docs) {
 		const modulesSnap = await cDoc.ref.collection('modules').get();
-		
+
 		for (const mDoc of modulesSnap.docs) {
 			const mData = mDoc.data();
 			if (mData.type === 'quiz') {
