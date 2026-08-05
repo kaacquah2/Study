@@ -9,7 +9,7 @@ import { env } from '$env/dynamic/private';
 
 /** Get ML Backend URL with fallbacks */
 function getMLBackendUrl(): string {
-	return env.ML_BACKEND_URL || process.env.ML_BACKEND_URL || 'http://localhost:8000';
+	return env.ML_BACKEND_URL || process.env.ML_BACKEND_URL || 'http://127.0.0.1:8000';
 }
 
 /** Get ML Backend API Key with fallbacks */

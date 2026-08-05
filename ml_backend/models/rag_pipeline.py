@@ -82,6 +82,8 @@ class RAGPipeline:
         with self._lock:
             if self._index is None:
                 self._index = faiss.IndexIDMap(faiss.IndexFlatL2(self._dim))
+            elif not isinstance(self._index, (faiss.IndexIDMap, faiss.IndexIDMap2)):
+                self._index = faiss.IndexIDMap(self._index)
 
             start_id = len(self._docs)
             ids = np.arange(start_id, start_id + len(chunks), dtype="int64")
@@ -206,7 +208,10 @@ class RAGPipeline:
                 self._docs = []
                 return
 
-            self._index = faiss.read_index(str(_INDEX_PATH))
+            loaded = faiss.read_index(str(_INDEX_PATH))
+            if not isinstance(loaded, (faiss.IndexIDMap, faiss.IndexIDMap2)):
+                loaded = faiss.IndexIDMap(loaded)
+            self._index = loaded
             with open(_DOCS_PATH, "r", encoding="utf-8") as f:
                 raw = json.load(f)
                 # Handle legacy string format or dictionary format

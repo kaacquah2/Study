@@ -184,7 +184,7 @@ export async function chatViaOllama(
 ): Promise<{ reply: string; sources: Array<{ moduleId: string; pageTitle: string }> }> {
 	const lastMsg = messages[messages.length - 1]?.content || '';
 	const contextBlock = courseContext ? `\nContext:\n${courseContext.slice(0, 1000)}\n` : '';
-	const prompt = `You are a helpful AI study assistant.${contextBlock}
+	const prompt = `You are an encouraging AI study assistant helping students master course materials. Answer concisely, clearly, and with high technical precision (e.g., explicitly distinguishing amortized vs. strict Big-O complexity when relevant). When comparing concepts, algorithms, or data structures, use Markdown comparison tables to highlight key trade-offs.${contextBlock}
 User: ${lastMsg}
 Assistant:`;
 

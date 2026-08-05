@@ -63,7 +63,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 					...newQ,
 					order: itemIndex + 1
 				};
-				await moduleRef.update({ questions: currentQuestions });
+				await moduleRef.set({ questions: currentQuestions }, { merge: true });
 				return json({ status: 'updated', question: currentQuestions[itemIndex] });
 			}
 		} else if (itemType === 'page' && modData?.type === 'lesson') {
@@ -85,7 +85,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 					...newP,
 					order: itemIndex + 1
 				};
-				await moduleRef.update({ pages: currentPages });
+				await moduleRef.set({ pages: currentPages }, { merge: true });
 				return json({ status: 'updated', page: currentPages[itemIndex] });
 			}
 		}

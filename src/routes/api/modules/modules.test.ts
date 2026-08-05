@@ -21,9 +21,11 @@ vi.mock('$lib/server/admin', () => {
 		update: vi.fn()
 	};
 	const mockDoc = {
+		set: vi.fn().mockResolvedValue(undefined),
 		update: vi.fn().mockResolvedValue(undefined),
 		collection: vi.fn(() => ({
 			doc: vi.fn(() => ({
+				set: vi.fn().mockResolvedValue(undefined),
 				update: vi.fn().mockResolvedValue(undefined)
 			})),
 			orderBy: vi.fn(() => ({

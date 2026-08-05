@@ -14,7 +14,7 @@ import { json } from '@sveltejs/kit';
 import { verifySessionUser } from '$lib/server/auth';
 import { env } from '$env/dynamic/private';
 
-const ML_BACKEND_URL = env.ML_BACKEND_URL || 'http://localhost:8000';
+const ML_BACKEND_URL = env.ML_BACKEND_URL || 'http://127.0.0.1:8000';
 const ML_BACKEND_API_KEY = env.ML_BACKEND_API_KEY || '';
 
 /** Build headers for forwarding requests to the Python ML backend */

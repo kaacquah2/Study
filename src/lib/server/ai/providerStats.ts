@@ -195,10 +195,14 @@ export interface AttributionMetadata {
 export async function recordAttributionMetadata(
 	collectionName: 'courses' | 'modules',
 	docId: string,
-	meta: AttributionMetadata
+	meta: AttributionMetadata,
+	courseId?: string
 ): Promise<void> {
 	try {
-		const docRef = adminDb.collection(collectionName).doc(docId);
+		const docRef =
+			collectionName === 'modules' && courseId
+				? adminDb.collection('courses').doc(courseId).collection('modules').doc(docId)
+				: adminDb.collection(collectionName).doc(docId);
 		if (typeof docRef?.set === 'function') {
 			await docRef.set(
 				{

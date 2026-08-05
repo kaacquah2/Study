@@ -129,10 +129,16 @@ async def _async_seed_rag():
     else:
         logger.info("[RAG auto-seed] No sample documents found.")
 
+_EAGER_WARMUP = os.getenv("EAGER_MODEL_WARMUP", "false").lower() in ("true", "1", "yes")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("ML backend server booted. Launching model warmup and RAG seed tasks in background...")
-    asyncio.create_task(_async_warmup_models())
+    logger.info("ML backend server booted.")
+    if _EAGER_WARMUP:
+        logger.info("Launching eager model warmup in background...")
+        asyncio.create_task(_async_warmup_models())
+    else:
+        logger.info("Eager model warmup disabled (EAGER_MODEL_WARMUP=false). Models will load lazily on demand.")
     asyncio.create_task(_async_seed_rag())
     logger.info("ML backend HTTP server ready.")
     yield
@@ -184,7 +190,7 @@ def verify_api_key(request: Request) -> None:
 # ── Health ─────────────────────────────────────────────────────────────────────
 
 @app.get("/healthcheck", response_model=HealthResponse, dependencies=[Depends(verify_api_key)], tags=["Health"])
-def healthcheck():
+async def healthcheck():
     # Dynamically update the status if is_loaded is true and we don't have an error recorded
     for model_name, status in _MODEL_STATUS.items():
         if not status.startswith("error"):
@@ -228,7 +234,7 @@ def healthcheck():
 
 
 @app.get("/health", tags=["Health"])
-def health_alias():
+async def health_alias():
     """Simple standard /health endpoint for container probes."""
     return {"status": "ok"}
 
@@ -270,7 +276,8 @@ async def summarize(body: SummarizeRequest, response: Response = None):
     if response is None:
         response = Response()
     if not summarizer_model.is_loaded():
-        raise HTTPException(status_code=503, detail="Summarizer model is still loading. Please try again in a few seconds.")
+        logger.info("Summarizer model not loaded yet — initializing on demand...")
+        await asyncio.to_thread(summarizer_model.load_summarizer)
 
     cache_key = cache.generate_key("summarize", body.model_dump())
     cached_val, status = cache.get(cache_key)
@@ -302,7 +309,8 @@ async def paraphrase(body: ParaphraseRequest, response: Response = None):
     if response is None:
         response = Response()
     if not paraphraser_model.is_loaded():
-        raise HTTPException(status_code=503, detail="Paraphraser model is still loading. Please try again in a few seconds.")
+        logger.info("Paraphraser model not loaded yet — initializing on demand...")
+        await asyncio.to_thread(paraphraser_model.load_paraphraser)
 
     cache_key = cache.generate_key("paraphrase", body.model_dump())
     cached_val, status = cache.get(cache_key)
@@ -329,7 +337,8 @@ async def outline(body: OutlineRequest, request: Request, response: Response = N
     if response is None:
         response = Response()
     if not outline_model.is_loaded():
-        raise HTTPException(status_code=503, detail="Outline generator model is still loading. Please try again in a few seconds.")
+        logger.info("Outline generator model not loaded yet — initializing on demand...")
+        await asyncio.to_thread(outline_model.load_model)
 
     user_id = request.headers.get("X-User-ID", "default_user")
     cache_params = {**body.model_dump(), "user_id": user_id}
@@ -371,7 +380,8 @@ async def lesson(body: LessonRequest, request: Request, response: Response = Non
     if response is None:
         response = Response()
     if not lesson_model.is_loaded():
-        raise HTTPException(status_code=503, detail="Lesson generator model is still loading. Please try again in a few seconds.")
+        logger.info("Lesson generator model not loaded yet — initializing on demand...")
+        await asyncio.to_thread(lesson_model.load_model)
 
     user_id = request.headers.get("X-User-ID", "default_user")
     cache_params = {**body.model_dump(), "user_id": user_id}
@@ -409,7 +419,8 @@ async def quiz(body: QuizRequest, response: Response = None):
     if response is None:
         response = Response()
     if not quiz_model.is_loaded():
-        raise HTTPException(status_code=503, detail="Quiz pipeline models are still loading. Please try again in a few seconds.")
+        logger.info("Quiz pipeline models not loaded yet — initializing on demand...")
+        await asyncio.to_thread(quiz_model.load_models)
 
     cache_key = cache.generate_key("quiz", body.model_dump())
     cached_val, status = cache.get(cache_key)

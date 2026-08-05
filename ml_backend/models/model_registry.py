@@ -40,47 +40,60 @@ def is_any_inference_busy() -> bool:
     with _registry_lock:
         return any(lock.locked() for lock in _inference_locks.values()) or inference_lock.locked()
 
-# Store of cached pipelines, keyed by "task:model_id"
 _pipelines: dict[str, Pipeline] = {}
+_loading_locks: dict[str, threading.Lock] = {}
 
 def get_pipeline(task: str, model_id: str, **kwargs) -> Pipeline:
     """
     Retrieve an existing pipeline from the registry, or initialize and cache it.
     Thread-safe to prevent multiple threads from loading the same model concurrently.
+    Does NOT hold global registry lock during heavy downloading to prevent blocking health checks.
     """
     key = f"{task}:{model_id}"
     with _registry_lock:
-        if key not in _pipelines:
-            logger.info(f"Model Registry: Loading model '{model_id}' for task '{task}' (device={DEVICE})...")
-            # Set default device if not explicitly provided
-            if "device" not in kwargs:
-                kwargs["device"] = DEVICE
-            
-            if CUDA_AVAILABLE and "torch_dtype" not in kwargs:
-                kwargs["torch_dtype"] = torch.float16
+        if key in _pipelines:
+            return _pipelines[key]
+        if key not in _loading_locks:
+            _loading_locks[key] = threading.Lock()
+        load_lock = _loading_locks[key]
 
-            pipe = pipeline(
-                task,
-                model=model_id,
-                tokenizer=model_id,
-                **kwargs
-            )
+    with load_lock:
+        with _registry_lock:
+            if key in _pipelines:
+                return _pipelines[key]
 
-            # Apply PyTorch dynamic INT8 quantization on CPU for linear layers to boost CPU speed
-            if DEVICE == -1:
-                try:
-                    pipe.model = torch.ao.quantization.quantize_dynamic(
-                        pipe.model, {torch.nn.Linear}, dtype=torch.qint8
-                    )
-                    logger.info(f"Model Registry: Applied dynamic INT8 quantization to '{model_id}'.")
-                except Exception as q_err:
-                    logger.debug(f"Model Registry: Dynamic quantization skipped for '{model_id}': {q_err}")
+        logger.info(f"Model Registry: Loading model '{model_id}' for task '{task}' (device={DEVICE})...")
+        # Set default device if not explicitly provided
+        if "device" not in kwargs:
+            kwargs["device"] = DEVICE
+        
+        if CUDA_AVAILABLE and "torch_dtype" not in kwargs:
+            kwargs["torch_dtype"] = torch.float16
 
+        pipe = pipeline(
+            task,
+            model=model_id,
+            tokenizer=model_id,
+            **kwargs
+        )
+
+        # Apply PyTorch dynamic INT8 quantization on CPU for linear layers to boost CPU speed
+        if DEVICE == -1:
+            try:
+                pipe.model = torch.ao.quantization.quantize_dynamic(
+                    pipe.model, {torch.nn.Linear}, dtype=torch.qint8
+                )
+                logger.info(f"Model Registry: Applied dynamic INT8 quantization to '{model_id}'.")
+            except Exception as q_err:
+                logger.debug(f"Model Registry: Dynamic quantization skipped for '{model_id}': {q_err}")
+
+        with _registry_lock:
             _pipelines[key] = pipe
-            logger.info(f"Model Registry: Model '{model_id}' successfully loaded.")
-        return _pipelines[key]
+        logger.info(f"Model Registry: Model '{model_id}' successfully loaded.")
+        return pipe
 
 def is_pipeline_loaded(task: str, model_id: str) -> bool:
     """Check if the pipeline has already been initialized in memory."""
     key = f"{task}:{model_id}"
-    return key in _pipelines
+    with _registry_lock:
+        return key in _pipelines

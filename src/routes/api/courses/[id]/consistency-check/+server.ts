@@ -35,11 +35,14 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			30
 		);
 
-		await courseRef.update({
-			consistencyChecked: true,
-			consistencyNotes: auditRes.result,
-			updatedAt: FieldValue.serverTimestamp()
-		});
+		await courseRef.set(
+			{
+				consistencyChecked: true,
+				consistencyNotes: auditRes.result,
+				updatedAt: FieldValue.serverTimestamp()
+			},
+			{ merge: true }
+		);
 
 		return json({
 			status: 'checked',

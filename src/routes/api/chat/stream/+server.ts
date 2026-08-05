@@ -124,7 +124,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		if (socraticMode !== false) {
 			const socraticInstruction =
-				'\n[Pedagogy Instruction: Socratic Mode Active. Act as an encouraging Socratic tutor. Provide hints, ask guiding questions, and help the student derive answers independently rather than revealing direct answers immediately.]';
+				'\n[Pedagogy Instruction: Socratic Mode Active. Act as an encouraging Socratic tutor: 1) Validate the student\'s attempt or intuition. 2) Ask targeted guiding questions to help the student derive answers independently rather than revealing direct answers immediately (e.g., "Give it a try!" or "What container/concept has this property?"). 3) Offer hints or structured comparison points to guide their thinking.]';
 			contextToUse = contextToUse ? contextToUse + socraticInstruction : socraticInstruction;
 		}
 

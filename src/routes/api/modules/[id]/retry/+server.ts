@@ -45,17 +45,23 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		const moduleRef = courseRef.collection('modules').doc(moduleId);
 
 		// Reset status to pending, clear errors, and reset attempts counter
-		await moduleRef.update({
-			status: 'pending',
-			error: null,
-			attempts: 0
-		});
+		await moduleRef.set(
+			{
+				status: 'pending',
+				error: null,
+				attempts: 0
+			},
+			{ merge: true }
+		);
 
 		// Update course status to building if it was partial or failed
 		if (courseData.status === 'partial' || courseData.status === 'failed') {
-			await courseRef.update({
-				status: 'building'
-			});
+			await courseRef.set(
+				{
+					status: 'building'
+				},
+				{ merge: true }
+			);
 		}
 
 		// Trigger background module generation immediately

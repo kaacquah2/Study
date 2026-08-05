@@ -85,11 +85,15 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			// Lock the module for generation and increment attempts
 			const idempotencyKey = request.headers.get('x-idempotency-key') || null;
 			const attempts = (moduleData?.attempts || 0) + 1;
-			transaction.update(moduleRef, {
-				status: 'generating',
-				idempotencyKey: idempotencyKey || moduleData?.idempotencyKey || null,
-				attempts: attempts
-			});
+			transaction.set(
+				moduleRef,
+				{
+					status: 'generating',
+					idempotencyKey: idempotencyKey || moduleData?.idempotencyKey || null,
+					attempts: attempts
+				},
+				{ merge: true }
+			);
 
 			// Update hourly limit counters
 			transaction.set(
@@ -196,20 +200,28 @@ export const POST: RequestHandler = async ({ params, request }) => {
 				const memCheck = checkMemorization(fullLessonText, courseData?.referenceText);
 
 				// Write lesson pages to database
-				await moduleRef.update({
-					pages: pages,
-					estimatedMinutes: estMinutes,
-					status: 'ready',
-					model: provider,
-					verbatimSimilarityScore: memCheck.verbatimSimilarityScore,
-					generatedAt: FieldValue.serverTimestamp(),
-					error: null
-				});
+				await moduleRef.set(
+					{
+						pages: pages,
+						estimatedMinutes: estMinutes,
+						status: 'ready',
+						model: provider,
+						verbatimSimilarityScore: memCheck.verbatimSimilarityScore,
+						generatedAt: FieldValue.serverTimestamp(),
+						error: null
+					},
+					{ merge: true }
+				);
 
-				await recordAttributionMetadata('modules', moduleId, {
-					servicedByProvider: provider,
-					verbatimSimilarityScore: memCheck.verbatimSimilarityScore
-				});
+				await recordAttributionMetadata(
+					'modules',
+					moduleId,
+					{
+						servicedByProvider: provider,
+						verbatimSimilarityScore: memCheck.verbatimSimilarityScore
+					},
+					courseId
+				);
 			} else if (moduleData.type === 'quiz') {
 				const { result, provider } = await generateQuiz(
 					courseOutline.title,
@@ -246,14 +258,26 @@ export const POST: RequestHandler = async ({ params, request }) => {
 				const estMinutes = Math.max(2, Math.ceil((result.questions.length * 45) / 60));
 
 				// Write quiz questions to database
-				await moduleRef.update({
-					questions: result.questions,
-					estimatedMinutes: estMinutes,
-					status: 'ready',
-					model: provider,
-					generatedAt: FieldValue.serverTimestamp(),
-					error: null
-				});
+				await moduleRef.set(
+					{
+						questions: result.questions,
+						estimatedMinutes: estMinutes,
+						status: 'ready',
+						model: provider,
+						generatedAt: FieldValue.serverTimestamp(),
+						error: null
+					},
+					{ merge: true }
+				);
+
+				await recordAttributionMetadata(
+					'modules',
+					moduleId,
+					{
+						servicedByProvider: provider
+					},
+					courseId
+				);
 			}
 
 			// Check if all modules are ready, update course status & total estimated duration
@@ -269,22 +293,31 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			);
 
 			if (allReady) {
-				await courseRef.update({
-					status: 'ready',
-					estimatedMinutes: totalCourseEstMinutes,
-					updatedAt: FieldValue.serverTimestamp()
-				});
+				await courseRef.set(
+					{
+						status: 'ready',
+						estimatedMinutes: totalCourseEstMinutes,
+						updatedAt: FieldValue.serverTimestamp()
+					},
+					{ merge: true }
+				);
 			} else if (anyFailed) {
-				await courseRef.update({
-					status: 'partial',
-					estimatedMinutes: totalCourseEstMinutes,
-					updatedAt: FieldValue.serverTimestamp()
-				});
+				await courseRef.set(
+					{
+						status: 'partial',
+						estimatedMinutes: totalCourseEstMinutes,
+						updatedAt: FieldValue.serverTimestamp()
+					},
+					{ merge: true }
+				);
 			} else {
-				await courseRef.update({
-					estimatedMinutes: totalCourseEstMinutes,
-					updatedAt: FieldValue.serverTimestamp()
-				});
+				await courseRef.set(
+					{
+						estimatedMinutes: totalCourseEstMinutes,
+						updatedAt: FieldValue.serverTimestamp()
+					},
+					{ merge: true }
+				);
 			}
 
 			return json({ status: 'ready', message: 'Module generated successfully' });
@@ -299,16 +332,26 @@ export const POST: RequestHandler = async ({ params, request }) => {
 
 			// Handle failure and register attempts
 			const statusUpdate = 'failed';
-			await moduleRef.update({
-				status: statusUpdate,
-				error: message
-			});
+			try {
+				await moduleRef.set(
+					{
+						status: statusUpdate,
+						error: message
+					},
+					{ merge: true }
+				);
 
-			// Update course status to partial
-			await courseRef.update({
-				status: 'partial',
-				updatedAt: FieldValue.serverTimestamp()
-			});
+				// Update course status to partial
+				await courseRef.set(
+					{
+						status: 'partial',
+						updatedAt: FieldValue.serverTimestamp()
+					},
+					{ merge: true }
+				);
+			} catch (dbErr) {
+				console.warn('Failed to update failure status in Firestore:', dbErr);
+			}
 
 			return json(
 				{

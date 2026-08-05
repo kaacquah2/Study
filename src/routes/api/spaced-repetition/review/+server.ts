@@ -81,10 +81,13 @@ export const POST: RequestHandler = async ({ request }) => {
 			lastReviewedAt: fsrsResult.card.lastReview
 		};
 
-		await moduleRef.update({
-			questions: updatedQuestions,
-			updatedAt: FieldValue.serverTimestamp()
-		});
+		await moduleRef.set(
+			{
+				questions: updatedQuestions,
+				updatedAt: FieldValue.serverTimestamp()
+			},
+			{ merge: true }
+		);
 
 		return json({
 			success: true,
