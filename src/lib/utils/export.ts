@@ -146,7 +146,7 @@ export function printCourse(course: CourseDoc, modules: ModuleDoc[]) {
 					<div class="page-block">
 						<h4>${p.heading}</h4>
 						${p.subheading ? `<h5>${p.subheading}</h5>` : ''}
-						<div class="body-text">${p.body.replace(/\n/g, '<br/>')}</div>
+						<div class="body-text">${(p.body || (p.blocks ? p.blocks.map((b) => ('markdown' in b ? b.markdown : '')).join('\n') : '')).replace(/\n/g, '<br/>')}</div>
 					</div>
 				`
 					)

@@ -198,6 +198,88 @@ export async function generateLessonViaGemini(
 	return callGeminiApi<unknown>(prompt, systemInstruction, LESSON_RESPONSE_SCHEMA, 60_000);
 }
 
+const LESSON_BLOCK_RESPONSE_SCHEMA = {
+	type: 'OBJECT',
+	properties: {
+		pages: {
+			type: 'ARRAY',
+			items: {
+				type: 'OBJECT',
+				properties: {
+					order: { type: 'INTEGER' },
+					heading: { type: 'STRING' },
+					subheading: { type: 'STRING', nullable: true },
+					blocks: {
+						type: 'ARRAY',
+						items: {
+							type: 'OBJECT',
+							properties: {
+								type: {
+									type: 'STRING',
+									enum: [
+										'text',
+										'callout',
+										'diagram',
+										'term',
+										'check',
+										'flashcard',
+										'code',
+										'mindmap-node'
+									]
+								},
+								markdown: { type: 'STRING', nullable: true },
+								style: {
+									type: 'STRING',
+									enum: ['tip', 'warning', 'example', 'deep-dive'],
+									nullable: true
+								},
+								title: { type: 'STRING', nullable: true },
+								mermaid: { type: 'STRING', nullable: true },
+								caption: { type: 'STRING', nullable: true },
+								term: { type: 'STRING', nullable: true },
+								definition: { type: 'STRING', nullable: true },
+								prompt: { type: 'STRING', nullable: true },
+								options: { type: 'ARRAY', items: { type: 'STRING' }, nullable: true },
+								answerIndex: { type: 'INTEGER', nullable: true },
+								explanation: { type: 'STRING', nullable: true },
+								front: { type: 'STRING', nullable: true },
+								back: { type: 'STRING', nullable: true },
+								language: { type: 'STRING', nullable: true },
+								code: { type: 'STRING', nullable: true },
+								runnable: { type: 'BOOLEAN', nullable: true },
+								nodeId: { type: 'STRING', nullable: true },
+								label: { type: 'STRING', nullable: true }
+							},
+							required: ['type']
+						}
+					}
+				},
+				required: ['order', 'heading', 'blocks']
+			}
+		}
+	},
+	required: ['pages']
+};
+
+export async function generateLessonWithBlocksViaGemini(
+	courseTitle: string,
+	fullOutline: unknown,
+	moduleTitle: string,
+	moduleObjective: string,
+	keyPoints: string[]
+) {
+	const systemInstruction =
+		'You are an expert interactive learning designer. Create structured lesson pages composed of typed blocks. Every 2-3 paragraphs insert one check block. Insert a diagram block (valid Mermaid syntax) wherever a process, hierarchy, or workflow is described. Wrap key technical terms in term blocks for tap-to-reveal definitions. Insert callout blocks for tips and warnings. Do NOT use H1 headings in text block markdown.';
+
+	let prompt = `Course: "${courseTitle}"\n`;
+	prompt += `Module: "${moduleTitle}"\n`;
+	prompt += `Learning Objective: ${moduleObjective}\n`;
+	prompt += `MANDATORY KEY POINTS TO COVER: ${keyPoints.join('; ')}\n`;
+	prompt += `Generate interactive, rich structured content blocks covering all key points.\n`;
+
+	return callGeminiApi<unknown>(prompt, systemInstruction, LESSON_BLOCK_RESPONSE_SCHEMA, 60_000);
+}
+
 // ── Quiz Generation via Gemini ─────────────────────────────────────────────────
 
 const QUIZ_RESPONSE_SCHEMA = {

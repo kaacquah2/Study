@@ -24,6 +24,21 @@ export interface CourseDoc {
 	updatedAt?: unknown;
 }
 
+export type LessonBlock =
+	| { type: 'text'; markdown: string }
+	| {
+			type: 'callout';
+			style: 'tip' | 'warning' | 'example' | 'deep-dive';
+			title: string;
+			markdown: string;
+	  }
+	| { type: 'diagram'; mermaid: string; caption?: string }
+	| { type: 'term'; term: string; definition: string }
+	| { type: 'check'; prompt: string; options: string[]; answerIndex: number; explanation: string }
+	| { type: 'flashcard'; front: string; back: string }
+	| { type: 'code'; language: string; code: string; runnable?: boolean }
+	| { type: 'mindmap-node'; nodeId: string; label: string };
+
 export interface ModuleDoc {
 	id?: string;
 	order: number;
@@ -36,7 +51,14 @@ export interface ModuleDoc {
 	estimatedMinutes?: number;
 	error?: string | null;
 	attempts?: number;
-	pages?: Array<{ order: number; heading: string; subheading?: string; body: string }> | null;
+	contentVersion?: 1 | 2;
+	pages?: Array<{
+		order: number;
+		heading: string;
+		subheading?: string;
+		body?: string;
+		blocks?: LessonBlock[];
+	}> | null;
 	questions?: Array<{
 		prompt?: string;
 		question?: string;

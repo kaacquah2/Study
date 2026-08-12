@@ -3,7 +3,7 @@ import { POST as completeModuleHandler } from './[id]/complete/+server';
 import { POST as generateModuleHandler } from './[id]/generate/+server';
 import { verifySessionUser } from '$lib/server/auth';
 import { adminDb } from '$lib/server/admin';
-import { generateLesson } from '$lib/server/ai/provider';
+import { generateLessonV2 } from '$lib/server/ai/provider';
 
 vi.mock('$lib/server/auth', () => ({
 	verifySessionUser: vi.fn()
@@ -11,6 +11,7 @@ vi.mock('$lib/server/auth', () => ({
 
 vi.mock('$lib/server/ai/provider', () => ({
 	generateLesson: vi.fn(),
+	generateLessonV2: vi.fn(),
 	generateQuiz: vi.fn()
 }));
 
@@ -232,18 +233,23 @@ describe('/api/modules/[id] Integration Tests', () => {
 				cb(mockTransaction as never)
 			);
 
-			vi.mocked(generateLesson).mockResolvedValue({
+			vi.mocked(generateLessonV2).mockResolvedValue({
 				result: {
 					pages: [
 						{
-							order: 0,
+							order: 1,
 							heading: 'Variables',
 							subheading: null,
-							body: '## Section Overview\n\nVariables store values in memory. Visit Google for details.'
+							blocks: [
+								{
+									type: 'text',
+									markdown: '## Section Overview\n\nVariables store values in memory.'
+								}
+							]
 						}
 					]
 				},
-				provider: 'ml_backend'
+				provider: 'gemini'
 			});
 
 			const request = new Request('http://localhost/api/modules/mod1/generate', {
@@ -287,9 +293,9 @@ describe('/api/modules/[id] Integration Tests', () => {
 				cb(mockTransaction as never)
 			);
 
-			// Mock generateLesson throwing an AI generation error
+			// Mock generateLessonV2 throwing an AI generation error
 			const { MLBackendError } = await import('$lib/server/ai/client');
-			vi.mocked(generateLesson).mockRejectedValue(
+			vi.mocked(generateLessonV2).mockRejectedValue(
 				new MLBackendError('AI Generation Failed', 500, '/lesson')
 			);
 

@@ -11,34 +11,58 @@ Ensures graceful failover if Redis is unreachable or fails mid-operation.
 import os
 import json
 import time
+import ssl
 import hashlib
 import logging
 from typing import Any, Tuple, Optional
-from cachetools import TTLCache
+from cachetools import TTLCache  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 
 _REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+_ENABLE_REDIS = os.getenv("ENABLE_REDIS", "true").lower() in ("true", "1", "yes")
+_CACHE_MAXSIZE = int(os.getenv("CACHE_IN_MEMORY_MAXSIZE", "1000"))
+_CACHE_TTL = int(os.getenv("CACHE_IN_MEMORY_TTL", "86400"))
+_REDIS_COOLDOWN = float(os.getenv("REDIS_CONNECT_COOLDOWN", "60.0"))
 
 class CacheManager:
-    def __init__(self, in_memory_maxsize: int = 1000, in_memory_ttl: int = 86400, redis_cooldown: float = 60.0):
-        self._memory_cache = TTLCache(maxsize=in_memory_maxsize, ttl=in_memory_ttl)
+    def __init__(
+        self,
+        in_memory_maxsize: Optional[int] = None,
+        in_memory_ttl: Optional[int] = None,
+        redis_cooldown: Optional[float] = None,
+        enable_redis: Optional[bool] = None,
+    ):
+        maxsize = in_memory_maxsize if in_memory_maxsize is not None else _CACHE_MAXSIZE
+        ttl = in_memory_ttl if in_memory_ttl is not None else _CACHE_TTL
+        self._memory_cache = TTLCache(maxsize=maxsize, ttl=ttl)
         self._redis_client = None
         self._redis_available = False
-        self._redis_cooldown = redis_cooldown
+        self._redis_cooldown = redis_cooldown if redis_cooldown is not None else _REDIS_COOLDOWN
+        self._enable_redis = enable_redis if enable_redis is not None else _ENABLE_REDIS
         self._last_redis_attempt = 0.0
-        self._init_redis()
+        if self._enable_redis:
+            self._init_redis()
+        else:
+            logger.info("[CacheManager] Redis disabled by ENABLE_REDIS=false. Using in-memory TTLCache.")
 
     def _init_redis(self) -> None:
+        if not self._enable_redis:
+            return
         self._last_redis_attempt = time.time()
+        redis_url = os.getenv("REDIS_URL", _REDIS_URL)
         try:
             import redis
-            client = redis.from_url(_REDIS_URL, socket_connect_timeout=1, socket_timeout=1)
+            kwargs: dict[str, Any] = {"socket_connect_timeout": 3, "socket_timeout": 3}
+            if redis_url.startswith("rediss://"):
+                kwargs["ssl_cert_reqs"] = ssl.CERT_NONE
+            client = redis.from_url(redis_url, **kwargs)
             # Test ping
             client.ping()
             self._redis_client = client
             self._redis_available = True
-            logger.info(f"[CacheManager] Connected to Redis at {_REDIS_URL}")
+            sanitized_url = redis_url.split("@")[-1] if "@" in redis_url else redis_url
+            logger.info(f"[CacheManager] Connected to Redis at {sanitized_url}")
         except Exception as e:
             self._redis_client = None
             self._redis_available = False
@@ -46,7 +70,7 @@ class CacheManager:
 
     def _maybe_reconnect_redis(self) -> None:
         """Attempt to reconnect to Redis if the cooldown period has elapsed."""
-        if not self._redis_available and (time.time() - self._last_redis_attempt) >= self._redis_cooldown:
+        if self._enable_redis and not self._redis_available and (time.time() - self._last_redis_attempt) >= self._redis_cooldown:
             self._init_redis()
 
     @staticmethod

@@ -16,6 +16,13 @@
 	import CompletionScreen from '$lib/components/CompletionScreen.svelte';
 	import LessonAudioPlayer from '$lib/components/LessonAudioPlayer.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
+	import MermaidDiagram from '$lib/components/MermaidDiagram.svelte';
+	import LessonBlockRenderer from '$lib/components/lesson-blocks/LessonBlockRenderer.svelte';
+	import {
+		interceptMermaidBlocks,
+		type InterceptedMermaidResult
+	} from '$lib/components/MermaidInterceptor';
+	import { chatStore } from '$lib/stores/chat.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import type { ModuleDoc, CourseDoc } from '$lib/firebase/converters';
 
@@ -37,6 +44,72 @@
 
 	// Lesson state
 	let currentPageIndex = $state(0);
+
+	// ── Interactive enhancements ──────────────────────────────────────────────
+	// Content key — changes on page switch to re-trigger entrance animations
+	let contentKey = $state(0);
+
+	// Typewriter heading state
+	let typewriterText = $state('');
+	let typewriterDone = $state(false);
+	let typewriterTimer: ReturnType<typeof setTimeout> | null = null;
+
+	const startTypewriter = (fullText: string) => {
+		if (typewriterTimer) clearTimeout(typewriterTimer);
+		typewriterText = '';
+		typewriterDone = false;
+		let i = 0;
+		const step = () => {
+			if (i <= fullText.length) {
+				typewriterText = fullText.slice(0, i);
+				i++;
+				typewriterTimer = setTimeout(step, i < 4 ? 0 : 22);
+			} else {
+				typewriterDone = true;
+			}
+		};
+		step();
+	};
+
+	// Comprehension pulse banner
+	let showComprehensionBanner = $state(false);
+	let comprehensionTimer: ReturnType<typeof setTimeout> | null = null;
+
+	const startComprehensionTimer = () => {
+		if (comprehensionTimer) clearTimeout(comprehensionTimer);
+		showComprehensionBanner = false;
+		// Show after 22 seconds of reading
+		comprehensionTimer = setTimeout(() => {
+			if (!isCompleted) showComprehensionBanner = true;
+		}, 22000);
+	};
+
+	const handleComprehension = (response: 'got-it' | 'confused' | 'reread') => {
+		showComprehensionBanner = false;
+		if (response === 'confused') {
+			chatStore.openWithSeed(
+				`I'm confused about "${activeLessonPage?.heading || moduleData?.title || 'this section'}". Can you explain it differently using a simple analogy?`
+			);
+		} else if (response === 'reread') {
+			// Scroll the lesson card to top
+			document.querySelector('.lesson-scroll-container')?.scrollTo({ top: 0, behavior: 'smooth' });
+			startComprehensionTimer();
+		}
+	};
+
+	// Quiz score animation
+	let displayedScore = $state(0);
+	let scoreAnimKey = $state(0);
+
+	// Quiz question animation key
+	let questionAnimKey = $state(0);
+
+	// Quiz sparkle effect
+	let showSparkle = $state(false);
+	const triggerSparkle = () => {
+		showSparkle = true;
+		setTimeout(() => (showSparkle = false), 800);
+	};
 
 	// Quiz state
 	let currentQuestionIndex = $state(0);
@@ -88,6 +161,29 @@
 			loadingVideos = false;
 		}
 	};
+
+	// Restore mid-lesson page state from URL & localStorage
+	$effect(() => {
+		if (moduleId && moduleData?.type === 'lesson') {
+			const storageKey = `lesson_page_${moduleId}`;
+			const urlParams = new URLSearchParams(window.location.search);
+			const pageParam = urlParams.get('page');
+			if (pageParam && !isNaN(Number(pageParam))) {
+				currentPageIndex = Math.max(0, Number(pageParam) - 1);
+			} else {
+				const savedPage = localStorage.getItem(storageKey);
+				if (savedPage) {
+					currentPageIndex = Math.max(0, Number(savedPage));
+				}
+			}
+		}
+	});
+
+	$effect(() => {
+		if (moduleId && moduleData?.type === 'lesson') {
+			localStorage.setItem(`lesson_page_${moduleId}`, currentPageIndex.toString());
+		}
+	});
 
 	// Restore mid-quiz state from localStorage & Firestore
 	$effect(() => {
@@ -239,12 +335,61 @@
 	// Lesson derivations
 	let lessonPages = $derived(moduleData?.pages || []);
 	let activeLessonPage = $derived(lessonPages[currentPageIndex] || null);
+	let interceptedBody = $derived.by<InterceptedMermaidResult>(() => {
+		if (activeLessonPage?.body) {
+			return interceptMermaidBlocks(activeLessonPage.body);
+		}
+		return { sections: [] };
+	});
 	let renderedBody = $derived.by(() => {
 		if (activeLessonPage?.body) {
 			return DOMPurify.sanitize(marked.parse(activeLessonPage.body) as string);
 		}
 		return '';
 	});
+
+	// Selection Popover & Progress Bar State
+	let scrollProgress = $state(0);
+	let selectedText = $state('');
+	let selectionCoords = $state<{ top: number; left: number } | null>(null);
+
+	const handleScroll = (e: Event) => {
+		const target = e.currentTarget as HTMLDivElement;
+		if (target) {
+			const total = target.scrollHeight - target.clientHeight;
+			scrollProgress = total > 0 ? Math.min(100, Math.max(0, (target.scrollTop / total) * 100)) : 0;
+		}
+	};
+
+	const handleTextSelection = () => {
+		if (typeof window === 'undefined') return;
+		const sel = window.getSelection();
+		if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+			selectionCoords = null;
+			selectedText = '';
+			return;
+		}
+		const text = sel.toString().trim();
+		if (text.length < 3) return;
+
+		const range = sel.getRangeAt(0);
+		const rect = range.getBoundingClientRect();
+		selectedText = text;
+		selectionCoords = {
+			top: rect.top + window.scrollY - 44,
+			left: Math.max(10, rect.left + window.scrollX + rect.width / 2 - 70)
+		};
+	};
+
+	const handleAskAIAboutSelection = () => {
+		if (!selectedText) return;
+		chatStore.openWithSeed(
+			`Explain this concept from "${moduleData?.title || 'the lesson'}": "${selectedText}"`
+		);
+		selectionCoords = null;
+		selectedText = '';
+		window.getSelection()?.removeAllRanges();
+	};
 
 	// Quiz derivations
 	interface QuizQuestionItem {
@@ -310,6 +455,19 @@
 
 		if (currentPageIndex < lessonPages.length - 1) {
 			currentPageIndex += 1;
+			contentKey += 1; // re-trigger entrance animations
+			// Typewriter on new heading
+			const nextHeading = lessonPages[currentPageIndex]?.heading || '';
+			if (nextHeading) startTypewriter(nextHeading);
+			startComprehensionTimer();
+			// Scroll to top of lesson
+			setTimeout(
+				() =>
+					document
+						.querySelector('.lesson-scroll-container')
+						?.scrollTo({ top: 0, behavior: 'smooth' }),
+				50
+			);
 		} else {
 			finishModule();
 		}
@@ -319,6 +477,17 @@
 		if (currentPageIndex > 0) {
 			currentPageIndex -= 1;
 			pageStartTime = Date.now();
+			contentKey += 1;
+			const prevHeading = lessonPages[currentPageIndex]?.heading || '';
+			if (prevHeading) startTypewriter(prevHeading);
+			startComprehensionTimer();
+			setTimeout(
+				() =>
+					document
+						.querySelector('.lesson-scroll-container')
+						?.scrollTo({ top: 0, behavior: 'smooth' }),
+				50
+			);
 		}
 	};
 
@@ -336,6 +505,10 @@
 
 		if (selectedOptionIndex === correctIdx) {
 			score += 1;
+			// Animate score
+			scoreAnimKey += 1;
+			displayedScore = score;
+			triggerSparkle();
 		}
 
 		// Item #10: Store record for end-of-quiz comprehensive review
@@ -357,9 +530,59 @@
 			currentQuestionIndex += 1;
 			selectedOptionIndex = null;
 			isAnswerLocked = false;
+			questionAnimKey += 1; // re-trigger slide-in animation
 		} else {
 			finishModule();
 		}
+	};
+
+	// Upgraded multi-option selection toolbar actions
+	const handleDefineSelection = () => {
+		if (!selectedText) return;
+		chatStore.openWithSeed(
+			`Define the term "${selectedText}" in the context of "${moduleData?.title || 'the lesson'}" with a clear, simple explanation and an example.`
+		);
+		selectionCoords = null;
+		selectedText = '';
+		window.getSelection()?.removeAllRanges();
+	};
+
+	const handleCopySelection = () => {
+		if (!selectedText) return;
+		navigator.clipboard?.writeText(selectedText);
+		toastStore.success('Copied to clipboard!');
+		selectionCoords = null;
+		selectedText = '';
+		window.getSelection()?.removeAllRanges();
+	};
+
+	const handleSaveSelectionAsFlashcard = async () => {
+		if (!selectedText) return;
+		try {
+			const idToken = await auth.currentUser?.getIdToken();
+			if (!idToken) {
+				toastStore.warning('Sign in to save flashcards');
+				return;
+			}
+			const res = await fetch('/api/spaced-repetition', {
+				method: 'POST',
+				headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					front: selectedText,
+					back: `From: ${moduleData?.title || 'lesson'}`,
+					courseId,
+					moduleId,
+					type: 'flashcard'
+				})
+			});
+			if (res.ok) toastStore.success('Saved to flashcard review queue!');
+			else toastStore.error('Could not save flashcard.');
+		} catch {
+			toastStore.error('Failed to save flashcard');
+		}
+		selectionCoords = null;
+		selectedText = '';
+		window.getSelection()?.removeAllRanges();
 	};
 
 	// Item #18: Granular Question or Page AI Regeneration
@@ -549,15 +772,33 @@
 	{:else if moduleData.type === 'lesson'}
 		<!-- LESSON VIEW -->
 		<div
-			class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-5 shadow-sm sm:p-8 lg:p-10"
+			class="lesson-scroll-container relative flex flex-col gap-6 overflow-hidden rounded-3xl border border-border bg-surface p-5 shadow-sm sm:p-8 lg:p-10"
+			onscroll={handleScroll}
 		>
+			<!-- Reading Progress Bar -->
+			<div class="absolute top-0 left-0 h-1.5 w-full bg-surface-muted/60">
+				<div
+					class="h-full bg-gradient-to-r from-primary to-violet-400 transition-all duration-300"
+					style="width: {scrollProgress}%"
+				></div>
+			</div>
+
 			<!-- Header -->
-			<div class="flex items-start justify-between border-b border-border/40 pb-4">
+			<div
+				class="anim-slide-up flex items-start justify-between border-b border-border/40 pt-1 pb-4"
+			>
 				<div>
 					<span class="text-[10px] font-bold tracking-wider text-primary uppercase">
 						{course?.title || 'Course Lesson'}
 					</span>
-					<h1 class="mt-1 font-display text-2xl font-bold text-text">{moduleData.title}</h1>
+					<!-- Typewriter heading (shows on page switch, fallback to module title) -->
+					<h1 class="mt-1 font-display text-2xl font-bold text-text">
+						{#if typewriterText && !typewriterDone}
+							{typewriterText}<span class="animate-pulse">|</span>
+						{:else}
+							{activeLessonPage?.heading || moduleData.title}
+						{/if}
+					</h1>
 					{#if activeLessonPage?.subheading}
 						<h2 class="mt-1 text-xs font-semibold text-text-muted">
 							{activeLessonPage.subheading}
@@ -596,11 +837,130 @@
 				/>
 			{/if}
 
-			<!-- Markdown Body -->
-			<div class="prose prose-sm max-w-none leading-relaxed text-text">
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html renderedBody}
+			<!-- Markdown Body with Blocks / Intercepted Mermaid Diagrams & Text Selection Listener -->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div
+				class="anim-fade prose prose-sm stagger-2 max-w-none leading-relaxed text-text"
+				style="animation-delay: {contentKey * 0}ms"
+				onmouseup={handleTextSelection}
+				ontouchend={handleTextSelection}
+			>
+				{#if activeLessonPage?.blocks && activeLessonPage.blocks.length > 0}
+					<LessonBlockRenderer blocks={activeLessonPage.blocks} {courseId} {moduleId} />
+				{:else if interceptedBody.sections.length > 0}
+					{#each interceptedBody.sections as section, idx (idx)}
+						{#if section.type === 'html'}
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+							{@html section.content}
+						{:else if section.type === 'mermaid'}
+							<MermaidDiagram code={section.code} id={section.id} />
+						{/if}
+					{/each}
+				{:else}
+					<!-- Fallback plain HTML -->
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+					{@html renderedBody}
+				{/if}
 			</div>
+
+			<!-- Upgraded Multi-Option Floating Text Selection Toolbar -->
+			{#if selectionCoords && selectedText}
+				<div
+					class="anim-pop fixed z-50"
+					style="top: {selectionCoords.top}px; left: {selectionCoords.left}px;"
+				>
+					<div
+						class="flex items-center gap-1 rounded-2xl border border-border/60 bg-surface p-1 shadow-2xl backdrop-blur-md"
+					>
+						<button
+							type="button"
+							onclick={handleAskAIAboutSelection}
+							title="Ask AI"
+							class="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-primary px-2.5 py-1.5 text-[11px] font-bold text-white transition-all hover:bg-primary-hover active:scale-95"
+						>
+							<span>🤖</span><span>Ask AI</span>
+						</button>
+						<button
+							type="button"
+							onclick={handleDefineSelection}
+							title="Define"
+							class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border px-2.5 py-1.5 text-[11px] font-bold text-text transition-all hover:border-primary/50 hover:text-primary active:scale-95"
+						>
+							<span>📖</span><span>Define</span>
+						</button>
+						<button
+							type="button"
+							onclick={handleSaveSelectionAsFlashcard}
+							title="Save as flashcard"
+							class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border px-2.5 py-1.5 text-[11px] font-bold text-text transition-all hover:border-amber-400/60 hover:text-amber-500 active:scale-95"
+						>
+							<span>🗂️</span><span>Flashcard</span>
+						</button>
+						<button
+							type="button"
+							onclick={handleCopySelection}
+							title="Copy text"
+							class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border px-2.5 py-1.5 text-[11px] font-bold text-text transition-all hover:border-emerald-400/60 hover:text-emerald-500 active:scale-95"
+						>
+							<span>📋</span><span>Copy</span>
+						</button>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Comprehension Pulse Banner -->
+			{#if showComprehensionBanner}
+				<div class="anim-slide-up fixed right-4 bottom-24 z-50 max-w-sm sm:right-8">
+					<div
+						class="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-surface p-4 shadow-2xl backdrop-blur-md"
+					>
+						<div class="flex items-center gap-2">
+							<span class="text-lg">🧠</span>
+							<p class="text-xs font-bold text-text">Did you grasp this concept?</p>
+							<button
+								type="button"
+								onclick={() => (showComprehensionBanner = false)}
+								class="ml-auto cursor-pointer text-xs text-text-muted hover:text-text">✕</button
+							>
+						</div>
+						<div class="flex gap-2">
+							<button
+								type="button"
+								onclick={() => handleComprehension('got-it')}
+								class="flex-1 cursor-pointer rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2 text-[11px] font-bold text-emerald-500 transition-all hover:bg-emerald-500/20 active:scale-95"
+							>
+								✅ Got it!
+							</button>
+							<button
+								type="button"
+								onclick={() => handleComprehension('confused')}
+								class="flex-1 cursor-pointer rounded-xl border border-amber-500/40 bg-amber-500/10 py-2 text-[11px] font-bold text-amber-500 transition-all hover:bg-amber-500/20 active:scale-95"
+							>
+								🤔 Confused
+							</button>
+							<button
+								type="button"
+								onclick={() => handleComprehension('reread')}
+								class="flex-1 cursor-pointer rounded-xl border border-border bg-surface-muted py-2 text-[11px] font-bold text-text-muted transition-all hover:border-primary/40 active:scale-95"
+							>
+								🔁 Re-read
+							</button>
+						</div>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Almost there! banner on second-to-last page -->
+			{#if currentPageIndex === lessonPages.length - 2 && lessonPages.length > 2}
+				<div
+					class="anim-pop flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/8 px-4 py-3"
+				>
+					<span class="text-base">🏁</span>
+					<p class="text-xs font-bold text-emerald-500">
+						Almost there! One more page to complete this lesson.
+					</p>
+				</div>
+			{/if}
 
 			<!-- Bottom Lesson Controls -->
 			<div class="mt-4 flex items-center justify-between border-t border-border/40 pt-6">
@@ -608,7 +968,7 @@
 					type="button"
 					onclick={handleLessonPrev}
 					disabled={currentPageIndex === 0}
-					class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text hover:bg-surface-muted disabled:opacity-30"
+					class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text transition-all hover:bg-surface-muted active:scale-95 disabled:opacity-30"
 				>
 					&larr; Previous Page
 				</button>
@@ -616,9 +976,11 @@
 				<button
 					type="button"
 					onclick={handleLessonNext}
-					class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-hover active:scale-98"
+					class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 active:scale-95"
 				>
-					<span>{currentPageIndex === lessonPages.length - 1 ? 'Finish Lesson' : 'Next Page'}</span>
+					<span
+						>{currentPageIndex === lessonPages.length - 1 ? '🎉 Finish Lesson' : 'Next Page'}</span
+					>
 					<span>&rarr;</span>
 				</button>
 			</div>
@@ -762,7 +1124,7 @@
 	{:else if moduleData.type === 'quiz'}
 		<!-- QUIZ VIEW -->
 		<div
-			class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-5 shadow-sm sm:p-8 lg:p-10"
+			class="relative flex flex-col gap-6 rounded-3xl border border-border bg-surface p-5 shadow-sm sm:p-8 lg:p-10"
 		>
 			<div class="flex items-center justify-between border-b border-border/40 pb-4">
 				<div>
@@ -794,106 +1156,149 @@
 						</svg>
 						<span>Flag</span>
 					</button>
-					<div
-						class="rounded-xl border border-border bg-surface-muted px-3 py-1.5 text-xs font-bold text-text"
-					>
-						Score: {score}
+					<div class="flex flex-col items-end gap-1">
+						<span class="text-[10px] font-bold text-text-muted"
+							>Score:
+							{#key scoreAnimKey}
+								<span class="anim-bounce inline-block text-primary">{displayedScore || score}</span>
+							{/key}/{quizQuestions.length}</span
+						>
+						<div class="h-1.5 w-24 overflow-hidden rounded-full bg-border">
+							<div
+								class="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400 transition-all duration-500"
+								style="width: {quizQuestions.length > 0
+									? ((displayedScore || score) / quizQuestions.length) * 100
+									: 0}%"
+							></div>
+						</div>
 					</div>
 				</div>
 			</div>
 
-			{#if activeQuizQuestion}
-				<!-- Question Markdown -->
-				<div class="font-display text-base font-bold text-text">
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html DOMPurify.sanitize(
-						marked.parse(activeQuizQuestion.prompt || activeQuizQuestion.question || '') as string
-					)}
-				</div>
-
-				<!-- Options List -->
-				<div class="flex flex-col gap-3">
-					{#each activeQuizQuestion.options as option, idx (idx)}
-						{@const isSelected = selectedOptionIndex === idx}
-						{@const correctIdx =
-							activeQuizQuestion.answerIndex ?? activeQuizQuestion.correctIndex ?? 0}
-						{@const isCorrect = idx === correctIdx}
-
-						<button
-							type="button"
-							onclick={() => handleSelectOption(idx)}
-							disabled={isAnswerLocked}
-							class="flex w-full cursor-pointer items-center justify-between rounded-2xl border p-4 text-left text-xs font-semibold transition-all duration-180 {isAnswerLocked
-								? isCorrect
-									? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
-									: isSelected
-										? 'border-rose-500 bg-rose-500/10 text-rose-300'
-										: 'border-border/40 bg-surface-muted/30 opacity-50'
-								: isSelected
-									? 'border-primary bg-primary-soft text-primary'
-									: 'border-border bg-surface hover:border-primary/50 hover:bg-surface-muted/40'}"
+			<!-- Sparkle burst on correct answer -->
+			{#if showSparkle}
+				<div
+					class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+					aria-hidden="true"
+				>
+					{#each [0, 1, 2, 3, 4, 5, 6, 7] as i (i)}
+						<div
+							class="absolute"
+							style="
+								top: {40 + Math.sin((i * 45 * Math.PI) / 180) * 35}%;
+								left: {50 + Math.cos((i * 45 * Math.PI) / 180) * 35}%;
+								animation: confetti-fall 0.7s ease-out {i * 60}ms both;
+							"
 						>
-							<div class="flex items-center gap-3">
-								<span
-									class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-[10px] font-bold text-text-muted"
-								>
-									{String.fromCharCode(65 + idx)}
-								</span>
-								<span>{option}</span>
-							</div>
-
-							{#if isAnswerLocked}
-								{#if isCorrect}
-									<span class="font-bold text-emerald-400">✓ Correct</span>
-								{:else if isSelected}
-									<span class="font-bold text-rose-400">&times; Incorrect</span>
-								{/if}
-							{/if}
-						</button>
+							<div
+								style="width:8px;height:8px;background:{'#7c74f0,#34d399,#f59e0b,#f87171,#60a5fa,#e879f9,#34d399,#7c74f0'.split(
+									','
+								)[i]};border-radius:50%;"
+							></div>
+						</div>
 					{/each}
 				</div>
+			{/if}
 
-				<!-- Item #11: Confirm Answer button before locking -->
-				{#if !isAnswerLocked && selectedOptionIndex !== null}
-					<div class="flex justify-end pt-2">
-						<button
-							type="button"
-							onclick={handleConfirmAnswer}
-							class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-500 px-6 py-2.5 text-xs font-bold text-slate-950 shadow-md transition-all hover:bg-emerald-400 active:scale-95"
-						>
-							<span>Confirm Answer</span>
-							<span>✓</span>
-						</button>
-					</div>
-				{/if}
+			{#if activeQuizQuestion}
+				<!-- Question Markdown — wrapped in a key for slide-in on each new question -->
+				{#key questionAnimKey}
+					<div class="anim-slide-left flex flex-col gap-5">
+						<div class="font-display text-base font-bold text-text">
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+							{@html DOMPurify.sanitize(
+								marked.parse(
+									activeQuizQuestion.prompt || activeQuizQuestion.question || ''
+								) as string
+							)}
+						</div>
 
-				<!-- Answer Explanation after locked -->
-				{#if isAnswerLocked && activeQuizQuestion.explanation}
-					<div
-						class="rounded-2xl border border-primary/20 bg-primary-soft/30 p-4 text-xs leading-relaxed text-text"
-					>
-						<span class="font-bold text-primary">Explanation:</span>
-						{activeQuizQuestion.explanation}
-					</div>
-				{/if}
+						<!-- Options List -->
+						<div class="flex flex-col gap-3">
+							{#each activeQuizQuestion.options as option, idx (idx)}
+								{@const isSelected = selectedOptionIndex === idx}
+								{@const correctIdx =
+									activeQuizQuestion.answerIndex ?? activeQuizQuestion.correctIndex ?? 0}
+								{@const isCorrect = idx === correctIdx}
 
-				<!-- Next Question CTA -->
-				{#if isAnswerLocked}
-					<div class="flex justify-end border-t border-border/40 pt-4">
-						<button
-							type="button"
-							onclick={handleQuizNext}
-							class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-hover active:scale-98"
-						>
-							<span
-								>{currentQuestionIndex === quizQuestions.length - 1
-									? 'Finish Quiz'
-									: 'Next Question'}</span
+								<button
+									type="button"
+									onclick={() => handleSelectOption(idx)}
+									disabled={isAnswerLocked}
+									class="flex w-full cursor-pointer items-center justify-between rounded-2xl border p-4 text-left text-xs font-semibold transition-all duration-180 {isAnswerLocked
+										? isCorrect
+											? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
+											: isSelected
+												? 'border-rose-500 bg-rose-500/10 text-rose-300'
+												: 'border-border/40 bg-surface-muted/30 opacity-50'
+										: isSelected
+											? 'border-primary bg-primary-soft text-primary'
+											: 'border-border bg-surface hover:border-primary/50 hover:bg-surface-muted/40'}"
+								>
+									<div class="flex items-center gap-3">
+										<span
+											class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-[10px] font-bold text-text-muted"
+										>
+											{String.fromCharCode(65 + idx)}
+										</span>
+										<span>{option}</span>
+									</div>
+
+									{#if isAnswerLocked}
+										{#if isCorrect}
+											<span class="font-bold text-emerald-400">✓ Correct</span>
+										{:else if isSelected}
+											<span class="font-bold text-rose-400">&times; Incorrect</span>
+										{/if}
+									{/if}
+								</button>
+							{/each}
+						</div>
+
+						<!-- Item #11: Confirm Answer button before locking -->
+						{#if !isAnswerLocked && selectedOptionIndex !== null}
+							<div class="flex justify-end pt-2">
+								<button
+									type="button"
+									onclick={handleConfirmAnswer}
+									class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-500 px-6 py-2.5 text-xs font-bold text-slate-950 shadow-md transition-all hover:bg-emerald-400 active:scale-95"
+								>
+									<span>Confirm Answer</span>
+									<span>✓</span>
+								</button>
+							</div>
+						{/if}
+
+						<!-- Answer Explanation after locked -->
+						{#if isAnswerLocked && activeQuizQuestion.explanation}
+							<div
+								class="rounded-2xl border border-primary/20 bg-primary-soft/30 p-4 text-xs leading-relaxed text-text"
 							>
-							<span>&rarr;</span>
-						</button>
+								<span class="font-bold text-primary">Explanation:</span>
+								{activeQuizQuestion.explanation}
+							</div>
+						{/if}
+
+						<!-- Next Question CTA -->
+						{#if isAnswerLocked}
+							<div class="flex justify-end border-t border-border/40 pt-4">
+								<button
+									type="button"
+									onclick={handleQuizNext}
+									class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-hover active:scale-98"
+								>
+									<span
+										>{currentQuestionIndex === quizQuestions.length - 1
+											? 'Finish Quiz'
+											: 'Next Question'}</span
+									>
+									<span>&rarr;</span>
+								</button>
+							</div>
+						{/if}
 					</div>
-				{/if}
+					<!-- close anim-slide-left wrapper -->
+				{/key}
 			{/if}
 		</div>
 	{/if}

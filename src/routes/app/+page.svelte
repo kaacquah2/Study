@@ -355,17 +355,19 @@
 						In Progress Courses ({inProgressCourses.length})
 					</h3>
 					<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-						{#each inProgressCourses as course (course.id)}
-							<CourseCard
-								id={course.id || ''}
-								title={course.title}
-								description={course.description}
-								status={course.status}
-								accent={course.accent || 'violet'}
-								moduleCount={course.moduleCount}
-								progress={course.progress}
-								onShare={() => handleOpenShare(course.id || '')}
-							/>
+						{#each inProgressCourses as course, idx (course.id)}
+							<div class="anim-slide-up" style="animation-delay: {idx * 70}ms">
+								<CourseCard
+									id={course.id || ''}
+									title={course.title}
+									description={course.description}
+									status={course.status}
+									accent={course.accent || 'violet'}
+									moduleCount={course.moduleCount}
+									progress={course.progress}
+									onShare={() => handleOpenShare(course.id || '')}
+								/>
+							</div>
 						{/each}
 					</div>
 				</div>
@@ -377,17 +379,19 @@
 						🎓 Completed Courses & Certificates ({completedCourses.length})
 					</h3>
 					<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-						{#each completedCourses as course (course.id)}
-							<CourseCard
-								id={course.id || ''}
-								title={course.title}
-								description={course.description}
-								status={course.status}
-								accent={course.accent || 'emerald'}
-								moduleCount={course.moduleCount}
-								progress={course.progress}
-								onShare={() => handleOpenShare(course.id || '')}
-							/>
+						{#each completedCourses as course, idx (course.id)}
+							<div class="anim-slide-up" style="animation-delay: {idx * 70}ms">
+								<CourseCard
+									id={course.id || ''}
+									title={course.title}
+									description={course.description}
+									status={course.status}
+									accent={course.accent || 'emerald'}
+									moduleCount={course.moduleCount}
+									progress={course.progress}
+									onShare={() => handleOpenShare(course.id || '')}
+								/>
+							</div>
 						{/each}
 					</div>
 				</div>

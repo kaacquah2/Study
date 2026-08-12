@@ -109,10 +109,34 @@
 		fetchKnowledgeMap(newId);
 	}
 
+	let searchQuery = $state('');
+
+	let filteredGraph = $derived.by(() => {
+		if (!mapData.graph) return null;
+		if (!searchQuery.trim()) return mapData.graph;
+
+		const q = searchQuery.toLowerCase();
+		const matchingNodes = mapData.graph.nodes.filter(
+			(n) =>
+				n.label.toLowerCase().includes(q) ||
+				(n.moduleTitle && n.moduleTitle.toLowerCase().includes(q))
+		);
+		const matchingIds = new Set(matchingNodes.map((n) => n.id));
+		const matchingEdges = mapData.graph.edges.filter(
+			(e) => matchingIds.has(e.source) && matchingIds.has(e.target)
+		);
+
+		return { nodes: matchingNodes, edges: matchingEdges };
+	});
+
 	function handleNodeAction(node: ConceptNode, actionType: 'lesson' | 'quiz' | 'review') {
 		if (actionType === 'review') {
 			goto(
 				`/app/review?courseId=${encodeURIComponent(selectedCourseId)}&moduleId=${encodeURIComponent(node.moduleId)}`
+			);
+		} else if (node.moduleId) {
+			goto(
+				`/app/courses/${encodeURIComponent(selectedCourseId)}/${encodeURIComponent(node.moduleId)}`
 			);
 		} else {
 			goto(`/app/courses/${encodeURIComponent(selectedCourseId)}`);
@@ -170,15 +194,21 @@
 			</p>
 		</div>
 
-		<!-- Course Selector Dropdown -->
-		<div class="flex items-center gap-3">
+		<!-- Course Selector Dropdown & Search -->
+		<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+			<input
+				type="text"
+				bind:value={searchQuery}
+				placeholder="Search concept..."
+				class="rounded-xl border border-border bg-surface px-3 py-2 text-xs font-medium text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+			/>
 			{#if loadingCourses}
 				<div class="h-10 w-48 animate-pulse rounded-xl bg-surface-muted"></div>
 			{:else if courses.length > 0}
 				<select
 					value={selectedCourseId}
 					onchange={handleCourseSelect}
-					class="w-full cursor-pointer rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text shadow-xs focus:border-primary focus:outline-none sm:w-64"
+					class="w-full cursor-pointer rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text shadow-xs focus:border-primary focus:outline-none sm:w-64"
 				>
 					{#each courses as course (course.id)}
 						<option value={course.id}>📚 {course.title}</option>
@@ -195,7 +225,7 @@
 		</div>
 	{:else}
 		<KnowledgeMap
-			graph={mapData.graph}
+			graph={filteredGraph}
 			mastery={mapData.mastery}
 			recommendation={mapData.recommendation}
 			isStale={mapData.isStale}

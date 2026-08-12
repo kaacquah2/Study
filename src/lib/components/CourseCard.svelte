@@ -83,14 +83,40 @@
 		showDeleteConfirmModal = false;
 		onDelete(course.id);
 	};
+	// Tilt effect on hover
+	let tiltX = $state(0);
+	let tiltY = $state(0);
+	let isHovered = $state(false);
+
+	const handleMouseMove = (e: MouseEvent) => {
+		const card = e.currentTarget as HTMLElement;
+		const rect = card.getBoundingClientRect();
+		const cx = rect.left + rect.width / 2;
+		const cy = rect.top + rect.height / 2;
+		tiltX = ((e.clientY - cy) / (rect.height / 2)) * -5;
+		tiltY = ((e.clientX - cx) / (rect.width / 2)) * 5;
+		isHovered = true;
+	};
+
+	const handleMouseLeave = () => {
+		tiltX = 0;
+		tiltY = 0;
+		isHovered = false;
+	};
 </script>
 
 <svelte:window onclick={handleDocumentClick} />
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="relative flex flex-col justify-between rounded-lg border border-border bg-surface p-6 shadow-md transition-all duration-180 select-none hover:-translate-y-0.5 hover:shadow-lg {borderClasses[
+	class="relative flex flex-col justify-between rounded-lg border border-border bg-surface p-6 shadow-md transition-all duration-200 select-none {borderClasses[
 		course.accent || 'violet'
-	] || 'border-t-4 border-t-primary'}"
+	] || 'border-t-4 border-t-primary'} {isHovered ? 'shadow-xl' : ''}"
+	onmousemove={handleMouseMove}
+	onmouseleave={handleMouseLeave}
+	style="transform: perspective(800px) rotateX({tiltX}deg) rotateY({tiltY}deg) scale({isHovered
+		? 1.015
+		: 1}); will-change: transform;"
 >
 	<!-- Card Header -->
 	<div class="mb-3 flex items-start justify-between gap-4">
@@ -98,10 +124,15 @@
 		<div>
 			{#if course.status === 'building'}
 				<span
-					class="inline-flex animate-pulse items-center gap-1.5 rounded-sm bg-primary-soft px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary uppercase"
+					class="inline-flex items-center gap-1.5 rounded-sm bg-primary-soft px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary uppercase"
 				>
-					<span class="h-1.5 w-1.5 animate-ping rounded-full bg-primary"></span>
-					Building
+					<span class="relative flex h-1.5 w-1.5">
+						<span
+							class="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"
+						></span>
+						<span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary"></span>
+					</span>
+					Building...
 				</span>
 			{:else if course.status === 'ready'}
 				<span

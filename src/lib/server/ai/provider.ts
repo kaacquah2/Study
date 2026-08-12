@@ -14,6 +14,7 @@ import { callML, pingMLBackend } from './client';
 import {
 	generateOutlineViaGemini,
 	generateLessonViaGemini,
+	generateLessonWithBlocksViaGemini,
 	generateQuizViaGemini,
 	chatViaGemini,
 	summarizeViaGemini,
@@ -56,6 +57,8 @@ export interface CourseOutline {
 	}>;
 }
 
+import type { LessonBlock } from '$lib/firebase/converters';
+
 export interface LessonPage {
 	order: number;
 	heading: string;
@@ -65,6 +68,17 @@ export interface LessonPage {
 
 export interface LessonContent {
 	pages: LessonPage[];
+}
+
+export interface LessonPageV2 {
+	order: number;
+	heading: string;
+	subheading: string | null;
+	blocks: LessonBlock[];
+}
+
+export interface LessonContentV2 {
+	pages: LessonPageV2[];
 }
 
 export interface QuizQuestion {
@@ -436,6 +450,83 @@ export async function generateLesson(
 		'reasoning',
 		`${safeCourseTitle} ${safeModuleTitle}`
 	);
+}
+
+export async function generateLessonV2(
+	courseTitle: string,
+	fullOutline: CourseOutline,
+	moduleTitle: string,
+	moduleObjective: string,
+	keyPoints: string[],
+	userId?: string
+): Promise<AIResult<LessonContentV2>> {
+	const safeCourseTitle = (courseTitle || 'Untitled Course').slice(0, 500);
+	const safeModuleTitle = (moduleTitle || 'Overview').slice(0, 500);
+	const safeObjective = (moduleObjective || safeModuleTitle).slice(0, 2000);
+	const safeKeyPoints =
+		keyPoints && keyPoints.filter((k) => k.trim()).length > 0
+			? keyPoints.filter((k) => k.trim())
+			: [safeModuleTitle];
+
+	try {
+		const res = await generateLessonWithBlocksViaGemini(
+			safeCourseTitle,
+			fullOutline,
+			safeModuleTitle,
+			safeObjective,
+			safeKeyPoints
+		);
+
+		const rawPages =
+			(
+				res as {
+					pages?: Array<{
+						order?: number;
+						heading?: string;
+						subheading?: string | null;
+						blocks?: LessonBlock[];
+						body?: string;
+					}>;
+				}
+			)?.pages || [];
+		const pages: LessonPageV2[] = rawPages.map((p, idx: number) => ({
+			order: p.order || idx + 1,
+			heading: p.heading || `Section ${idx + 1}`,
+			subheading: p.subheading || null,
+			blocks: Array.isArray(p.blocks) ? p.blocks : [{ type: 'text', markdown: p.body || '' }]
+		}));
+
+		await recordProviderUsage('gemini');
+		return {
+			result: { pages },
+			provider: 'gemini'
+		};
+	} catch (geminiErr) {
+		console.warn(
+			'[generateLessonV2] Gemini block generation failed, falling back to legacy lesson format:',
+			geminiErr
+		);
+		const legacyRes = await generateLesson(
+			courseTitle,
+			fullOutline,
+			moduleTitle,
+			moduleObjective,
+			keyPoints,
+			userId
+		);
+
+		const pages: LessonPageV2[] = legacyRes.result.pages.map((p) => ({
+			order: p.order,
+			heading: p.heading,
+			subheading: p.subheading,
+			blocks: [{ type: 'text', markdown: p.body || '' }]
+		}));
+
+		return {
+			result: { pages },
+			provider: legacyRes.provider
+		};
+	}
 }
 
 // ── Quiz Generation ───────────────────────────────────────────────────────────

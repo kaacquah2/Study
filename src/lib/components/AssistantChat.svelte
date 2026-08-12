@@ -4,6 +4,8 @@
 	import { page } from '$app/state';
 	import { themeStore } from '$lib/stores/theme.svelte';
 	import { renderSanitizedMarkdown } from '$lib/utils/markdown';
+	import { chatStore } from '$lib/stores/chat.svelte';
+
 	interface Message {
 		role: 'user' | 'assistant';
 		content: string;
@@ -11,7 +13,6 @@
 	}
 
 	// State using Svelte 5 runes
-	let isOpen = $state(false);
 	let messages = $state<Message[]>([
 		{
 			role: 'assistant',
@@ -28,10 +29,24 @@
 	const courseId = $derived(page.params.id);
 	const moduleId = $derived(page.params.moduleId || page.params.mid);
 
+	// Sync with chatStore seed message and drawer state
+	$effect(() => {
+		if (chatStore.seedMessage) {
+			inputMessage = chatStore.seedMessage;
+			chatStore.seedMessage = ''; // Clear seed after setting
+		}
+	});
+
+	$effect(() => {
+		if (chatStore.isOpen) {
+			scrollToBottom();
+		}
+	});
+
 	// Toggle drawer
 	const toggleDrawer = () => {
-		isOpen = !isOpen;
-		if (isOpen) {
+		chatStore.toggle();
+		if (chatStore.isOpen) {
 			scrollToBottom();
 		}
 	};
@@ -164,7 +179,7 @@
 
 {#if authStore.user}
 	<!-- Floating trigger button (Only visible when drawer is closed) -->
-	{#if !isOpen}
+	{#if !chatStore.isOpen}
 		<button
 			type="button"
 			class="fixed right-6 bottom-20 z-40 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-xl transition-all duration-180 hover:scale-105 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 md:right-6 md:bottom-6"
@@ -190,7 +205,7 @@
 	{/if}
 
 	<!-- Chat Drawer overlay -->
-	{#if isOpen}
+	{#if chatStore.isOpen}
 		<!-- Backdrop for mobile screen dimming -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->

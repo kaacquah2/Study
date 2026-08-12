@@ -84,6 +84,35 @@ class LessonPage(BaseModel):
     body: str
 
 
+class LessonBlock(BaseModel):
+    type: str
+    markdown: Optional[str] = None
+    style: Optional[str] = None
+    title: Optional[str] = None
+    mermaid: Optional[str] = None
+    caption: Optional[str] = None
+    term: Optional[str] = None
+    definition: Optional[str] = None
+    prompt: Optional[str] = None
+    options: Optional[list[str]] = None
+    answerIndex: Optional[int] = None
+    explanation: Optional[str] = None
+    front: Optional[str] = None
+    back: Optional[str] = None
+    language: Optional[str] = None
+    code: Optional[str] = None
+    runnable: Optional[bool] = None
+    nodeId: Optional[str] = None
+    label: Optional[str] = None
+
+
+class LessonPageV2(BaseModel):
+    order: int
+    heading: str
+    subheading: Optional[str] = None
+    blocks: list[LessonBlock]
+
+
 class LessonRequest(BaseModel):
     course_title: str = Field(..., min_length=1, max_length=500)
     module_title: str = Field(..., min_length=1, max_length=500)
@@ -94,6 +123,10 @@ class LessonRequest(BaseModel):
 
 class LessonResponse(BaseModel):
     pages: list[LessonPage]
+
+
+class LessonResponseV2(BaseModel):
+    pages: list[LessonPageV2]
 
 
 # ── Quiz ───────────────────────────────────────────────────────────────────────

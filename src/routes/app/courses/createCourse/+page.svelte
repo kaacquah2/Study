@@ -383,21 +383,43 @@
 			// Clear saved wizard draft upon confirmation
 			localStorage.removeItem('wizard_draft_state');
 
-			// Trigger per-module generation in background
-			if (confirmData.moduleIds && Array.isArray(confirmData.moduleIds)) {
-				for (const mId of confirmData.moduleIds) {
-					fetch(`/api/modules/${mId}/generate`, {
-						method: 'POST',
-						headers: {
-							Authorization: `Bearer ${idToken}`,
-							'Content-Type': 'application/json'
+			// Trigger per-module generation in background with priority Module 1 & staggered queue
+			if (
+				confirmData.moduleIds &&
+				Array.isArray(confirmData.moduleIds) &&
+				confirmData.moduleIds.length > 0
+			) {
+				const [firstModuleId, ...restModuleIds] = confirmData.moduleIds;
+
+				// Priority 1: Immediately generate Module 1 so user can study in ~2-4s
+				fetch(`/api/modules/${firstModuleId}/generate`, {
+					method: 'POST',
+					headers: {
+						Authorization: `Bearer ${idToken}`,
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ courseId: draftCourseId })
+				}).catch((err) => console.error(`Error triggering priority module ${firstModuleId}:`, err));
+
+				// Stagger remaining modules (800ms spacing) to avoid Firestore transaction contention & rate limit pressure
+				restModuleIds.forEach((mId: string, index: number) => {
+					setTimeout(
+						() => {
+							fetch(`/api/modules/${mId}/generate`, {
+								method: 'POST',
+								headers: {
+									Authorization: `Bearer ${idToken}`,
+									'Content-Type': 'application/json'
+								},
+								body: JSON.stringify({ courseId: draftCourseId })
+							}).catch((err) => console.error(`Error triggering module ${mId}:`, err));
 						},
-						body: JSON.stringify({ courseId: draftCourseId })
-					}).catch((err) => console.error(`Error triggering module ${mId}:`, err));
-				}
+						(index + 1) * 800
+					);
+				});
 			}
 
-			toastStore.success('Full course generation started!');
+			toastStore.success('Course generation started! Module 1 will be ready in seconds.');
 			goto(`/app/courses/${draftCourseId}`);
 		} catch (err) {
 			console.error('Error confirming course:', err);

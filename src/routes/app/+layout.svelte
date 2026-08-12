@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { goto } from '$app/navigation';
+	import { goto, onNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 	import StreakChip from '$lib/components/StreakChip.svelte';
@@ -9,6 +9,17 @@
 	import AssistantChat from '$lib/components/AssistantChat.svelte';
 	import DesktopSidebar from '$lib/components/DesktopSidebar.svelte';
 	import MobileNav from '$lib/components/MobileNav.svelte';
+
+	// View Transitions API — smooth cross-page animations
+	onNavigate((navigation) => {
+		if (!document.startViewTransition) return;
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
+	});
 
 	interface Props {
 		children: Snippet;

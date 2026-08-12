@@ -41,6 +41,8 @@
 		}
 	};
 
+	let sortBy = $state<'popular' | 'beginner'>('popular');
+
 	let filteredCourses = $derived.by(() => {
 		let list = sharedCourses;
 
@@ -60,10 +62,14 @@
 			);
 		}
 
-		// Pin isOfficial courses first, then sort by importCount / recency
+		// Pin isOfficial courses first, then sort by popularity / level
 		return [...list].sort((a, b) => {
 			if (a.isOfficial && !b.isOfficial) return -1;
 			if (!a.isOfficial && b.isOfficial) return 1;
+			if (sortBy === 'beginner') {
+				if (a.level === 'beginner' && b.level !== 'beginner') return -1;
+				if (a.level !== 'beginner' && b.level === 'beginner') return 1;
+			}
 			const impA = a.importCount || a.claimCount || 0;
 			const impB = b.importCount || b.claimCount || 0;
 			return impB - impA;
@@ -115,28 +121,38 @@
 
 	<!-- Search & Tag Filter Bar -->
 	<div class="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
-		<!-- Search Input -->
-		<div class="relative max-w-md grow">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-text-muted"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+		<!-- Search Input & Sort Dropdown -->
+		<div class="flex max-w-xl grow flex-col gap-2.5 sm:flex-row sm:items-center">
+			<div class="relative grow">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-text-muted"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+					/>
+				</svg>
+				<input
+					type="text"
+					bind:value={searchQuery}
+					placeholder="Search title, description, or author..."
+					class="w-full rounded-2xl border border-border bg-surface py-2.5 pr-4 pl-10 text-xs font-medium text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
 				/>
-			</svg>
-			<input
-				type="text"
-				bind:value={searchQuery}
-				placeholder="Search by title, topic, or creator..."
-				class="w-full rounded-2xl border border-border bg-surface py-2.5 pr-4 pl-10 text-xs text-text shadow-xs focus:border-primary focus:outline-none"
-			/>
+			</div>
+
+			<select
+				bind:value={sortBy}
+				class="cursor-pointer rounded-2xl border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text shadow-xs focus:border-primary focus:outline-none"
+			>
+				<option value="popular">🔥 Most Popular</option>
+				<option value="beginner">🌱 Beginner Friendly</option>
+			</select>
 		</div>
 
 		<!-- Tag Filter Chips -->

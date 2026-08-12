@@ -1,11 +1,10 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb, FieldValue } from '$lib/server/admin';
+import type { DocumentData } from 'firebase-admin/firestore';
 import { verifySessionUser } from '$lib/server/auth';
-import { generateLesson, generateQuiz } from '$lib/server/ai/provider';
-import { checkMemorization } from '$lib/server/ai/memorizationGuard';
+import { generateLessonV2, generateQuiz } from '$lib/server/ai/provider';
 import { recordAttributionMetadata } from '$lib/server/ai/providerStats';
-import DOMPurify from 'isomorphic-dompurify';
 import { z } from 'zod';
 import { MLBackendError } from '$lib/server/ai/client';
 import { getCachedOutline } from '$lib/server/outlineCache';
@@ -42,71 +41,103 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		const moduleRef = courseRef.collection('modules').doc(moduleId);
 		const usageRef = adminDb.collection('usage').doc(user.uid);
 
-		// 3. Enforce Rate Limits & Idempotency Lock in a Transaction
-		const moduleState = await adminDb.runTransaction(async (transaction) => {
-			// (a) Enforce Rate Limit
-			const hourStr = Math.floor(Date.now() / 3600000).toString(); // Hour index
-			const usageDoc = await transaction.get(usageRef);
-			let modulesThisHour = 0;
+		// 3. Enforce Rate Limits & Idempotency Lock in a Transaction (with auto-retry for contention)
+		interface ModuleState {
+			shouldGenerate: boolean;
+			data: DocumentData;
+			courseData: DocumentData;
+		}
 
-			if (usageDoc.exists) {
-				const usageData = usageDoc.data();
-				const usageHour = usageData?.hour || '';
-				if (usageHour === hourStr) {
-					modulesThisHour = usageData?.modulesThisHour || 0;
+		const acquireModuleState = async (): Promise<ModuleState> => {
+			let txAttempts = 0;
+			const maxTxAttempts = 3;
+			while (txAttempts < maxTxAttempts) {
+				try {
+					txAttempts++;
+					return await adminDb.runTransaction(async (transaction) => {
+						// (a) Enforce Rate Limit
+						const hourStr = Math.floor(Date.now() / 3600000).toString(); // Hour index
+						const usageDoc = await transaction.get(usageRef);
+						let modulesThisHour = 0;
+
+						if (usageDoc.exists) {
+							const usageData = usageDoc.data();
+							const usageHour = usageData?.hour || '';
+							if (usageHour === hourStr) {
+								modulesThisHour = usageData?.modulesThisHour || 0;
+							}
+						}
+
+						if (modulesThisHour >= 30) {
+							throw new Error('RATE_LIMIT_EXCEEDED');
+						}
+
+						// (b) Fetch Course context inside transaction to verify ownership before modifying anything
+						const courseDoc = await transaction.get(courseRef);
+						if (!courseDoc.exists) {
+							throw new Error('COURSE_NOT_FOUND');
+						}
+						const courseData = courseDoc.data();
+						if (!courseData || courseData.ownerUid !== user.uid) {
+							throw new Error('FORBIDDEN');
+						}
+
+						// (c) Read module state to ensure idempotency
+						const moduleDoc = await transaction.get(moduleRef);
+						if (!moduleDoc.exists) {
+							throw new Error('MODULE_NOT_FOUND');
+						}
+
+						const moduleData = moduleDoc.data();
+						if (!moduleData) {
+							throw new Error('MODULE_NOT_FOUND');
+						}
+
+						if (moduleData.status === 'generating' || moduleData.status === 'ready') {
+							return { shouldGenerate: false, data: moduleData, courseData };
+						}
+
+						// Lock the module for generation and increment attempts
+						const idempotencyKey = request.headers.get('x-idempotency-key') || null;
+						const attempts = (moduleData.attempts || 0) + 1;
+						transaction.set(
+							moduleRef,
+							{
+								status: 'generating',
+								idempotencyKey: idempotencyKey || moduleData.idempotencyKey || null,
+								attempts: attempts
+							},
+							{ merge: true }
+						);
+
+						// Update hourly limit counters
+						transaction.set(
+							usageRef,
+							{
+								modulesThisHour: modulesThisHour + 1,
+								hour: hourStr
+							},
+							{ merge: true }
+						);
+
+						return { shouldGenerate: true, data: { ...moduleData, attempts }, courseData };
+					});
+				} catch (txErr) {
+					const txMsg = txErr instanceof Error ? txErr.message : String(txErr);
+					if (
+						(txMsg.includes('10 ABORTED') || txMsg.includes('cross-transaction contention')) &&
+						txAttempts < maxTxAttempts
+					) {
+						await new Promise((r) => setTimeout(r, txAttempts * 200));
+						continue;
+					}
+					throw txErr;
 				}
 			}
+			throw new Error('CONCURRENT_REQUEST');
+		};
 
-			if (modulesThisHour >= 30) {
-				throw new Error('RATE_LIMIT_EXCEEDED');
-			}
-
-			// (b) Fetch Course context inside transaction to verify ownership before modifying anything
-			const courseDoc = await transaction.get(courseRef);
-			if (!courseDoc.exists) {
-				throw new Error('COURSE_NOT_FOUND');
-			}
-			const courseData = courseDoc.data();
-			if (courseData?.ownerUid !== user.uid) {
-				throw new Error('FORBIDDEN');
-			}
-
-			// (c) Read module state to ensure idempotency
-			const moduleDoc = await transaction.get(moduleRef);
-			if (!moduleDoc.exists) {
-				throw new Error('MODULE_NOT_FOUND');
-			}
-
-			const moduleData = moduleDoc.data();
-			if (moduleData?.status === 'generating' || moduleData?.status === 'ready') {
-				return { shouldGenerate: false, data: moduleData, courseData };
-			}
-
-			// Lock the module for generation and increment attempts
-			const idempotencyKey = request.headers.get('x-idempotency-key') || null;
-			const attempts = (moduleData?.attempts || 0) + 1;
-			transaction.set(
-				moduleRef,
-				{
-					status: 'generating',
-					idempotencyKey: idempotencyKey || moduleData?.idempotencyKey || null,
-					attempts: attempts
-				},
-				{ merge: true }
-			);
-
-			// Update hourly limit counters
-			transaction.set(
-				usageRef,
-				{
-					modulesThisHour: modulesThisHour + 1,
-					hour: hourStr
-				},
-				{ merge: true }
-			);
-
-			return { shouldGenerate: true, data: { ...moduleData, attempts }, courseData };
-		});
+		const moduleState = await acquireModuleState();
 
 		if (!moduleState.shouldGenerate) {
 			return json({
@@ -140,10 +171,10 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			modules: outlineModules
 		};
 
-		// 4. Generate content using ML backend (Flan-T5)
+		// 4. Generate content using AI provider layer
 		try {
 			if (moduleData.type === 'lesson') {
-				const { result, provider } = await generateLesson(
+				const { result, provider } = await generateLessonV2(
 					courseOutline.title,
 					courseOutline,
 					moduleData.title,
@@ -152,61 +183,30 @@ export const POST: RequestHandler = async ({ params, request }) => {
 					user.uid
 				);
 
-				// Sanitize and validate markdown content on write
-				const pages = result.pages.map((page) => {
-					const body = page.body;
+				const pages = result.pages.map((page) => ({
+					order: page.order,
+					heading: page.heading,
+					subheading: page.subheading,
+					blocks: page.blocks
+				}));
 
-					// Reject prohibited elements
-					if (body.includes('<img') || body.includes('![') || body.includes('<iframe')) {
-						throw new Error(
-							'Security policy violation: Lesson pages cannot contain images or iframe embeds.'
-						);
-					}
-					if (
-						body.includes('http://') ||
-						body.includes('https://') ||
-						/\[.*?\]\(.*?\)/.test(body)
-					) {
-						throw new Error(
-							'Security policy violation: Lesson pages cannot contain external links.'
-						);
-					}
-					if (/(^|\n)#\s/.test(body) || body.includes('<h1>')) {
-						throw new Error(
-							'Security policy violation: Lesson pages cannot contain H1 heading tags.'
-						);
-					}
-
-					// HTML sanitize page body to guarantee XSS safety
-					const cleanBody = DOMPurify.sanitize(body);
-
-					return {
-						order: page.order,
-						heading: page.heading,
-						subheading: page.subheading,
-						body: cleanBody
-					};
-				});
-
-				// Calculate dynamic duration from actual word count (200 wpm average reading speed)
-				const totalWords = pages.reduce(
-					(acc, p) => acc + (p.body ? p.body.split(/\s+/).filter(Boolean).length : 0),
-					0
-				);
+				// Calculate dynamic duration from block text / markdown length
+				const totalWords = pages.reduce((acc, p) => {
+					const blockText = p.blocks
+						.map((b) => ('markdown' in b ? b.markdown : 'text' in b ? b.text : ''))
+						.join(' ');
+					return acc + (blockText ? blockText.split(/\s+/).filter(Boolean).length : 0);
+				}, 0);
 				const estMinutes = Math.max(2, Math.ceil(totalWords / 200));
 
-				// Memorization / verbatim overlap check against reference material
-				const fullLessonText = pages.map((p) => `${p.heading} ${p.body}`).join('\n');
-				const memCheck = checkMemorization(fullLessonText, courseData?.referenceText);
-
-				// Write lesson pages to database
+				// Write lesson pages to database with contentVersion: 2
 				await moduleRef.set(
 					{
 						pages: pages,
+						contentVersion: 2,
 						estimatedMinutes: estMinutes,
 						status: 'ready',
 						model: provider,
-						verbatimSimilarityScore: memCheck.verbatimSimilarityScore,
 						generatedAt: FieldValue.serverTimestamp(),
 						error: null
 					},
@@ -217,8 +217,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 					'modules',
 					moduleId,
 					{
-						servicedByProvider: provider,
-						verbatimSimilarityScore: memCheck.verbatimSimilarityScore
+						servicedByProvider: provider
 					},
 					courseId
 				);

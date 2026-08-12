@@ -108,6 +108,35 @@
 	);
 	let isCourseCompleted = $derived(totalModules > 0 && completedCount >= totalModules);
 
+	let readyCount = $derived(modules.filter((m) => m.status === 'ready').length);
+	let generatingCount = $derived(
+		modules.filter((m) => m.status === 'generating' || m.status === 'pending').length
+	);
+	let failedCount = $derived(modules.filter((m) => m.status === 'failed').length);
+	let activeBuildingModule = $derived(
+		modules.find((m) => m.status === 'generating') || modules.find((m) => m.status === 'pending')
+	);
+	let genProgressPct = $derived(
+		totalModules > 0 ? Math.round((readyCount / totalModules) * 100) : 0
+	);
+
+	let previousReadyCount = $state<number | null>(null);
+	$effect(() => {
+		if (
+			previousReadyCount !== null &&
+			readyCount > previousReadyCount &&
+			readyCount < totalModules
+		) {
+			const justCompleted = modules.find((m) => m.status === 'ready');
+			if (justCompleted) {
+				toastStore.success(
+					`✨ Module ready to study! (${readyCount}/${totalModules} modules ready)`
+				);
+			}
+		}
+		previousReadyCount = readyCount;
+	});
+
 	const handleAddModule = async () => {
 		if (actionLoading || !courseId) return;
 		actionLoading = true;
@@ -371,42 +400,72 @@
 			</div>
 
 			<!-- Status Banner if Building or Failed -->
-			{#if course.status === 'building'}
+			{#if course.status === 'building' || generatingCount > 0}
 				<div
-					class="flex flex-col gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-4 text-xs text-indigo-300"
+					class="flex flex-col gap-3 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-5 text-xs text-indigo-200 shadow-inner"
 				>
-					<div class="flex items-center justify-between">
-						<div class="flex items-center gap-2 font-bold">
-							<span class="h-2.5 w-2.5 animate-ping rounded-full bg-indigo-400"></span>
-							<span>AI Study Buddy is building your course content in the background...</span>
+					<div class="flex flex-wrap items-center justify-between gap-2">
+						<div class="flex items-center gap-2.5 text-sm font-bold text-indigo-100">
+							<span class="relative flex h-3 w-3">
+								<span
+									class="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"
+								></span>
+								<span class="relative inline-flex h-3 w-3 rounded-full bg-indigo-500"></span>
+							</span>
+							<span>Generating AI Course Content ({readyCount}/{totalModules} ready)</span>
 						</div>
-						<span class="text-[10px] font-semibold text-indigo-200/80">
-							🔔 Feel free to leave this tab &mdash; we'll alert you when ready!
+						<span class="text-[11px] font-semibold text-indigo-300/80">
+							🔔 Feel free to leave this tab &mdash; we'll alert you when complete!
 						</span>
 					</div>
 
-					<!-- Immediate Module 1 Start Banner (Item #6) -->
+					<!-- Visual Generation Progress Bar -->
+					<div
+						class="h-2 w-full overflow-hidden rounded-full border border-indigo-500/20 bg-indigo-950/60"
+					>
+						<div
+							class="h-full bg-linear-to-r from-indigo-500 to-sky-400 transition-all duration-500"
+							style="width: {genProgressPct}%"
+						></div>
+					</div>
+
+					{#if activeBuildingModule}
+						<div class="flex items-center gap-2 text-[11px] font-medium text-indigo-300">
+							<span
+								class="h-3 w-3 animate-spin rounded-full border-2 border-indigo-300 border-t-transparent"
+							></span>
+							<span>Building content for <strong>{activeBuildingModule.title}</strong>...</span>
+						</div>
+					{/if}
+
+					<!-- Immediate Module 1 Start Banner -->
 					{#if modules.length > 0 && modules[0].status === 'ready'}
 						<div
-							class="mt-1 flex items-center justify-between rounded-lg border border-indigo-400/30 bg-indigo-900/60 p-2.5 text-white"
+							class="mt-1 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/60 p-3 text-white shadow-sm"
 						>
-							<span class="font-bold"
-								>🚀 Module 1 is ready! Start reading now while remaining modules finish building.</span
-							>
+							<div class="flex items-center gap-2">
+								<span class="text-base">🚀</span>
+								<span class="text-xs font-bold text-emerald-200">
+									Module 1 is ready! Start learning now while remaining modules finish in the
+									background.
+								</span>
+							</div>
 							<a
 								href={`/app/courses/${courseId}/${modules[0].id}`}
-								class="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-primary-hover active:scale-95"
+								class="rounded-lg bg-emerald-500 px-3.5 py-1.5 text-xs font-bold text-slate-950 shadow-xs transition-all hover:bg-emerald-400 active:scale-95"
 							>
 								Start Module 1 &rarr;
 							</a>
 						</div>
 					{/if}
 				</div>
-			{:else if course.status === 'partial' || course.status === 'failed'}
+			{:else if course.status === 'partial' || course.status === 'failed' || failedCount > 0}
 				<div
 					class="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs font-semibold text-amber-300"
 				>
-					<span>Some modules failed generation. Click retry below to regenerate them.</span>
+					<span
+						>Some modules failed generation. Click retry on failed modules below to regenerate them.</span
+					>
 				</div>
 			{/if}
 
