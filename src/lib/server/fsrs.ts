@@ -125,3 +125,54 @@ export function calculateFSRS(input: FSRSInput, currentDate: Date = new Date()):
 		nextReviewDate
 	};
 }
+
+export interface FSRSReviewLog {
+	cardId?: string;
+	courseId: string;
+	moduleId: string;
+	questionIndex: number;
+	quality: number;
+	elapsedDays: number;
+	predictedRetrievability: number;
+	newStability: number;
+	newDifficulty: number;
+	timestamp: string;
+}
+
+export interface FSRSOptimizationResult {
+	sampleCount: number;
+	averageRetention: number;
+	recommendedStabilityFactor: number;
+	isCalibrated: boolean;
+}
+
+/**
+ * Evaluates historical review logs to calculate user-specific memory retention performance
+ * and derive calibrated stability scaling factors.
+ */
+export function optimizeFSRSWeights(logs: FSRSReviewLog[]): FSRSOptimizationResult {
+	if (!logs || logs.length === 0) {
+		return {
+			sampleCount: 0,
+			averageRetention: 0.9,
+			recommendedStabilityFactor: 1.0,
+			isCalibrated: false
+		};
+	}
+
+	const successfulRecalls = logs.filter((log) => log.quality >= 3).length;
+	const averageRetention = Number((successfulRecalls / logs.length).toFixed(3));
+
+	// If observed retention differs from target (90%), scale stability factor accordingly
+	// Target R = 0.9. If average retention is lower (e.g. 0.8), stability is scaled up to increase review frequency.
+	const targetRetention = 0.9;
+	const ratio = Math.max(0.5, Math.min(1.5, averageRetention / targetRetention));
+	const recommendedStabilityFactor = Number(ratio.toFixed(3));
+
+	return {
+		sampleCount: logs.length,
+		averageRetention,
+		recommendedStabilityFactor,
+		isCalibrated: logs.length >= 10
+	};
+}

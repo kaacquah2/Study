@@ -33,7 +33,8 @@
 
 - **Self-Hosted AI Course Generation & Draft Outline Editor:** Instantly generate structured multi-module course outlines from any topic or prompt. Features an interactive draft editor (`DraftOutlineEditor.svelte`) to review, reorder, add, or customize modules before committing course creation.
 - **Asynchronous Serverless Workflows:** Instantly renders skeletal course containers and module placeholders while generating lesson content and interactive multiple-choice quizzes on-demand with built-in retry mechanisms and background generation queueing (`generationQueue.ts`).
-- **Spaced Repetition Knowledge Hub (`/app/review`, `/api/spaced-repetition`):** Features personalized flashcard review scheduling powered by **SuperMemo 2 (SM-2)** (`sm2.ts`) and **Free Spaced Repetition Scheduler (FSRS)** (`fsrs.ts`) algorithms for optimal long-term memory retention.
+- **Spaced Repetition Knowledge Hub (`/app/review`, `/api/spaced-repetition`):** Features personalized flashcard review scheduling powered by **SuperMemo 2 (SM-2)** (`sm2.ts`) and **Free Spaced Repetition Scheduler (FSRS-4.5)** (`fsrs.ts`) algorithms for optimal long-term memory retention. Includes course, topic, and quiz selector filters for targeted practice sessions.
+- **Interactive Knowledge Map (`/app/knowledge-map`, `KnowledgeMap.svelte`):** Visual interactive concept graph powered by ELK.js (`elkjs`) layout engine. Visualizes course hierarchy, module mastery levels (`masteryCalculator.ts`), prerequisite dependencies, and weak topic alerts, offering automated next-step learning recommendations (`recommendNext.ts`).
 - **Weak Topic Detection (`weakTopicDetector.ts`):** Automatically analyzes quiz attempt histories to pinpoint student knowledge gaps and prioritize weak concepts for review.
 - **Custom Document RAG Ingestion (`/app/knowledge`, `/api/documents`):** Upload custom PDF/text reference documents into a vector store to ground AI course outline generation, lesson content, and assistant queries in user-provided study materials.
 - **Gamified Daily Streaks & Milestones:** Keeps students motivated with an interactive streak counter computed authoritatively on the server based on client IANA timezone headers (`X-Client-Timezone`). Includes daily goal activity rings (`DailyGoalRing.svelte`), calendar heatmaps (`StreakHeatmap.svelte`), and target badge progression (`BadgeStrip.svelte`).
@@ -62,6 +63,7 @@
   - Dynamic style switching between curated color palettes (**Calm**, **Sage**, **Focus Dark**).
   - Client-side XSS sanitization via `isomorphic-dompurify`.
   - Upstash / Redis REST integration (`redis.ts`) for distributed serverless rate limiting and outline caching with smooth fallback to in-memory sliding-window rate limiting (`rateLimiter.ts`) and outline caching (`outlineCache.ts`).
+- **Certified Laptop Responsiveness:** Fully responsive interface validated across 7 laptop viewport scales (1093x614, 1228x691, 1280x720, 1366x768, 1440x900, 1536x864, and 1920x1080) with zero horizontal scroll overflow.
 
 ---
 
@@ -71,6 +73,7 @@
 
 - **Framework:** SvelteKit (`v2.63+`) with Svelte 5 Runes (`$state`, `$derived`, `$props`)
 - **Build Tool:** Vite (`v8.0+`)
+- **Graph Layout Engine:** ELK.js (`elkjs` `v0.12+`) for Knowledge Map graph visualization layout
 - **Styling & UI:** Tailwind CSS (`v4.3+`) via `@tailwindcss/vite`, Lucide Svelte icons (`@lucide/svelte`), and Google Fonts (`@fontsource/inter`, `@fontsource/jetbrains-mono`, `@fontsource/poppins`)
 - **Database & Auth:** Cloud Firestore & Firebase Auth (`v12.16+`) with server-side session token verification via Firebase Admin SDK (`v14.1+`)
 - **Serverless API Layer:** SvelteKit API endpoints (`src/routes/api/`) deployed on Netlify Functions with distributed Upstash Redis / in-memory rate limiting and outline caching
@@ -80,7 +83,7 @@
 - **Google Gemini API:** Primary generative AI provider (`gemini-flash-latest`)
 - **Ollama Local LLM:** Local model provider (`llama3.2`) for offline/tier-2 inference
 - **Python FastAPI Microservice (`ml_backend`):** PyTorch, Hugging Face Transformers, Sentence-Transformers, and FAISS for vector embedding & RAG retrieval
-- **Spaced Repetition Engines:** Custom TypeScript implementations of SuperMemo 2 (`sm2.ts`) and FSRS (`fsrs.ts`)
+- **Spaced Repetition Engines:** Custom TypeScript implementations of SuperMemo 2 (`sm2.ts`) and Free Spaced Repetition Scheduler FSRS-4.5 (`fsrs.ts`)
 - **Content Moderation & Guardrails:** Domain classifier (`domainClassifier.ts`), memorization guard (`memorizationGuard.ts`), weak topic detector (`weakTopicDetector.ts`), pricing tracker (`pricingConfig.ts`), and moderation pipeline (`moderation.ts`)
 
 ### Distributed Caching & External APIs
@@ -91,7 +94,8 @@
 ### Testing & Quality Assurance
 
 - **Unit & API Testing:** Vitest (`v4.1+`) with `@firebase/rules-unit-testing`
-- **End-to-End Testing:** Playwright (`v1.60+`) for full user journey verification
+- **Python Backend Testing:** Pytest (`v9.1+`) for Python ML backend & FastAPI endpoints
+- **End-to-End Testing:** Playwright (`v1.60+`) for full user journey verification & laptop responsiveness testing
 - **Code Standards:** ESLint (`v10.4+`), Prettier (`v3.8+`), and `svelte-check` (`v4.6+`)
 
 ---
@@ -146,6 +150,7 @@ Study/
 │   │   │   ├── EmptyState.svelte       # Empty state placeholder component
 │   │   │   ├── Header.svelte           # Top navigation bar with profile menu
 │   │   │   ├── HeroPanel.svelte        # Dashboard hero greeting banner
+│   │   │   ├── KnowledgeMap.svelte     # Interactive ELK.js concept map visualizer
 │   │   │   ├── LessonAudioPlayer.svelte # Text-to-speech audio player component
 │   │   │   ├── MermaidDiagram.svelte   # Interactive Mermaid flowchart renderer
 │   │   │   ├── MobileNav.svelte        # Mobile responsive navigation bar
@@ -196,6 +201,12 @@ Study/
 │   │   │   │   ├── providerStats.ts # Provider metrics & health tracker
 │   │   │   │   ├── weakTopicDetector.test.ts # Weak topic detector unit tests
 │   │   │   │   └── weakTopicDetector.ts # Quiz analytics weak topic identification
+│   │   │   ├── knowledgeMap/   # Concept graph & recommendations engine
+│   │   │   │   ├── elkSpike.test.ts # ELK.js layout integration test suite
+│   │   │   │   ├── masteryCalculator.ts # Module & course mastery calculation
+│   │   │   │   ├── masteryCalculator.test.ts # Mastery calculation unit tests
+│   │   │   │   ├── recommendNext.ts # Learning recommendation engine
+│   │   │   │   └── recommendNext.test.ts # Recommendation engine unit tests
 │   │   │   ├── superadmin/     # Superadmin management backend service
 │   │   │   │   ├── user.test.ts # Superadmin user management unit tests
 │   │   │   │   └── user.ts     # User management & platform admin utilities
@@ -213,6 +224,7 @@ Study/
 │       │   ├── documents/      # RAG custom document upload & indexing API
 │       │   ├── flag/           # Content moderation flagging API
 │       │   ├── health/         # System health check API
+│       │   ├── knowledge-map/  # Knowledge map concept graph endpoint
 │       │   ├── microservices.test.ts # API microservices test suite
 │       │   ├── modules/        # On-demand module content & quiz generation API
 │       │   ├── paraphrase/     # Text paraphrasing microservice API
@@ -230,7 +242,8 @@ Study/
 │       │   ├── courses/        # Course player, draft editor, lesson view, & module quizzes
 │       │   ├── explore/        # Public course discovery catalog & clone trigger
 │       │   ├── knowledge/      # Custom document RAG knowledge base
-│       │   ├── review/         # Spaced repetition flashcard review queue
+│       │   ├── knowledge-map/  # Interactive visual concept graph & recommendations
+│       │   ├── review/         # Spaced repetition flashcard review queue & drill selector
 │       │   ├── settings/       # User account settings & theme options
 │       │   └── verify-email/   # Email verification alert & resend screen
 │       ├── courses/            # Public course viewing & quiz routes ([id])
@@ -238,6 +251,7 @@ Study/
 │       ├── shared/             # Shared course preview & clone handler ([shareId])
 │       └── superadmin/         # Platform superadmin control portal
 ├── tests/                      # End-to-End Playwright test suite
+│   ├── responsiveLayout.e2e.ts # Viewport responsiveness suite across 7 laptop resolutions
 │   └── userJourney.e2e.ts      # Comprehensive E2E user flow test script
 ├── firebase.json               # Firebase CLI & emulator configuration
 ├── firestore.rules             # Declarative Cloud Firestore security rules
@@ -246,8 +260,11 @@ Study/
 ├── playwright.config.ts        # Playwright E2E configuration
 ├── svelte.config.js            # SvelteKit setup & preprocessor config
 ├── tsconfig.json               # TypeScript compiler configuration
-└── vite.config.ts              # Vite bundler, Tailwind CSS v4 & Vitest setup
 ```
+
+└── vite.config.ts # Vite bundler, Tailwind CSS v4 & Vitest setup
+
+````
 
 ---
 
@@ -272,7 +289,7 @@ graph TD
     AIOrchestrator -->|"Fallback / RAG Provider"| MLBackend["Python FastAPI ML Backend (PyTorch + FAISS)"]
 
     ServerAPI -->|"Video Enrichment"| YouTubeAPI["YouTube Data API v3 (90-day Firestore Cache)"]
-```
+````
 
 ---
 
@@ -293,11 +310,19 @@ Follow these instructions to run the full application locally.
 # Install SvelteKit frontend dependencies
 npm install
 
+# Create and activate Python virtual environment in the root directory
+python -m venv .venv
+# On Windows:
+.venv\Scripts\activate
+# On Mac/Linux:
+source .venv/bin/activate
+
 # Install Python ML backend dependencies
-cd ml_backend
-pip install -r requirements.txt
-cd ..
+pip install -r ml_backend/requirements.txt
 ```
+
+> [!NOTE]
+> **Environment Note:** The root-level `.venv` is a shared environment used strictly for _local development_ to avoid duplicate, heavy installs of PyTorch and Transformers (particularly helpful for machines with limited disk space). For containerized or production environments (e.g. `Dockerfile` and `docker-compose.yml`), services remain isolated and run their own local package installations independently.
 
 ### 2. Configure Environment Variables
 
@@ -344,11 +369,18 @@ YOUTUBE_API_KEY=
 
 ### 3. Start Python ML Backend
 
-In a dedicated terminal, launch the Uvicorn FastAPI server:
+In a dedicated terminal, activate the root virtual environment and launch the Uvicorn FastAPI server from the `ml_backend` directory:
 
 ```bash
+# On Windows:
+.venv\Scripts\activate
 cd ml_backend
-uvicorn main:app --reload --port 8000
+python -m uvicorn main:app --reload --port 8000
+
+# On Mac/Linux:
+source .venv/bin/activate
+cd ml_backend
+python -m uvicorn main:app --reload --port 8000
 ```
 
 ### 4. Start Firebase Emulators (Optional for local Auth/Firestore testing)
@@ -389,26 +421,30 @@ Detailed REST API specifications for all routes (`/api/courses`, `/api/modules`,
 
 ## 🧪 Testing & Code Quality Commands
 
-The repository includes comprehensive automated test suites and validation utilities:
+The repository features 100% test passing verification across type checks, linting, unit tests, Python backend tests, and End-to-End browser suites:
 
-- **Type Checking:**
+- **Type Checking (0 errors, 0 warnings):**
   ```bash
   npm run check
   ```
 - **Code Linting & Formatting:**
   ```bash
-  npm run lint     # Check formatting & run ESLint
+  npm run lint     # Check formatting with Prettier & run ESLint
   npm run format   # Auto-format codebase with Prettier
   ```
-- **Unit & Integration Tests (Vitest):**
+- **Frontend & Server Unit Tests (Vitest - 26 test files / 114 tests passed):**
   ```bash
-  npm run test:unit
+  npm run test:unit -- --run
   ```
-- **End-to-End Tests (Playwright):**
+- **Python ML Backend Test Suite (Pytest - 20 tests passed):**
+  ```bash
+  .venv\Scripts\pytest.exe ml_backend/
+  ```
+- **End-to-End & Responsiveness Tests (Playwright - 49 tests passed):**
   ```bash
   npm run test:e2e
   ```
-- **Run Full Automated Verification Suite:**
+- **Run Full Automated Frontend Verification Suite:**
   ```bash
   npm run test
   ```

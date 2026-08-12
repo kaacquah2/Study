@@ -7,27 +7,54 @@
 	);
 	let lastStudiedOn = $derived(authStore.profile?.streak?.lastStudiedOn || null);
 
-	// Generate grid for past 28 days (4 weeks x 7 days) ending today
+	/**
+	 * Convert any date value to a local YYYY-MM-DD string.
+	 * Using local date parts avoids the UTC-midnight parse bug where
+	 * `new Date("2026-08-05")` is treated as UTC 00:00, which in timezones
+	 * behind UTC maps to the *previous* local day.
+	 */
+	function toLocalDateStr(val: string | Date | { toDate?: () => Date } | null): string | null {
+		if (!val) return null;
+		const d =
+			val &&
+			typeof val === 'object' &&
+			typeof (val as { toDate?: () => Date }).toDate === 'function'
+				? (val as { toDate: () => Date }).toDate()
+				: new Date(val as string | Date);
+		if (isNaN(d.getTime())) return null;
+		const y = d.getFullYear();
+		const m = String(d.getMonth() + 1).padStart(2, '0');
+		const day = String(d.getDate()).padStart(2, '0');
+		return `${y}-${m}-${day}`;
+	}
+
+	/** Noon-anchored ms for a local YYYY-MM-DD string — immune to DST shifts. */
+	function noonMs(dateStr: string): number {
+		const [y, m, d] = dateStr.split('-').map(Number);
+		return new Date(y, m - 1, d, 12, 0, 0).getTime();
+	}
+
+	// Generate grid for past 28 days (4 weeks × 7 days) ending today
 	let gridDays = $derived.by(() => {
 		const days: { dateStr: string; label: string; active: boolean; isToday: boolean }[] = [];
 		const now = new Date();
 
+		// Build last-studied string from local date parts of the stored value
+		const lastDateStr = toLocalDateStr(lastStudiedOn);
+
 		for (let i = 27; i >= 0; i--) {
-			const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+			// Derive each day's local date from now, going back i days
+			const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 12, 0, 0);
 			const year = d.getFullYear();
 			const month = String(d.getMonth() + 1).padStart(2, '0');
 			const day = String(d.getDate()).padStart(2, '0');
 			const dateStr = `${year}-${month}-${day}`;
 			const isToday = i === 0;
 
-			// Determine if this date was active:
+			// Compare using noon-anchored ms so timezone offsets can't cross a day boundary
 			let active = false;
-			if (lastStudiedOn) {
-				const lastDateObj = new Date(lastStudiedOn);
-				const currentDateObj = new Date(dateStr);
-				const diffDays = Math.round(
-					(lastDateObj.getTime() - currentDateObj.getTime()) / (24 * 60 * 60 * 1000)
-				);
+			if (lastDateStr) {
+				const diffDays = Math.round((noonMs(lastDateStr) - noonMs(dateStr)) / 86400000);
 				if (diffDays >= 0 && diffDays < currentStreak) {
 					active = true;
 				}
@@ -93,12 +120,19 @@
 	<div class="flex flex-col gap-1.5 pt-0.5">
 		<div class="grid grid-cols-7 gap-1">
 			{#each gridDays as day (day.dateStr)}
+				<!--
+					Use `overflow-visible` so the tooltip can escape the cell bounds
+					without triggering layout reflow. The tooltip uses opacity/visibility
+					transition instead of display:none→block to prevent the hover-flicker
+					loop (display toggle causes reflow → cursor leaves cell → hover lost →
+					tooltip hides → cursor back on cell → hover gained → repeat).
+				-->
 				<div
-					class="group relative flex h-5.5 w-full cursor-help items-center justify-center rounded-md border transition-all duration-180 select-none {day.active
+					class="group relative flex h-5.5 w-full cursor-help items-center justify-center overflow-visible rounded-md border transition-all duration-150 select-none {day.active
 						? 'border-amber-500/50 bg-amber-500 font-bold text-slate-950 shadow-xs shadow-amber-500/30'
 						: day.isToday
 							? 'border-dashed border-primary bg-primary-soft/30 text-primary'
-							: 'border-border/40 bg-surface-muted/60 text-text-muted/40 hover:border-border hover:bg-surface-muted'}"
+							: 'border-heatmap-empty-border bg-heatmap-empty-bg text-text-muted hover:border-border hover:brightness-95'}"
 					aria-label={`${day.label}: ${day.active ? 'Studied' : 'No activity'}`}
 				>
 					{#if day.active}
@@ -107,9 +141,11 @@
 						<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-primary"></span>
 					{/if}
 
-					<!-- Tooltip -->
+					<!-- Tooltip — opacity/visibility transition; never triggers layout reflow -->
 					<div
-						class="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 hidden -translate-x-1/2 rounded-xl border border-slate-700/60 bg-slate-900 px-2.5 py-1 text-[10px] font-semibold whitespace-nowrap text-white shadow-xl group-hover:block"
+						class="pointer-events-none invisible absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 rounded-xl border border-slate-700/60 bg-slate-900 px-2.5 py-1 text-[10px] font-semibold whitespace-nowrap text-white
+						       opacity-0 shadow-xl transition-opacity duration-150 ease-out
+						       group-hover:visible group-hover:opacity-100"
 					>
 						{day.label}: {day.active ? '1+ module studied 🔥' : 'No activity recorded'}
 					</div>
@@ -122,7 +158,8 @@
 			<span>{totalActiveDays} active day{totalActiveDays === 1 ? '' : 's'}</span>
 			<div class="flex items-center gap-1 text-[9px]">
 				<span>Less</span>
-				<span class="h-2 w-2 rounded-xs border border-border/40 bg-surface-muted/60"></span>
+				<span class="h-2 w-2 rounded-xs border border-heatmap-empty-border bg-heatmap-empty-bg"
+				></span>
 				<span class="h-2 w-2 rounded-xs border border-amber-500/50 bg-amber-500"></span>
 				<span>More</span>
 			</div>

@@ -624,7 +624,7 @@
 				<span class="text-xs font-bold tracking-wider text-text-muted uppercase"
 					>Target Skill Level</span
 				>
-				<div class="grid grid-cols-3 gap-3">
+				<div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
 					{#each ['beginner', 'intermediate', 'advanced'] as lvl (lvl)}
 						<button
 							type="button"
@@ -643,7 +643,7 @@
 			<!-- Primary Goal with Smart Defaults (Item #3) -->
 			<div class="flex flex-col gap-2">
 				<span class="text-xs font-bold tracking-wider text-text-muted uppercase">Primary Goal</span>
-				<div class="grid grid-cols-3 gap-3">
+				<div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
 					{#each [{ label: 'Exam Prep', val: 'exam prep' }, { label: 'Job Skill', val: 'job skill' }, { label: 'Curiosity', val: 'curiosity' }] as g (g.val)}
 						<button
 							type="button"

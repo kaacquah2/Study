@@ -5,6 +5,15 @@
 	import { onMount } from 'svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 
+	interface DeckInfo {
+		courseId: string;
+		courseTitle: string;
+		moduleId: string;
+		moduleTitle: string;
+		dueCount: number;
+		totalCount: number;
+	}
+
 	interface DueQuestion {
 		courseId: string;
 		courseTitle: string;
@@ -17,9 +26,13 @@
 		explanation?: string;
 		nextReviewDate?: string;
 		intervalDays?: number;
+		isDue: boolean;
 	}
 
 	let dueQuestions = $state<DueQuestion[]>([]);
+	let availableDecks = $state<DeckInfo[]>([]);
+	let totalDueCount = $state(0);
+	let totalCardsCount = $state(0);
 	let loading = $state(true);
 	let errorMsg = $state('');
 	let currentIndex = $state(0);
@@ -27,7 +40,40 @@
 	let isAnswered = $state(false);
 	let reviewCount = $state(0);
 
+	// Filters & Mode
+	let selectedCourseId = $state<string>('');
+	let selectedModuleId = $state<string>('');
+	let reviewMode = $state<'due' | 'all'>('due');
+
 	let currentQ = $derived(dueQuestions[currentIndex] || null);
+
+	// Group unique courses from availableDecks
+	let coursesList = $derived.by(() => {
+		const coursesMap: Record<
+			string,
+			{ id: string; title: string; dueCount: number; totalCount: number }
+		> = {};
+		for (const deck of availableDecks) {
+			if (coursesMap[deck.courseId]) {
+				coursesMap[deck.courseId].dueCount += deck.dueCount;
+				coursesMap[deck.courseId].totalCount += deck.totalCount;
+			} else {
+				coursesMap[deck.courseId] = {
+					id: deck.courseId,
+					title: deck.courseTitle,
+					dueCount: deck.dueCount,
+					totalCount: deck.totalCount
+				};
+			}
+		}
+		return Object.values(coursesMap);
+	});
+
+	// Filter modules list based on selected course
+	let filteredModulesList = $derived.by(() => {
+		if (!selectedCourseId) return availableDecks;
+		return availableDecks.filter((d) => d.courseId === selectedCourseId);
+	});
 
 	async function getToken(): Promise<string> {
 		const token = await auth.currentUser?.getIdToken();
@@ -40,12 +86,22 @@
 		errorMsg = '';
 		try {
 			const token = await getToken();
-			const res = await fetch('/api/spaced-repetition/due', {
+			const queryParts: string[] = [];
+			if (selectedCourseId) queryParts.push(`courseId=${encodeURIComponent(selectedCourseId)}`);
+			if (selectedModuleId) queryParts.push(`moduleId=${encodeURIComponent(selectedModuleId)}`);
+			if (reviewMode) queryParts.push(`mode=${encodeURIComponent(reviewMode)}`);
+
+			const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+
+			const res = await fetch(`/api/spaced-repetition/due${queryString}`, {
 				headers: { Authorization: `Bearer ${token}` }
 			});
-			if (!res.ok) throw new Error('Failed to load due review questions');
+			if (!res.ok) throw new Error('Failed to load review questions');
 			const data = await res.json();
 			dueQuestions = data.dueQuestions || [];
+			availableDecks = data.availableDecks || [];
+			totalDueCount = data.totalDueCount ?? data.count ?? 0;
+			totalCardsCount = data.totalCardsCount ?? 0;
 		} catch (e) {
 			errorMsg = e instanceof Error ? e.message : 'Error loading reviews';
 		} finally {
@@ -54,8 +110,65 @@
 	}
 
 	onMount(() => {
+		const urlParams = new URLSearchParams(window.location.search);
+		selectedCourseId = urlParams.get('courseId') || '';
+		selectedModuleId = urlParams.get('moduleId') || '';
+		reviewMode = (urlParams.get('mode') as 'due' | 'all') || 'due';
+
 		fetchDueReviews();
+
+		window.addEventListener('keydown', handleKeyDown);
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown);
+		};
 	});
+
+	function handleKeyDown(event: KeyboardEvent) {
+		// Shortcuts work when question is answered
+		if (!isAnswered || !currentQ) return;
+		if (event.key === '1') submitRating(1);
+		else if (event.key === '2') submitRating(2);
+		else if (event.key === '3') submitRating(3);
+		else if (event.key === '4') submitRating(5);
+	}
+
+	async function applyFilterChange(
+		newCourseId: string,
+		newModuleId: string,
+		newMode: 'due' | 'all'
+	) {
+		selectedCourseId = newCourseId;
+		selectedModuleId = newModuleId;
+		reviewMode = newMode;
+		currentIndex = 0;
+		selectedOption = null;
+		isAnswered = false;
+
+		const queryParts: string[] = [];
+		if (selectedCourseId) queryParts.push(`courseId=${encodeURIComponent(selectedCourseId)}`);
+		if (selectedModuleId) queryParts.push(`moduleId=${encodeURIComponent(selectedModuleId)}`);
+		if (reviewMode !== 'due') queryParts.push(`mode=${encodeURIComponent(reviewMode)}`);
+
+		const queryStr = queryParts.join('&');
+		const newUrl = queryStr ? `${window.location.pathname}?${queryStr}` : window.location.pathname;
+		window.history.replaceState({}, '', newUrl);
+
+		await fetchDueReviews();
+	}
+
+	function handleCourseChange(e: Event) {
+		const val = (e.target as HTMLSelectElement).value;
+		applyFilterChange(val, '', reviewMode);
+	}
+
+	function handleModuleChange(e: Event) {
+		const val = (e.target as HTMLSelectElement).value;
+		applyFilterChange(selectedCourseId, val, reviewMode);
+	}
+
+	function handleModeToggle(mode: 'due' | 'all') {
+		applyFilterChange(selectedCourseId, selectedModuleId, mode);
+	}
 
 	function handleSelectOption(index: number) {
 		if (isAnswered) return;
@@ -129,7 +242,9 @@
 
 <div class="mx-auto flex w-full max-w-3xl flex-col gap-6 py-4">
 	<!-- Header -->
-	<div class="flex items-center justify-between border-b border-border pb-4">
+	<div
+		class="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between"
+	>
 		<div>
 			<a
 				href={resolve('/app')}
@@ -141,7 +256,8 @@
 				🧠 Spaced Repetition Drill (FSRS-4.5)
 			</h1>
 			<p class="text-xs text-text-muted">
-				Strengthen long-term memory recall by reviewing cards scheduled for today.
+				Strengthen long-term memory recall by reviewing cards scheduled for today or practicing any
+				quiz deck.
 			</p>
 		</div>
 
@@ -157,9 +273,95 @@
 
 			{#if dueQuestions.length > 0}
 				<span class="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-400">
-					{currentIndex + 1} of {dueQuestions.length} due
+					{currentIndex + 1} of {dueQuestions.length}
+					{reviewMode === 'due' ? 'due' : 'cards'}
 				</span>
 			{/if}
+		</div>
+	</div>
+
+	<!-- Quiz & Deck Selector Toolbar -->
+	<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
+		<div class="flex items-center justify-between">
+			<span class="text-xs font-bold tracking-wider text-text-muted uppercase"
+				>🎯 Quiz & Deck Selector</span
+			>
+			{#if totalDueCount > 0}
+				<span
+					class="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400"
+				>
+					{totalDueCount} Total Due Card{totalDueCount > 1 ? 's' : ''}
+				</span>
+			{/if}
+		</div>
+
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+			<!-- Course Filter Dropdown -->
+			<div class="flex flex-col gap-1">
+				<label for="course-select" class="text-[11px] font-bold text-text-muted"
+					>Course Filter:</label
+				>
+				<select
+					id="course-select"
+					value={selectedCourseId}
+					onchange={handleCourseChange}
+					class="w-full cursor-pointer rounded-xl border border-border bg-surface-muted px-3 py-2 text-xs font-semibold text-text shadow-xs transition-colors focus:border-primary focus:outline-none"
+				>
+					<option value="">🌐 All Courses ({totalDueCount} due / {totalCardsCount} total)</option>
+					{#each coursesList as course (course.id)}
+						<option value={course.id}>
+							📚 {course.title} ({course.dueCount} due / {course.totalCount} total)
+						</option>
+					{/each}
+				</select>
+			</div>
+
+			<!-- Quiz Filter Dropdown -->
+			<div class="flex flex-col gap-1">
+				<label for="module-select" class="text-[11px] font-bold text-text-muted"
+					>Quiz / Module Filter:</label
+				>
+				<select
+					id="module-select"
+					value={selectedModuleId}
+					onchange={handleModuleChange}
+					class="w-full cursor-pointer rounded-xl border border-border bg-surface-muted px-3 py-2 text-xs font-semibold text-text shadow-xs transition-colors focus:border-primary focus:outline-none"
+				>
+					<option value="">📝 All Quizzes {selectedCourseId ? 'in Course' : ''}</option>
+					{#each filteredModulesList as deck (deck.moduleId)}
+						<option value={deck.moduleId}>
+							⚡ {deck.moduleTitle} ({deck.dueCount} due / {deck.totalCount} total)
+						</option>
+					{/each}
+				</select>
+			</div>
+		</div>
+
+		<!-- Review Mode Switcher -->
+		<div class="flex items-center justify-between border-t border-border/50 pt-3">
+			<span class="text-xs font-bold text-text-muted">Review Mode:</span>
+			<div class="inline-flex rounded-xl bg-surface-muted p-1">
+				<button
+					type="button"
+					onclick={() => handleModeToggle('due')}
+					class="cursor-pointer rounded-lg px-3 py-1 text-xs font-bold transition-all {reviewMode ===
+					'due'
+						? 'bg-primary text-white shadow-xs'
+						: 'text-text-muted hover:text-text'}"
+				>
+					⏰ Due Today Only
+				</button>
+				<button
+					type="button"
+					onclick={() => handleModeToggle('all')}
+					class="cursor-pointer rounded-lg px-3 py-1 text-xs font-bold transition-all {reviewMode ===
+					'all'
+						? 'bg-primary text-white shadow-xs'
+						: 'text-text-muted hover:text-text'}"
+				>
+					🎯 All Quiz Cards (Practice)
+				</button>
+			</div>
 		</div>
 	</div>
 
@@ -184,40 +386,93 @@
 				🎉
 			</div>
 			<div>
-				<h2 class="font-display text-xl font-bold text-text">All Due Reviews Completed!</h2>
+				<h2 class="font-display text-xl font-bold text-text">
+					{reviewMode === 'due' ? 'No Due Cards Scheduled for Selected Quiz!' : 'No Cards Found'}
+				</h2>
 				<p class="mt-1 max-w-md text-xs text-text-muted">
-					Great job maintaining your memory retention! You have finished all spaced repetition cards
-					due for today.
+					{#if reviewMode === 'due'}
+						Great job! All spaced repetition cards in this deck scheduled for today are complete.
+						Switch to
+						<strong>Practice Mode</strong> to review all quiz cards on demand.
+					{:else}
+						No flashcard quiz questions available for the selected filter. Try selecting another
+						course or quiz.
+					{/if}
 				</p>
 			</div>
+
+			<div class="mt-2 flex flex-wrap items-center justify-center gap-3">
+				{#if reviewMode === 'due'}
+					<button
+						type="button"
+						onclick={() => handleModeToggle('all')}
+						class="inline-flex cursor-pointer items-center justify-center rounded-2xl bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary-hover active:scale-95"
+					>
+						🎯 Switch to Practice All Cards
+					</button>
+				{/if}
+				{#if selectedCourseId || selectedModuleId}
+					<button
+						type="button"
+						onclick={() => applyFilterChange('', '', 'due')}
+						class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-border bg-surface-muted px-5 py-2.5 text-xs font-bold text-text shadow-xs hover:border-primary active:scale-95"
+					>
+						🌐 View All Courses & Quizzes
+					</button>
+				{/if}
+				<a
+					href={resolve('/app')}
+					class="inline-flex items-center justify-center rounded-2xl border border-border bg-surface px-5 py-2.5 text-xs font-bold text-text-muted hover:text-text active:scale-95"
+				>
+					Return to Dashboard &rarr;
+				</a>
+			</div>
+
 			{#if reviewCount > 0}
 				<div
-					class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-400"
+					class="mt-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-400"
 				>
 					✓ Completed {reviewCount} card review{reviewCount > 1 ? 's' : ''} in this session
 				</div>
 			{/if}
-			<a
-				href={resolve('/app')}
-				class="mt-2 inline-flex items-center justify-center rounded-2xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-md hover:bg-primary-hover active:scale-95"
-			>
-				Return to Dashboard &rarr;
-			</a>
 		</div>
 	{:else if currentQ}
+		<!-- Progress Bar -->
+		<div class="h-2 w-full overflow-hidden rounded-full bg-surface-muted">
+			<div
+				class="h-full bg-primary transition-all duration-300"
+				style="width: {((currentIndex + 1) / dueQuestions.length) * 100}%"
+			></div>
+		</div>
+
 		<div
 			class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8"
 		>
-			<!-- Context Tag -->
-			<div class="flex items-center justify-between">
+			<!-- Context Tag & Status -->
+			<div class="flex flex-wrap items-center justify-between gap-2">
 				<span
 					class="rounded-lg border border-primary/30 bg-primary-soft/60 px-3 py-1 text-[11px] font-bold text-primary"
 				>
 					📚 {currentQ.courseTitle} &bull; {currentQ.moduleTitle}
 				</span>
-				<span class="text-[11px] font-bold text-text-muted">
-					Card {currentIndex + 1}/{dueQuestions.length}
-				</span>
+				<div class="flex items-center gap-2">
+					{#if !currentQ.isDue}
+						<span
+							class="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-[10px] font-bold text-blue-400"
+						>
+							🎯 Practice Card
+						</span>
+					{:else}
+						<span
+							class="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-400"
+						>
+							⏰ Scheduled Due
+						</span>
+					{/if}
+					<span class="text-[11px] font-bold text-text-muted">
+						Card {currentIndex + 1}/{dueQuestions.length}
+					</span>
+				</div>
 			</div>
 
 			<!-- Question Prompt -->
@@ -268,37 +523,40 @@
 
 					<!-- FSRS Rating Buttons -->
 					<div class="flex flex-col gap-2">
-						<span class="text-center text-xs font-bold text-text-muted uppercase">
-							Rate your recall difficulty (FSRS):
-						</span>
-						<div class="grid grid-cols-4 gap-2">
+						<div class="flex items-center justify-between">
+							<span class="text-xs font-bold text-text-muted uppercase">
+								Rate your recall difficulty (FSRS):
+							</span>
+							<span class="text-[10px] text-text-muted">Press [1], [2], [3], or [4]</span>
+						</div>
+						<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
 							<button
 								type="button"
 								onclick={() => submitRating(1)}
 								class="cursor-pointer rounded-xl border border-rose-500/40 bg-rose-500/15 py-3 text-center text-xs font-bold text-rose-300 transition-all hover:bg-rose-500/30 active:scale-95"
 							>
-								🔴 Forgot (Again)
+								🔴 [1] Forgot
 							</button>
 							<button
 								type="button"
 								onclick={() => submitRating(2)}
 								class="cursor-pointer rounded-xl border border-amber-500/40 bg-amber-500/15 py-3 text-center text-xs font-bold text-amber-300 transition-all hover:bg-amber-500/30 active:scale-95"
 							>
-								🟠 Hard
+								🟠 [2] Hard
 							</button>
 							<button
 								type="button"
 								onclick={() => submitRating(3)}
 								class="cursor-pointer rounded-xl border border-blue-500/40 bg-blue-500/15 py-3 text-center text-xs font-bold text-blue-300 transition-all hover:bg-blue-500/30 active:scale-95"
 							>
-								🟢 Good
+								🟢 [3] Good
 							</button>
 							<button
 								type="button"
 								onclick={() => submitRating(5)}
 								class="cursor-pointer rounded-xl border border-emerald-500/40 bg-emerald-500/15 py-3 text-center text-xs font-bold text-emerald-300 transition-all hover:bg-emerald-500/30 active:scale-95"
 							>
-								⚡ Easy
+								⚡ [4] Easy
 							</button>
 						</div>
 					</div>

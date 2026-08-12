@@ -3,7 +3,7 @@
 </script>
 
 <div
-	class="relative hidden flex-col justify-between overflow-hidden bg-linear-to-br from-indigo-900 via-indigo-800 to-purple-950 p-12 text-white select-none md:flex md:w-1/2 lg:p-16"
+	class="relative hidden flex-col justify-between overflow-y-auto bg-linear-to-br from-indigo-900 via-indigo-800 to-purple-950 p-8 text-white select-none md:flex md:w-1/2 lg:p-12"
 >
 	<!-- Ambient lighting -->
 	<div
@@ -44,7 +44,7 @@
 	</div>
 
 	<!-- Center Callout -->
-	<div class="z-10 my-auto py-8">
+	<div class="z-10 my-auto py-4 lg:py-8">
 		<div
 			class="mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-300/20 bg-indigo-500/15 px-3.5 py-1.5 text-xs font-semibold text-indigo-200 backdrop-blur-md"
 		>

@@ -58,6 +58,37 @@
 	// Item #18: Single Item Regeneration state
 	let isRegeneratingItem = $state(false);
 
+	// Educational Video Recommendations state
+	interface ModuleVideo {
+		videoId: string;
+		title: string;
+		channelTitle: string;
+		thumbnailUrl: string;
+	}
+	let moduleVideos = $state<ModuleVideo[]>([]);
+	let loadingVideos = $state(false);
+	let activeVideoId = $state<string | null>(null);
+
+	const fetchVideos = async (refresh = false) => {
+		if (!courseId || !moduleId) return;
+		loadingVideos = true;
+		try {
+			const idToken = await auth.currentUser?.getIdToken();
+			const url = `/api/courses/${courseId}/modules/${moduleId}/videos${refresh ? '?refresh=true' : ''}`;
+			const res = await fetch(url, {
+				headers: idToken ? { Authorization: `Bearer ${idToken}` } : {}
+			});
+			if (res.ok) {
+				const data = await res.json();
+				moduleVideos = data.videos || [];
+			}
+		} catch (err) {
+			console.warn('Failed to fetch video recommendations:', err);
+		} finally {
+			loadingVideos = false;
+		}
+	};
+
 	// Restore mid-quiz state from localStorage & Firestore
 	$effect(() => {
 		if (moduleId && courseId && moduleData?.type === 'quiz') {
@@ -186,6 +217,12 @@
 				unsubMod();
 				unsubModules();
 			};
+		}
+	});
+
+	$effect(() => {
+		if (courseId && moduleId && moduleData?.type === 'lesson') {
+			fetchVideos();
 		}
 	});
 
@@ -512,7 +549,7 @@
 	{:else if moduleData.type === 'lesson'}
 		<!-- LESSON VIEW -->
 		<div
-			class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-10"
+			class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-5 shadow-sm sm:p-8 lg:p-10"
 		>
 			<!-- Header -->
 			<div class="flex items-start justify-between border-b border-border/40 pb-4">
@@ -585,11 +622,147 @@
 					<span>&rarr;</span>
 				</button>
 			</div>
+
+			<!-- Curated Educational Video Recommendations Panel -->
+			{#if moduleVideos.length > 0 || loadingVideos}
+				<div
+					class="mt-8 rounded-3xl border border-border bg-surface-muted/30 p-5 backdrop-blur-sm sm:p-6"
+				>
+					<div class="flex items-center justify-between border-b border-border/40 pb-3">
+						<div class="flex items-center gap-2">
+							<span
+								class="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10 text-rose-500"
+							>
+								<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+									<path
+										d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 4-8 4z"
+									/>
+								</svg>
+							</span>
+							<div>
+								<h3 class="font-display text-sm font-bold text-text">
+									Recommended Learning Videos
+								</h3>
+								<p class="text-[11px] text-text-muted">
+									Curated video explainers matched to this module
+								</p>
+							</div>
+						</div>
+
+						<button
+							type="button"
+							onclick={() => fetchVideos(true)}
+							disabled={loadingVideos}
+							class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-2.5 py-1 text-xs font-semibold text-text-muted hover:border-primary hover:text-primary active:scale-95 disabled:opacity-50"
+						>
+							<svg
+								class="h-3 w-3 {loadingVideos ? 'animate-spin' : ''}"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+								/>
+							</svg>
+							<span>{loadingVideos ? 'Refreshing...' : 'Reroll'}</span>
+						</button>
+					</div>
+
+					{#if loadingVideos && moduleVideos.length === 0}
+						<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+							{#each [1, 2, 3] as idx (idx)}
+								<div class="h-40 animate-pulse rounded-2xl bg-surface-muted/60"></div>
+							{/each}
+						</div>
+					{:else if moduleVideos.length > 0}
+						<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+							{#each moduleVideos as video (video.videoId)}
+								<div
+									class="group flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-surface transition-all hover:border-primary/50 hover:shadow-md"
+								>
+									<button
+										type="button"
+										onclick={() => (activeVideoId = video.videoId)}
+										class="relative aspect-video w-full cursor-pointer overflow-hidden bg-black/10"
+									>
+										<img
+											src={video.thumbnailUrl}
+											alt={video.title}
+											class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+										/>
+										<div
+											class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100"
+										>
+											<div
+												class="flex h-10 w-10 items-center justify-center rounded-full bg-rose-600 text-white shadow-lg"
+											>
+												<svg class="h-5 w-5 translate-x-0.5 fill-current" viewBox="0 0 24 24"
+													><path d="M8 5v14l11-7z" /></svg
+												>
+											</div>
+										</div>
+									</button>
+									<div class="flex flex-1 flex-col p-3">
+										<h4 class="line-clamp-2 text-xs font-bold text-text group-hover:text-primary">
+											{video.title}
+										</h4>
+										<p class="mt-1 text-[11px] font-medium text-text-muted">{video.channelTitle}</p>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- Video Embed Modal -->
+			{#if activeVideoId}
+				<div
+					class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+					role="dialog"
+					aria-modal="true"
+					aria-label="Educational Video Player"
+				>
+					<button
+						type="button"
+						aria-label="Close video backdrop"
+						class="absolute inset-0 border-0 bg-transparent"
+						onclick={() => (activeVideoId = null)}
+					></button>
+					<div
+						class="relative z-10 w-full max-w-4xl overflow-hidden rounded-3xl border border-border bg-surface shadow-2xl"
+					>
+						<div class="flex items-center justify-between border-b border-border/40 px-5 py-3">
+							<span class="text-xs font-bold text-text">Educational Video Player</span>
+							<button
+								type="button"
+								onclick={() => (activeVideoId = null)}
+								aria-label="Close video player"
+								class="rounded-xl border border-border p-1.5 text-text-muted hover:bg-surface-muted"
+								>&times;</button
+							>
+						</div>
+						<div class="relative aspect-video w-full bg-black">
+							<iframe
+								src="https://www.youtube-nocookie.com/embed/{activeVideoId}?autoplay=1"
+								title="YouTube Video Player"
+								class="absolute inset-0 h-full w-full border-0"
+								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+								allowfullscreen
+							></iframe>
+						</div>
+					</div>
+				</div>
+			{/if}
 		</div>
 	{:else if moduleData.type === 'quiz'}
 		<!-- QUIZ VIEW -->
 		<div
-			class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-10"
+			class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-5 shadow-sm sm:p-8 lg:p-10"
 		>
 			<div class="flex items-center justify-between border-b border-border/40 pb-4">
 				<div>

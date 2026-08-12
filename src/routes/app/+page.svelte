@@ -135,7 +135,7 @@
 <div class="flex w-full flex-col gap-8">
 	<!-- Welcome Header Banner -->
 	<div
-		class="relative overflow-hidden rounded-3xl bg-linear-to-r from-indigo-900 via-indigo-800 to-purple-900 p-8 text-white shadow-xl"
+		class="relative overflow-hidden rounded-3xl bg-linear-to-r from-indigo-900 via-indigo-800 to-purple-900 p-6 text-white shadow-xl sm:p-8"
 	>
 		<div class="absolute -top-10 -right-10 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl"></div>
 		<div class="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
@@ -252,7 +252,7 @@
 		</div>
 
 		{#if loading}
-			<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+			<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
 				<Skeleton variant="card" />
 				<Skeleton variant="card" />
 				<Skeleton variant="card" />
@@ -354,7 +354,7 @@
 					<h3 class="font-display text-xs font-bold tracking-wider text-text-muted uppercase">
 						In Progress Courses ({inProgressCourses.length})
 					</h3>
-					<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+					<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
 						{#each inProgressCourses as course (course.id)}
 							<CourseCard
 								id={course.id || ''}
@@ -376,7 +376,7 @@
 					<h3 class="font-display text-xs font-bold tracking-wider text-emerald-400 uppercase">
 						🎓 Completed Courses & Certificates ({completedCourses.length})
 					</h3>
-					<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+					<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
 						{#each completedCourses as course (course.id)}
 							<CourseCard
 								id={course.id || ''}

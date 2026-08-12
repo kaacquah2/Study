@@ -97,3 +97,20 @@ def is_pipeline_loaded(task: str, model_id: str) -> bool:
     key = f"{task}:{model_id}"
     with _registry_lock:
         return key in _pipelines
+
+def get_device_diagnostics() -> dict:
+    """Return runtime hardware acceleration, PyTorch thread configuration, and model load stats."""
+    with _registry_lock:
+        loaded_count = len(_pipelines)
+        loaded_keys = list(_pipelines.keys())
+
+    return {
+        "cuda_available": CUDA_AVAILABLE,
+        "device": "gpu" if CUDA_AVAILABLE else "cpu",
+        "device_id": DEVICE,
+        "torch_threads": torch.get_num_threads(),
+        "loaded_pipelines_count": loaded_count,
+        "loaded_pipelines": loaded_keys,
+        "quantization": "dynamic_int8" if not CUDA_AVAILABLE else "fp16_cuda"
+    }
+

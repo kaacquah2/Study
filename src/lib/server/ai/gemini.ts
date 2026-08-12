@@ -345,3 +345,65 @@ export async function enhanceTopicViaGemini(rawTopic: string) {
 		20_000
 	);
 }
+
+// ── Knowledge Graph Generation via Gemini ─────────────────────────────────────
+
+const KNOWLEDGE_GRAPH_RESPONSE_SCHEMA = {
+	type: 'OBJECT',
+	properties: {
+		nodes: {
+			type: 'ARRAY',
+			items: {
+				type: 'OBJECT',
+				properties: {
+					id: { type: 'STRING' },
+					label: { type: 'STRING' },
+					moduleId: { type: 'STRING' },
+					importance: { type: 'INTEGER' }
+				},
+				required: ['id', 'label', 'moduleId', 'importance']
+			}
+		},
+		edges: {
+			type: 'ARRAY',
+			items: {
+				type: 'OBJECT',
+				properties: {
+					source: { type: 'STRING' },
+					target: { type: 'STRING' },
+					relationship: { type: 'STRING', enum: ['prerequisite', 'related'] },
+					confidence: { type: 'NUMBER' }
+				},
+				required: ['source', 'target', 'relationship', 'confidence']
+			}
+		}
+	},
+	required: ['nodes', 'edges']
+};
+
+export async function generateKnowledgeGraphViaGemini(
+	courseTitle: string,
+	modules: Array<{ id: string; title: string; summary: string; keyPoints?: string[] }>
+) {
+	const systemInstruction =
+		'You are an expert educational cognitive architect creating concept knowledge graphs for adaptive learning pathways. Extract 2-4 key concept nodes per module and establish clear prerequisite edges between dependent concepts. Ensure node IDs are lowercase slugs (e.g. "variables-intro", "loop-types"). Note: edge confidence values are heuristic pruning numbers, not statistical probabilities.';
+
+	let prompt = `Course: "${courseTitle}"\nModules:\n`;
+	modules.forEach((m, idx) => {
+		prompt += `${idx + 1}. Module ID: "${m.id}" | Title: "${m.title}"\n   Summary: ${m.summary}\n   Key Points: ${(m.keyPoints || []).join(', ')}\n\n`;
+	});
+
+	prompt += `Output a JSON object with:
+1. nodes: array of concepts (2-4 per module), with id (slug), label, moduleId (must match given Module ID), importance (1-10).
+2. edges: array of prerequisite connections between concepts (source, target, relationship: "prerequisite" or "related", confidence: 0.0-1.0). Only include edges with confidence >= 0.6.`;
+
+	return callGeminiApi<{
+		nodes: Array<{ id: string; label: string; moduleId: string; importance: number }>;
+		edges: Array<{
+			source: string;
+			target: string;
+			relationship: 'prerequisite' | 'related';
+			confidence: number;
+		}>;
+	}>(prompt, systemInstruction, KNOWLEDGE_GRAPH_RESPONSE_SCHEMA, 60_000);
+}

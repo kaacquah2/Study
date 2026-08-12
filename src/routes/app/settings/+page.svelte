@@ -261,7 +261,7 @@
 			class="fixed inset-0 z-50 flex items-center justify-center bg-text/30 p-4 backdrop-blur-xs"
 		>
 			<div
-				class="flex max-w-md flex-col gap-4 rounded-3xl border border-danger/30 bg-surface p-6 shadow-2xl"
+				class="flex max-h-[90vh] max-w-md flex-col gap-4 overflow-y-auto rounded-3xl border border-danger/30 bg-surface p-6 shadow-2xl"
 			>
 				<h3 class="font-display text-lg font-bold text-danger">Confirm Account Deletion</h3>
 				<p class="text-xs leading-relaxed text-text-muted">

@@ -1,0 +1,11 @@
+{
+	"venvPath": ".",
+	"venv": ".venv",
+	"extraPaths": ["ml_backend", "ml_backend/fine_tuning", ".venv/Lib/site-packages"],
+	"executionEnvironments": [
+		{
+			"root": "ml_backend",
+			"extraPaths": [".", "fine_tuning", "../.venv/Lib/site-packages"]
+		}
+	]
+}

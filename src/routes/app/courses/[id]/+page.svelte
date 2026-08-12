@@ -232,7 +232,15 @@
 			&larr; Back to Courses
 		</a>
 
-		<div class="flex items-center gap-2">
+		<div class="flex flex-wrap items-center gap-2">
+			<a
+				href={`/app/review?courseId=${courseId}`}
+				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-300 shadow-xs transition-colors hover:border-amber-400"
+				title="Drill course flashcards in Spaced Repetition (FSRS-4.5)"
+			>
+				<span>🧠 FSRS Drill</span>
+			</a>
+
 			<button
 				type="button"
 				onclick={handleConsistencyCheck}
@@ -468,7 +476,7 @@
 					{@const isFailed = mod.status === 'failed'}
 
 					<div
-						class="flex items-center justify-between rounded-2xl border p-4 shadow-xs transition-all duration-200 {isReady
+						class="flex flex-col gap-3 rounded-2xl border p-4 shadow-xs transition-all duration-200 sm:flex-row sm:items-center sm:justify-between {isReady
 							? 'border-border bg-surface hover:border-primary/40'
 							: isGenerating
 								? 'animate-pulse border-border/60 bg-surface-muted/40 opacity-70'
@@ -528,15 +536,26 @@
 						</div>
 
 						<!-- Action CTA -->
-						<div class="shrink-0">
+						<div class="shrink-0 self-end sm:self-auto">
 							{#if isReady}
-								<a
-									href={`/app/courses/${courseId}/${mod.id}`}
-									class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-primary-hover active:scale-95"
-								>
-									<span>{isCompleted ? 'Review' : 'Start'}</span>
-									<span>&rarr;</span>
-								</a>
+								<div class="flex items-center gap-2">
+									{#if mod.type === 'quiz'}
+										<a
+											href={`/app/review?courseId=${courseId}&moduleId=${mod.id}`}
+											class="inline-flex cursor-pointer items-center justify-center gap-1 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 shadow-xs hover:bg-amber-500/20 active:scale-95"
+											title="Drill flashcards in Spaced Repetition (FSRS-4.5)"
+										>
+											<span>🧠 FSRS Drill</span>
+										</a>
+									{/if}
+									<a
+										href={`/app/courses/${courseId}/${mod.id}`}
+										class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-primary-hover active:scale-95"
+									>
+										<span>{isCompleted ? 'Review' : 'Start'}</span>
+										<span>&rarr;</span>
+									</a>
+								</div>
 							{:else if isGenerating}
 								<span class="text-[11px] font-semibold text-text-muted">Generating...</span>
 							{:else if isFailed}

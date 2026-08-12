@@ -26,7 +26,7 @@
 	<HeroPanel />
 
 	<div
-		class="relative flex grow flex-col justify-between bg-surface p-6 sm:p-12 md:w-1/2 md:p-14 lg:p-20"
+		class="relative flex grow flex-col justify-between overflow-y-auto bg-surface p-5 sm:p-10 md:w-1/2 md:p-10 lg:p-16"
 	>
 		<!-- Mobile Header Logo -->
 		<div class="flex items-center gap-2.5 md:hidden">

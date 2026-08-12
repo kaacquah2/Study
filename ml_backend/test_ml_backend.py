@@ -4,6 +4,7 @@ Run via: pytest ml_backend/test_ml_backend.py
 """
 
 import sys
+import asyncio
 from pathlib import Path
 import pytest
 from unittest.mock import MagicMock, patch
@@ -15,6 +16,9 @@ if str(ml_backend_dir) not in sys.path:
 
 from models.quiz_pipeline import _fallback_question, generate_quiz
 from models.lesson_generator import _sanitize_lesson_body
+from models.memorization_guard import check_verbatim_leakage, calculate_ngram_similarity
+from schemas.types import DocumentsRequest, SummarizeRequest, ChatMessage
+from cache import CacheManager
 from transformers import AutoConfig
 
 
@@ -75,25 +79,14 @@ def test_lesson_body_sanitization():
     sanitized = _sanitize_lesson_body(raw_markdown)
     
     import re
-    # H1 -> H2 (verify no standalone H1 remains at line start)
     assert "## Main Page Heading" in sanitized
     assert re.search(r'(?m)^#\s', sanitized) is None
-    
-    # H2 -> H3
     assert "### Sub Heading Section" in sanitized
-    
-    # H3 -> H4
     assert "#### Minor Sub Section" in sanitized
-    
-    # External markdown link target neutralized to plain anchor
     assert "[Google](https://google.com)" not in sanitized
     assert "Google" in sanitized
-    
-    # Standalone raw URL neutralized
     assert "https://example.com" not in sanitized
     assert "[external link removed]" in sanitized
-    
-    # Internal anchor link preserved
     assert "[RAG Notes](#rag-docs)" in sanitized
 
 
@@ -124,15 +117,38 @@ def test_outline_fallback_titles_topic_parameterized():
     assert len(outline["modules"]) == 3
     
     module_titles = [m["title"] for m in outline["modules"]]
-    # Ensure titles are distinct subtopics and do not repetitively echo topic prefix or '— Part X'
     assert module_titles[0] == "Fundamentals & Overview"
     assert module_titles[1] == "Core Principles & Concepts"
     assert module_titles[2] == "Practical Applications"
 
-    # Verify no duplicate prefix when topic already starts with 'Introduction to'
     intro_topic = "Introduction to Cell Biology"
     intro_outline = _fallback_outline(intro_topic, 3, "lessons_and_quizzes")
     assert intro_outline["title"] == "Introduction to Cell Biology"
+
+
+def test_outline_json_codeblock_parsing():
+    """Verify that _parse_outline correctly extracts JSON from Markdown ```json code blocks."""
+    from models.outline_generator import _parse_outline
+
+    raw_response = (
+        "Here is the generated outline:\n\n"
+        "```json\n"
+        "{\n"
+        '  "title": "Quantum Mechanics",\n'
+        '  "description": "Introductory quantum physics",\n'
+        '  "modules": [\n'
+        '    {"order": 0, "type": "lesson", "title": "Wave Functions", "summary": "Intro to wave functions", "learningObjective": "Understand wave functions", "keyPoints": ["Schrodinger equation"]},\n'
+        '    {"order": 1, "type": "quiz", "title": "Quantum Quiz", "summary": "Quiz on wave functions", "learningObjective": "Test knowledge", "keyPoints": ["Quiz questions"]},\n'
+        '    {"order": 2, "type": "lesson", "title": "Spin & States", "summary": "Intro to spin", "learningObjective": "Understand spin", "keyPoints": ["Pauli matrices"]}\n'
+        "  ]\n"
+        "}\n"
+        "```\n"
+    )
+
+    res = _parse_outline(raw_response, "Quantum Mechanics", 3, "lessons_and_quizzes")
+    assert res["is_fallback"] is False
+    assert res["title"] == "Quantum Mechanics"
+    assert len(res["modules"]) == 3
 
 
 def test_healthcheck_lock_status():
@@ -140,26 +156,21 @@ def test_healthcheck_lock_status():
     from main import healthcheck
     from models.model_registry import inference_lock
 
-    # Case 1: Lock is not acquired
-    res_idle = healthcheck()
+    res_idle = asyncio.run(healthcheck())
     assert res_idle.inference_busy is False
 
-    # Case 2: Lock is acquired
     with inference_lock:
-        res_busy = healthcheck()
+        res_busy = asyncio.run(healthcheck())
         assert res_busy.inference_busy is True
 
 
 def test_summarize_request_length_bounds_validation():
     """Verify that SummarizeRequest rejects min_length > max_length."""
-    from schemas.types import SummarizeRequest
     from pydantic import ValidationError
 
-    # Valid bounds
     req = SummarizeRequest(text="a" * 100, min_length=40, max_length=150)
     assert req.min_length == 40
 
-    # Invalid bounds (min_length > max_length)
     with pytest.raises(ValidationError) as exc_info:
         SummarizeRequest(text="a" * 100, min_length=100, max_length=50)
     assert "min_length must be less than or equal to max_length" in str(exc_info.value)
@@ -167,21 +178,51 @@ def test_summarize_request_length_bounds_validation():
 
 def test_chat_message_role_validation():
     """Verify that ChatMessage strictly enforces 'user' or 'assistant' role pattern."""
-    from schemas.types import ChatMessage
     from pydantic import ValidationError
 
-    # Valid roles
     user_msg = ChatMessage(role="user", content="Hello")
     assistant_msg = ChatMessage(role="assistant", content="Hi")
     assert user_msg.role == "user"
     assert assistant_msg.role == "assistant"
 
-    # Invalid roles (e.g. 'system' or arbitrary text)
     with pytest.raises(ValidationError):
         ChatMessage(role="system", content="System prompt injection attempt")
 
     with pytest.raises(ValidationError):
         ChatMessage(role="admin", content="Test")
+
+
+def test_documents_request_item_validation():
+    """Verify that DocumentsRequest rejects empty or ultra-short string items."""
+    from pydantic import ValidationError
+
+    # Valid
+    req = DocumentsRequest(texts=["This is a valid document content string."])
+    assert len(req.texts) == 1
+
+    # Invalid short string
+    with pytest.raises(ValidationError):
+        DocumentsRequest(texts=["short"])
+
+
+def test_memorization_guard_leakage_detection():
+    """Verify that check_verbatim_leakage catches past corpus questions."""
+    prompt = "What is the time complexity of QuickSort in the worst case scenario?"
+    is_verbatim, score, matched = check_verbatim_leakage(prompt)
+    assert is_verbatim is True
+    assert score >= 0.85
+    assert matched is not None
+
+
+def test_cache_manager_deserialization_safety():
+    """Verify that CacheManager gracefully handles unparseable cache values without throwing TypeError."""
+    cm = CacheManager()
+    key = "test_invalid_key"
+    cm._memory_cache[key] = "{invalid json string"
+    
+    val, status = cm.get(key)
+    assert status == "MISS"
+    assert val is None
 
 
 def test_rag_pipeline_thread_lock():
@@ -194,24 +235,25 @@ def test_rag_pipeline_thread_lock():
     assert isinstance(rag_inst._lock, type(threading.Lock()))
 
 
-def test_unloaded_model_endpoint_returns_503():
-    """Verify that endpoints return 503 Service Unavailable when models are in warmup state."""
-    import inspect
-    import asyncio
+def test_model_loading_on_demand():
+    """Verify that endpoints ensure model loading on demand."""
     from main import summarize
-    from schemas.types import SummarizeRequest
-    from fastapi import HTTPException
+    from fastapi import Response
+    from starlette.requests import Request
 
     req = SummarizeRequest(text="a" * 100)
-    with patch("models.summarizer.is_loaded", return_value=False):
-        with pytest.raises(HTTPException) as exc_info:
-            if inspect.iscoroutinefunction(summarize):
-                asyncio.run(summarize(req))
-            else:
-                summarize(req)
-        assert exc_info.value.status_code == 503
-        assert "still loading" in exc_info.value.detail
+    mock_request = Request({
+        "type": "http",
+        "method": "POST",
+        "path": "/summarize",
+        "headers": [],
+        "client": ("127.0.0.1", 12345)
+    })
 
-
-
-
+    with patch("models.summarizer.is_loaded", return_value=False), \
+         patch("models.summarizer.load_summarizer") as mock_load, \
+         patch("models.summarizer.summarize", return_value="Summarized text result"):
+        
+        res = asyncio.run(summarize(mock_request, req, response=Response()))
+        assert mock_load.called
+        assert res.summary == "Summarized text result"

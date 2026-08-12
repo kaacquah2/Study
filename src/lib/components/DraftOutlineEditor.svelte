@@ -249,57 +249,59 @@
 					ondragstart={() => handleDragStart(idx)}
 					ondragover={(e) => handleDragOver(e, idx)}
 					ondragend={handleDragEnd}
-					class="group relative flex items-start gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xs transition-all duration-180 hover:border-primary/40 {draggedIndex ===
+					class="group relative flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xs transition-all duration-180 hover:border-primary/40 sm:flex-row sm:items-start {draggedIndex ===
 					idx
 						? 'border-primary opacity-50'
 						: ''}"
 				>
-					<!-- Drag Handle -->
-					<div
-						class="mt-2.5 flex cursor-grab items-center text-text-muted hover:text-text active:cursor-grabbing"
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-4 w-4"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
+					<div class="flex items-center gap-3">
+						<!-- Drag Handle -->
+						<div
+							class="flex cursor-grab items-center text-text-muted hover:text-text active:cursor-grabbing"
 						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M4 8h16M4 16h16"
-							/>
-						</svg>
-					</div>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-4 w-4"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M4 8h16M4 16h16"
+								/>
+							</svg>
+						</div>
 
-					<!-- Order Badge -->
-					<div
-						class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-xs font-bold text-primary"
-					>
-						{idx + 1}
+						<!-- Order Badge -->
+						<div
+							class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-xs font-bold text-primary"
+						>
+							{idx + 1}
+						</div>
 					</div>
 
 					<!-- Module Content Inputs -->
 					<div class="flex grow flex-col gap-2">
-						<div class="flex items-center gap-2">
+						<div class="flex flex-wrap items-center gap-2">
 							<input
 								type="text"
 								bind:value={mod.title}
-								class="grow rounded-lg border border-border/60 bg-surface-muted/50 px-3 py-1.5 text-xs font-bold text-text focus:border-primary focus:outline-none"
+								class="min-w-44 grow rounded-lg border border-border/60 bg-surface-muted/50 px-3 py-1.5 text-xs font-bold text-text focus:border-primary focus:outline-none"
 							/>
 
-							<!-- Module Type Icon + Badge (Item #4) -->
+							<!-- Module Type Icon + Badge -->
 							<span
-								class="inline-flex items-center gap-1 rounded-md border border-border/40 px-2 py-0.5 text-[10px] font-bold text-text-muted uppercase"
+								class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border/40 px-2 py-0.5 text-[10px] font-bold text-text-muted uppercase"
 							>
 								<span>{mod.type === 'lesson' ? '📖 Lesson' : '🧩 Quiz'}</span>
 							</span>
 
-							<!-- Module Estimated Duration Tag (Item #4) -->
+							<!-- Module Estimated Duration Tag -->
 							<span
-								class="rounded-md border border-border/40 bg-surface-muted px-2 py-0.5 text-[10px] font-bold text-text-muted"
+								class="shrink-0 rounded-md border border-border/40 bg-surface-muted px-2 py-0.5 text-[10px] font-bold text-text-muted"
 							>
 								⏱️ ~{mod.estimatedMinutes || 12} mins
 							</span>
@@ -312,7 +314,7 @@
 					</div>
 
 					<!-- Action Buttons (Single Regenerate, Move up, Move down, Delete) -->
-					<div class="flex shrink-0 items-center gap-1">
+					<div class="flex shrink-0 items-center gap-1 self-end sm:self-start">
 						{#if courseId}
 							<button
 								type="button"

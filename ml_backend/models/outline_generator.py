@@ -94,8 +94,25 @@ def _parse_outline(raw: str, topic: str, module_count: int, fmt: str) -> dict:
     Parse and validate the model output.
     Falls back to a deterministic template if parsing fails.
     """
-    json_matches = re.findall(r"\{.*\}", raw, re.DOTALL) + re.findall(r"\{.*?\}", raw, re.DOTALL)
-    for json_str in json_matches:
+    candidates = []
+
+    # 1. Direct raw string
+    candidates.append(raw.strip())
+
+    # 2. Markdown json code block
+    code_block_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.DOTALL)
+    if code_block_match:
+        candidates.append(code_block_match.group(1).strip())
+
+    # 3. Outer bracket extraction (greedy)
+    start_idx = raw.find("{")
+    end_idx = raw.rfind("}")
+    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+        candidates.append(raw[start_idx : end_idx + 1].strip())
+
+    for json_str in candidates:
+        if not json_str:
+            continue
         try:
             data = json.loads(json_str)
             if not isinstance(data, dict):

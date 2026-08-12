@@ -200,7 +200,7 @@
 		></div>
 
 		<div
-			class="animate-slide-in fixed top-0 right-0 z-50 flex h-full w-full flex-col border-l border-border bg-surface shadow-2xl md:w-105"
+			class="animate-slide-in fixed top-0 right-0 z-50 flex h-full w-full max-w-[calc(100vw-2rem)] flex-col border-l border-border bg-surface shadow-2xl md:w-96 lg:w-105"
 		>
 			<!-- Header -->
 			<div class="flex items-center justify-between border-b border-border p-4.5">

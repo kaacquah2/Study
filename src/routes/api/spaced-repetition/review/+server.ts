@@ -89,6 +89,39 @@ export const POST: RequestHandler = async ({ request }) => {
 			{ merge: true }
 		);
 
+		// Record immutable review log for user memory retention analytics
+		try {
+			const lastReviewDate = currentQuestion.lastReviewedAt
+				? new Date(currentQuestion.lastReviewedAt)
+				: new Date();
+			const elapsedDays = Math.max(
+				0,
+				(Date.now() - lastReviewDate.getTime()) / (1000 * 60 * 60 * 24)
+			);
+			const predictedRetrievability = Math.pow(
+				1 + elapsedDays / (9 * (currentQuestion.stability || 1)),
+				-1
+			);
+
+			await adminDb
+				.collection('users')
+				.doc(user.uid)
+				.collection('fsrsReviewLogs')
+				.add({
+					courseId,
+					moduleId,
+					questionIndex,
+					quality,
+					elapsedDays: Number(elapsedDays.toFixed(2)),
+					predictedRetrievability: Number(predictedRetrievability.toFixed(4)),
+					newStability: fsrsResult.card.stability,
+					newDifficulty: fsrsResult.card.difficulty,
+					timestamp: fsrsResult.card.lastReview
+				});
+		} catch (logErr) {
+			console.warn('Failed to record FSRS review log to Firestore:', logErr);
+		}
+
 		return json({
 			success: true,
 			fsrs: fsrsResult

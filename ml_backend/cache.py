@@ -10,6 +10,7 @@ Ensures graceful failover if Redis is unreachable or fails mid-operation.
 
 import os
 import json
+import time
 import hashlib
 import logging
 from typing import Any, Tuple, Optional
@@ -20,13 +21,16 @@ logger = logging.getLogger(__name__)
 _REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 class CacheManager:
-    def __init__(self, in_memory_maxsize: int = 1000, in_memory_ttl: int = 86400):
+    def __init__(self, in_memory_maxsize: int = 1000, in_memory_ttl: int = 86400, redis_cooldown: float = 60.0):
         self._memory_cache = TTLCache(maxsize=in_memory_maxsize, ttl=in_memory_ttl)
         self._redis_client = None
         self._redis_available = False
+        self._redis_cooldown = redis_cooldown
+        self._last_redis_attempt = 0.0
         self._init_redis()
 
     def _init_redis(self) -> None:
+        self._last_redis_attempt = time.time()
         try:
             import redis
             client = redis.from_url(_REDIS_URL, socket_connect_timeout=1, socket_timeout=1)
@@ -39,6 +43,11 @@ class CacheManager:
             self._redis_client = None
             self._redis_available = False
             logger.info(f"[CacheManager] Redis unavailable ({e}). Using in-memory TTLCache.")
+
+    def _maybe_reconnect_redis(self) -> None:
+        """Attempt to reconnect to Redis if the cooldown period has elapsed."""
+        if not self._redis_available and (time.time() - self._last_redis_attempt) >= self._redis_cooldown:
+            self._init_redis()
 
     @staticmethod
     def generate_key(prefix: str, params: dict) -> str:
@@ -60,6 +69,8 @@ class CacheManager:
         Retrieve value from cache.
         Returns tuple of (value, status) where status is 'HIT' or 'MISS'.
         """
+        self._maybe_reconnect_redis()
+
         # Try Redis first
         if self._redis_available and self._redis_client is not None:
             try:
@@ -73,11 +84,17 @@ class CacheManager:
 
         # Fallback to in-memory cache
         if key in self._memory_cache:
+            val = self._memory_cache[key]
+            if isinstance(val, (dict, list)):
+                return val, "HIT"
             try:
-                data = json.loads(self._memory_cache[key])
-                return data, "HIT"
+                data = json.loads(val)
+                if isinstance(data, (dict, list, str, int, float, bool)):
+                    return data, "HIT"
             except Exception:
-                return self._memory_cache[key], "HIT"
+                logger.warning(f"[CacheManager] Failed to deserialize in-memory value for key {key}.")
+                del self._memory_cache[key]
+                return None, "MISS"
 
         return None, "MISS"
 
@@ -93,6 +110,7 @@ class CacheManager:
         self._memory_cache[key] = serialized
 
         # Set in Redis if available
+        self._maybe_reconnect_redis()
         if self._redis_available and self._redis_client is not None:
             try:
                 self._redis_client.setex(key, ttl, serialized)

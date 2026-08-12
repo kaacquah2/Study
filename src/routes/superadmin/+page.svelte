@@ -78,7 +78,7 @@
 	</div>
 
 	{#if loading}
-		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
 			<Skeleton variant="card" />
 			<Skeleton variant="card" />
 			<Skeleton variant="card" />
@@ -92,7 +92,7 @@
 		</div>
 	{:else if stats}
 		<!-- Stats Grid -->
-		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
 			<!-- Stat 1: Total Users -->
 			<div
 				class="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-6 shadow-xs transition-all hover:border-primary/40"

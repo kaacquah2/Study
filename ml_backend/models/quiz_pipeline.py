@@ -74,7 +74,7 @@ def generate_quiz(
     return {"questions": questions}
 
 
-from models.memorizationGuard import check_verbatim_leakage
+from models.memorization_guard import check_verbatim_leakage
 
 def _generate_one_question(
     qg: Pipeline,

@@ -204,3 +204,24 @@ def chat(
 
     final_reply = reply if reply else "I'm sorry, I couldn't generate a response. Please try rephrasing your question."
     return (final_reply, sources)
+
+
+import json
+
+def chat_stream(
+    messages: list[dict],
+    course_context: Optional[str] = None,
+    user_id: str = "default_user",
+):
+    """
+    Generator yielding SSE formatted strings for streaming chat output.
+    """
+    reply, sources = chat(messages=messages, course_context=course_context, user_id=user_id)
+    words = reply.split(" ")
+    for i, word in enumerate(words):
+        chunk = word if i == 0 else " " + word
+        payload = json.dumps({"token": chunk, "done": False, "sources": sources if i == len(words) - 1 else []})
+        yield f"data: {payload}\n\n"
+    payload_done = json.dumps({"token": "", "done": True, "sources": sources})
+    yield f"data: {payload_done}\n\n"
+

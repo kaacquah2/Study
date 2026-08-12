@@ -115,7 +115,7 @@ class RAGPipeline:
                 try:
                     self._index.remove_ids(np.array(target_ids, dtype="int64"))
                 except Exception as exc:
-                    logger.warn(f"[RAG] remove_ids failed ({exc}), resetting index.")
+                    logger.warning(f"[RAG] remove_ids failed ({exc}), resetting index.")
                     self._index = faiss.IndexIDMap(faiss.IndexFlatL2(self._dim))
 
                 # Re-index doc tracking metadata

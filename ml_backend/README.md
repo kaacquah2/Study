@@ -16,22 +16,30 @@ Replaces the Google Gemini API with open-weight, locally-served models.
 
 ## Local Development Setup
 
-### 1. Create and activate a virtual environment
+### 1. Create and activate a virtual environment (Root directory)
+
+It is highly recommended to use a single virtual environment in the root directory to avoid duplicate installations of heavy packages like PyTorch and Transformers (especially if disk space is limited).
+
+From the root directory:
 
 ```bash
-cd ml_backend
-python -m venv venv
+python -m venv .venv
 # Windows:
-venv\Scripts\activate
+.venv\Scripts\activate
 # Mac/Linux:
-source venv/bin/activate
+source .venv/bin/activate
 ```
 
 ### 2. Install dependencies
 
+From the root directory:
+
 ```bash
-pip install -r requirements.txt
+pip install -r ml_backend/requirements.txt
 ```
+
+> [!NOTE]
+> **Environment Note:** The root-level `.venv` is a shared environment used strictly for _local development_ to avoid duplicate, heavy installs of PyTorch and Transformers (particularly helpful for machines with limited disk space). For containerized or production environments (e.g. `Dockerfile` and `docker-compose.yml`), services remain isolated and run their own local package installations independently.
 
 ### 3. Configure environment variables
 
@@ -42,8 +50,10 @@ cp .env.example .env
 
 ### 4. Start the server
 
+From the `ml_backend` directory (with the root virtual environment activated):
+
 ```bash
-uvicorn main:app --reload --port 8000
+python -m uvicorn main:app --reload --port 8000
 ```
 
 The API will be available at `http://localhost:8000`.

@@ -11,7 +11,10 @@ services:
       - NODE_ENV=development
       - ML_BACKEND_URL=http://ml-backend:8000
     depends_on:
-      - ml-backend
+      ml-backend:
+        condition: service_healthy
+    networks:
+      - study-network
 
   ml-backend:
     build:
@@ -22,3 +25,19 @@ services:
     environment:
       - APP_ENV=${APP_ENV:-development}
       - ML_BACKEND_API_KEY=${ML_BACKEND_API_KEY:-local-dev-key}
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'python -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/health")'' || exit 1'
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - study-network
+
+networks:
+  study-network:
+    driver: bridge

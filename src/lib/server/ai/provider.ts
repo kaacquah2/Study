@@ -18,7 +18,8 @@ import {
 	chatViaGemini,
 	summarizeViaGemini,
 	paraphraseViaGemini,
-	enhanceTopicViaGemini
+	enhanceTopicViaGemini,
+	generateKnowledgeGraphViaGemini
 } from './gemini';
 import {
 	pingOllama,
@@ -672,4 +673,35 @@ export async function generateAICompletion(
 		text: result.result,
 		provider: result.provider
 	};
+}
+
+// ── Knowledge Graph Generation ─────────────────────────────────────────────
+
+export async function generateKnowledgeGraph(
+	courseTitle: string,
+	modules: Array<{ id: string; title: string; summary: string; keyPoints?: string[] }>
+): Promise<
+	AIResult<{
+		nodes: Array<{ id: string; label: string; moduleId: string; importance: number }>;
+		edges: Array<{
+			source: string;
+			target: string;
+			relationship: 'prerequisite' | 'related';
+			confidence: number;
+		}>;
+	}>
+> {
+	return executeAI(
+		async () => {
+			const result = await generateKnowledgeGraphViaGemini(courseTitle, modules);
+			return result;
+		},
+		async () => {
+			const result = await generateKnowledgeGraphViaGemini(courseTitle, modules);
+			return result;
+		},
+		undefined,
+		'reasoning',
+		courseTitle
+	);
 }

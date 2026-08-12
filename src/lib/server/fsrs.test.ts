@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateFSRS, qualityToRating } from './fsrs';
+import { calculateFSRS, qualityToRating, optimizeFSRSWeights } from './fsrs';
 
 describe('FSRS-4.5 Spaced Repetition Engine', () => {
 	it('maps quality ratings 0-5 correctly to 1-4 scale', () => {
@@ -33,5 +33,29 @@ describe('FSRS-4.5 Spaced Repetition Engine', () => {
 		expect(lapseResult.card.lapses).toBe(1);
 		expect(lapseResult.card.state).toBe('Relearning');
 		expect(lapseResult.intervalDays).toBeGreaterThanOrEqual(1);
+	});
+
+	it('computes personalized stability factors and calibration status from historical review logs', () => {
+		const emptyResult = optimizeFSRSWeights([]);
+		expect(emptyResult.isCalibrated).toBe(false);
+		expect(emptyResult.recommendedStabilityFactor).toBe(1.0);
+
+		const logs = Array.from({ length: 10 }, (_, i) => ({
+			courseId: 'c1',
+			moduleId: 'm1',
+			questionIndex: 0,
+			quality: i % 2 === 0 ? 4 : 1,
+			elapsedDays: 2,
+			predictedRetrievability: 0.85,
+			newStability: 4.5,
+			newDifficulty: 5.0,
+			timestamp: new Date().toISOString()
+		}));
+
+		const result = optimizeFSRSWeights(logs);
+		expect(result.sampleCount).toBe(10);
+		expect(result.isCalibrated).toBe(true);
+		expect(result.averageRetention).toBe(0.5);
+		expect(result.recommendedStabilityFactor).toBeLessThan(1.0);
 	});
 });

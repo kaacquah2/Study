@@ -26,6 +26,10 @@
 	--color-hero-from: var(--hero-from);
 	--color-hero-to: var(--hero-to);
 
+	/* Heatmap Empty Cells */
+	--color-heatmap-empty-bg: var(--heatmap-empty-bg);
+	--color-heatmap-empty-border: var(--heatmap-empty-border);
+
 	/* Course Specific Theme Accents */
 	--color-course-violet: var(--c-violet);
 	--color-course-violet-soft: var(--c-violet-soft);
@@ -87,6 +91,10 @@
 	--hero-from: #6c63e8; /* login hero panel gradient */
 	--hero-to: #574fd6;
 
+	/* Heatmap Empty Cells — high contrast against white card surface */
+	--heatmap-empty-bg: #d8dce9;
+	--heatmap-empty-border: #b0b6cc;
+
 	/* Course Specific Accents */
 	--c-violet: #6d28d9;
 	--c-violet-soft: #f5f3ff;
@@ -116,6 +124,10 @@
 	--danger-soft: #2e1414;
 	--hero-from: #4a43b8;
 	--hero-to: #322c8c;
+
+	/* Heatmap Empty Cells — subtle on dark surface */
+	--heatmap-empty-bg: #262a3a;
+	--heatmap-empty-border: #333849;
 
 	/* Course Specific Accents */
 	--c-violet: #a78bfa;

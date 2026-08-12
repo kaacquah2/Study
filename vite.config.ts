@@ -13,6 +13,11 @@ export default defineConfig({
 			}
 		})
 	],
+	server: {
+		watch: {
+			ignored: ['**/.venv/**', '**/ml_backend/**']
+		}
+	},
 	build: {
 		chunkSizeWarningLimit: 1000
 	},

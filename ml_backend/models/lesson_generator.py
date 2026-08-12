@@ -48,6 +48,17 @@ def generate_lesson(
     model = load_model()
     model_lock = get_inference_lock(_MODEL_ID)
 
+    # Course outline context for overall coherence
+    outline_context = ""
+    if course_outline and isinstance(course_outline, list):
+        module_titles = [
+            f"- Module {m.get('order', idx) + 1}: {m.get('title', '')}"
+            for idx, m in enumerate(course_outline)
+            if isinstance(m, dict) and m.get('title')
+        ]
+        if module_titles:
+            outline_context = "\nCourse Context:\n" + "\n".join(module_titles[:8]) + "\n"
+
     # RAG retrieval: combine module title + objective as the query
     query = f"{module_title}: {learning_objective}"
     context = rag.retrieve(query, user_id=user_id, top_k=3)[:_MAX_CONTEXT_CHARS] if rag.has_documents(user_id=user_id) else ""
@@ -60,7 +71,7 @@ def generate_lesson(
 Course: "{course_title}"
 Module: "{module_title}"
 Learning objective: {learning_objective}
-This page covers: {kp}
+{outline_context}This page covers: {kp}
 {context_block}
 Write the lesson page body in clear, structured educational markdown.
 Requirements:

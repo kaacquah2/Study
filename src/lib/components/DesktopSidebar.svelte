@@ -29,10 +29,10 @@
 </script>
 
 <aside
-	class="sticky top-0 z-30 hidden h-screen w-64 shrink-0 flex-col justify-between overflow-hidden border-r border-border bg-surface select-none md:flex"
+	class="sticky top-0 z-30 hidden h-screen w-56 shrink-0 flex-col justify-between overflow-hidden border-r border-border bg-surface select-none md:flex xl:w-64"
 >
 	<!-- Fixed Top Zone -->
-	<div class="flex shrink-0 flex-col gap-6 p-5 pb-3">
+	<div class="flex shrink-0 flex-col gap-4 p-4 pb-2 xl:gap-6 xl:p-5 xl:pb-3">
 		<a href="/app" class="flex items-center gap-3">
 			<div
 				class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20"
@@ -52,33 +52,37 @@
 					<path d="M6 10h10" />
 				</svg>
 			</div>
-			<div>
-				<span class="font-display text-base font-bold tracking-tight text-text">AI Study Buddy</span
+			<div class="min-w-0">
+				<span
+					class="block truncate font-display text-sm font-bold tracking-tight text-text xl:text-base"
+					>AI Study Buddy</span
 				>
-				<span class="block text-[10px] font-semibold text-text-muted">Interactive AI Tutor</span>
+				<span class="block truncate text-[10px] font-semibold text-text-muted"
+					>Interactive AI Tutor</span
+				>
 			</div>
 		</a>
 
-		<nav class="flex flex-col gap-2">
+		<nav class="flex flex-col gap-1.5 xl:gap-2">
 			{#each navItems as item (item.href)}
 				{@const active =
 					currentPath === item.href || (item.href !== '/app' && currentPath.startsWith(item.href))}
 				<a
 					href={item.href}
-					class="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold transition-all duration-180 {active
+					class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all duration-180 xl:px-4 xl:py-3 {active
 						? 'bg-primary text-white shadow-md shadow-primary/20'
 						: 'text-text-muted hover:bg-surface-muted hover:text-text'}"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
-						class="h-4.5 w-4.5"
+						class="h-4.5 w-4.5 shrink-0"
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke="currentColor"
 					>
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={item.icon} />
 					</svg>
-					<span>{item.label}</span>
+					<span class="truncate">{item.label}</span>
 				</a>
 			{/each}
 		</nav>

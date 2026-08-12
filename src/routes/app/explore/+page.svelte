@@ -158,7 +158,7 @@
 
 	<!-- Course Grid -->
 	{#if loading}
-		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
 			<Skeleton variant="card" />
 			<Skeleton variant="card" />
 			<Skeleton variant="card" />
@@ -186,7 +186,7 @@
 			}}
 		/>
 	{:else}
-		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
 			{#each filteredCourses as item (item.id)}
 				<SharedCourseCard
 					shareId={item.id || ''}
