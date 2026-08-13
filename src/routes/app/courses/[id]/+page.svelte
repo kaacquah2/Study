@@ -5,6 +5,7 @@
 	import ProgressBar from '$lib/components/ProgressBar.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import ShareModal from '$lib/components/ShareModal.svelte';
+	import CertificateModal from '$lib/components/CertificateModal.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import type { CourseDoc, ModuleDoc } from '$lib/firebase/converters';
 	import {
@@ -25,6 +26,7 @@
 
 	let shareUrl = $state('');
 	let showShareModal = $state(false);
+	let showCertificateModal = $state(false);
 
 	// Push notification when generation finishes (Item #5)
 	let previousCourseStatus = $state<string | null>(null);
@@ -479,13 +481,22 @@
 						Course Achievement Unlocked!
 					</h3>
 					<p class="mt-1 text-xs text-emerald-200/80">You have completed 100% of {course.title}.</p>
-					<button
-						type="button"
-						onclick={handleOpenShare}
-						class="mt-4 rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-slate-950 shadow-md transition-all hover:bg-emerald-400 active:scale-95"
-					>
-						Share Your Achievement
-					</button>
+					<div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+						<button
+							type="button"
+							onclick={() => (showCertificateModal = true)}
+							class="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 shadow-md transition-all hover:bg-amber-400 active:scale-95"
+						>
+							📜 Download / Print Certificate
+						</button>
+						<button
+							type="button"
+							onclick={handleOpenShare}
+							class="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-slate-950 shadow-md transition-all hover:bg-emerald-400 active:scale-95"
+						>
+							Share Your Achievement
+						</button>
+					</div>
 				</div>
 			{:else}
 				<div class="mt-2">
@@ -639,4 +650,11 @@
 	{shareUrl}
 	courseTitle={course?.title || 'Course'}
 	onClose={() => (showShareModal = false)}
+/>
+
+<CertificateModal
+	isOpen={showCertificateModal}
+	userName={auth.currentUser?.displayName || 'Learner'}
+	courseTitle={course?.title || 'Course'}
+	onClose={() => (showCertificateModal = false)}
 />

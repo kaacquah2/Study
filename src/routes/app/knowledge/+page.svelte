@@ -453,15 +453,24 @@
 				<div>
 					<p class="text-sm font-bold text-text">Drag &amp; drop files here</p>
 					<p class="text-xs text-text-muted">
-						Supports <code class="rounded bg-surface-muted px-1 font-mono">.txt</code> and
-						<code class="rounded bg-surface-muted px-1 font-mono">.md</code> files
+						Supports <code class="rounded bg-surface-muted px-1 font-mono">.pdf</code>,
+						<code class="rounded bg-surface-muted px-1 font-mono">.txt</code>,
+						<code class="rounded bg-surface-muted px-1 font-mono">.md</code>,
+						<code class="rounded bg-surface-muted px-1 font-mono">.json</code>, and
+						<code class="rounded bg-surface-muted px-1 font-mono">.csv</code> files
 					</p>
 				</div>
 				<label
 					class="cursor-pointer rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text transition-colors hover:border-primary hover:text-primary"
 				>
 					Browse Files
-					<input type="file" accept=".txt,.md" multiple class="hidden" onchange={handleFilePick} />
+					<input
+						type="file"
+						accept=".txt,.md,.pdf,.json,.csv"
+						multiple
+						class="hidden"
+						onchange={handleFilePick}
+					/>
 				</label>
 			</div>
 

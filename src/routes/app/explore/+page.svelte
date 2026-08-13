@@ -15,7 +15,20 @@
 	let selectedTag = $state('All');
 	let importingShareId = $state<string | null>(null);
 
-	const availableTags = ['All', 'AI', 'Programming', 'Science', 'History', 'Math'];
+	let availableTags = $derived.by(() => {
+		const tags: string[] = [];
+		sharedCourses.forEach((c) => {
+			if (Array.isArray(c.tags)) {
+				c.tags.forEach((t) => {
+					const trimmed = t?.trim();
+					if (trimmed && !tags.includes(trimmed)) {
+						tags.push(trimmed);
+					}
+				});
+			}
+		});
+		return ['All', ...tags];
+	});
 
 	$effect(() => {
 		fetchSharedCourses();

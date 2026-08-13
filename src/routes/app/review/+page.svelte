@@ -470,7 +470,7 @@
 		<div class="flex items-center gap-3">
 			<div class="h-2 flex-1 overflow-hidden rounded-full bg-surface-muted">
 				<div
-					class="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400 transition-all duration-500"
+					class="h-full rounded-full bg-linear-to-r from-primary to-emerald-400 transition-all duration-500"
 					style="width: {((currentIndex + 1) / dueQuestions.length) * 100}%"
 				></div>
 			</div>

@@ -6,9 +6,10 @@ import { calculateFSRS } from '$lib/server/fsrs';
 import { z } from 'zod';
 
 const ReviewZod = z.object({
-	courseId: z.string(),
-	moduleId: z.string(),
-	questionIndex: z.number().int().min(0),
+	courseId: z.string().optional(),
+	moduleId: z.string().optional(),
+	questionIndex: z.number().int().optional(),
+	cardId: z.string().optional(),
 	quality: z.number().int().min(0).max(5)
 });
 
@@ -25,7 +26,77 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 
-		const { courseId, moduleId, questionIndex, quality } = parsed.data;
+		const { courseId, moduleId, questionIndex, cardId, quality } = parsed.data;
+
+		// 1. Handle direct standalone flashcard review if cardId is provided
+		if (cardId) {
+			const cardRef = adminDb.collection('flashcards').doc(cardId);
+			const cardDoc = await cardRef.get();
+
+			if (!cardDoc.exists) {
+				return json(
+					{ error: { code: 'NOT_FOUND', message: 'Flashcard not found' } },
+					{ status: 404 }
+				);
+			}
+
+			const cardData = cardDoc.data();
+			if (cardData?.uid !== user.uid) {
+				return json({ error: { code: 'FORBIDDEN', message: 'Forbidden' } }, { status: 403 });
+			}
+
+			const fsrsResult = calculateFSRS({
+				quality,
+				card: {
+					stability: cardData?.stability || 0,
+					difficulty: cardData?.difficulty || 5,
+					reps: cardData?.reps || cardData?.repetitions || 0,
+					lapses: cardData?.lapses || 0,
+					state: cardData?.state || 'New',
+					lastReview: cardData?.lastReviewedAt || null
+				}
+			});
+
+			await cardRef.set(
+				{
+					stability: fsrsResult.card.stability,
+					difficulty: fsrsResult.card.difficulty,
+					reps: fsrsResult.card.reps,
+					lapses: fsrsResult.card.lapses,
+					state: fsrsResult.card.state,
+					intervalDays: fsrsResult.intervalDays,
+					dueDate: fsrsResult.nextReviewDate,
+					lastReviewedAt: fsrsResult.card.lastReview,
+					updatedAt: FieldValue.serverTimestamp()
+				},
+				{ merge: true }
+			);
+
+			// Log FSRS review event
+			try {
+				await adminDb.collection('users').doc(user.uid).collection('fsrsReviewLogs').add({
+					cardId,
+					quality,
+					newStability: fsrsResult.card.stability,
+					newDifficulty: fsrsResult.card.difficulty,
+					timestamp: fsrsResult.card.lastReview
+				});
+			} catch (logErr) {
+				console.warn('Failed to log flashcard review:', logErr);
+			}
+
+			return json({ success: true, fsrs: fsrsResult });
+		}
+
+		// 2. Handle module quiz question review
+		if (!courseId || !moduleId || questionIndex === undefined || questionIndex < 0) {
+			return json(
+				{
+					error: { code: 'INVALID_INPUT', message: 'Missing courseId, moduleId, or questionIndex' }
+				},
+				{ status: 400 }
+			);
+		}
 
 		const courseRef = adminDb.collection('courses').doc(courseId);
 		const courseDoc = await courseRef.get();
@@ -67,7 +138,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 		});
 
-		// Update the question's FSRS metadata in the module's questions array
+		// Update question in module
 		const updatedQuestions = [...moduleData.questions];
 		updatedQuestions[questionIndex] = {
 			...currentQuestion,
@@ -89,7 +160,6 @@ export const POST: RequestHandler = async ({ request }) => {
 			{ merge: true }
 		);
 
-		// Record immutable review log for user memory retention analytics
 		try {
 			const lastReviewDate = currentQuestion.lastReviewedAt
 				? new Date(currentQuestion.lastReviewedAt)

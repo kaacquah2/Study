@@ -778,7 +778,7 @@
 			<!-- Reading Progress Bar -->
 			<div class="absolute top-0 left-0 h-1.5 w-full bg-surface-muted/60">
 				<div
-					class="h-full bg-gradient-to-r from-primary to-violet-400 transition-all duration-300"
+					class="h-full bg-linear-to-r from-primary to-violet-400 transition-all duration-300"
 					style="width: {scrollProgress}%"
 				></div>
 			</div>
@@ -1165,7 +1165,7 @@
 						>
 						<div class="h-1.5 w-24 overflow-hidden rounded-full bg-border">
 							<div
-								class="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400 transition-all duration-500"
+								class="h-full rounded-full bg-linear-to-r from-primary to-emerald-400 transition-all duration-500"
 								style="width: {quizQuestions.length > 0
 									? ((displayedScore || score) / quizQuestions.length) * 100
 									: 0}%"

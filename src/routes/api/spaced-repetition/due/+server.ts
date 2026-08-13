@@ -12,15 +12,13 @@ export const GET: RequestHandler = async ({ request, url }) => {
 		const moduleIdFilter = url.searchParams.get('moduleId');
 		const modeFilter = url.searchParams.get('mode') || 'due'; // 'due' or 'all'
 
-		// Query user's courses
-		const coursesSnap = await adminDb.collection('courses').where('ownerUid', '==', user.uid).get();
-
 		interface QuestionCard {
 			courseId: string;
 			courseTitle: string;
 			moduleId: string;
 			moduleTitle: string;
 			questionIndex: number;
+			cardId?: string;
 			question: string;
 			options: string[];
 			answerIndex: number;
@@ -43,6 +41,9 @@ export const GET: RequestHandler = async ({ request, url }) => {
 		const allCollectedQuestions: QuestionCard[] = [];
 		let totalDueCount = 0;
 		let totalCardsCount = 0;
+
+		// 1. Query user's courses and module quiz questions
+		const coursesSnap = await adminDb.collection('courses').where('ownerUid', '==', user.uid).get();
 
 		await Promise.all(
 			coursesSnap.docs.map(async (courseDoc) => {
@@ -109,6 +110,52 @@ export const GET: RequestHandler = async ({ request, url }) => {
 				}
 			})
 		);
+
+		// 2. Query user's standalone flashcards collection (AI generated & lesson saved)
+		const flashcardsSnap = await adminDb
+			.collection('flashcards')
+			.where('uid', '==', user.uid)
+			.get();
+
+		if (!flashcardsSnap.empty) {
+			let fcDueCount = 0;
+			const fcTotalCount = flashcardsSnap.docs.length;
+
+			flashcardsSnap.docs.forEach((fcDoc) => {
+				const fData = fcDoc.data();
+				const isDue = !fData.dueDate || fData.dueDate <= todayStr;
+				if (isDue) {
+					fcDueCount += 1;
+					totalDueCount += 1;
+				}
+				totalCardsCount += 1;
+
+				allCollectedQuestions.push({
+					courseId: fData.courseId || 'flashcards-deck',
+					courseTitle: 'Saved Flashcards Deck',
+					moduleId: fData.moduleId || 'generated-cards',
+					moduleTitle: fData.sourceType === 'rag_document' ? 'RAG Flashcards' : 'Saved Flashcards',
+					questionIndex: -1,
+					cardId: fcDoc.id,
+					question: fData.front || 'Untitled Flashcard',
+					options: [],
+					answerIndex: -1,
+					explanation: fData.back || '',
+					nextReviewDate: fData.dueDate,
+					intervalDays: fData.intervalDays || 0,
+					isDue
+				});
+			});
+
+			availableDecks.push({
+				courseId: 'flashcards-deck',
+				courseTitle: 'Saved Flashcards Deck',
+				moduleId: 'generated-cards',
+				moduleTitle: 'Saved Flashcards',
+				dueCount: fcDueCount,
+				totalCount: fcTotalCount
+			});
+		}
 
 		// Sort decks by dueCount descending then courseTitle
 		availableDecks.sort(

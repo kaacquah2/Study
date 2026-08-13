@@ -27,6 +27,7 @@ import logging
 import random
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -175,7 +176,7 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 # ── X-Request-ID Middleware ──────────────────────────────────────────────────
 @app.middleware("http")
@@ -288,7 +289,7 @@ def metrics():
     """System and inference metrics endpoint."""
     import torch
     cuda_available = torch.cuda.is_available()
-    metrics_data = {
+    metrics_data: dict[str, Any] = {
         "status": "up",
         "cuda_available": cuda_available,
         "device_name": torch.cuda.get_device_name(0) if cuda_available else "CPU",
@@ -306,11 +307,12 @@ def metrics():
 # ── RAG Stats ──────────────────────────────────────────────────────────────────
 
 @app.get("/rag-stats", dependencies=[Depends(verify_api_key)], tags=["RAG"])
-def rag_stats():
+def rag_stats(request: Request):
     """Return current RAG vector store statistics."""
+    user_id = request.headers.get("X-User-ID", "default_user")
     return {
-        "chunk_count": rag.chunk_count(),
-        "has_documents": rag.has_documents(),
+        "chunk_count": rag.chunk_count(user_id=user_id),
+        "has_documents": rag.has_documents(user_id=user_id),
     }
 
 
@@ -318,9 +320,7 @@ def rag_stats():
 
 @app.post("/summarize", response_model=SummarizeResponse, dependencies=[Depends(verify_api_key)], tags=["AI"])
 @limiter.limit("30/minute")
-async def summarize(request: Request, body: SummarizeRequest, response: Response = None):
-    if response is None:
-        response = Response()
+async def summarize(request: Request, body: SummarizeRequest, response: Response):
 
     await _ensure_model_loaded("summarizer", summarizer_model.is_loaded, summarizer_model.load_summarizer)
 
@@ -357,9 +357,7 @@ async def summarize(request: Request, body: SummarizeRequest, response: Response
 
 @app.post("/paraphrase", response_model=ParaphraseResponse, dependencies=[Depends(verify_api_key)], tags=["AI"])
 @limiter.limit("30/minute")
-async def paraphrase(request: Request, body: ParaphraseRequest, response: Response = None):
-    if response is None:
-        response = Response()
+async def paraphrase(request: Request, body: ParaphraseRequest, response: Response):
 
     await _ensure_model_loaded("paraphraser", paraphraser_model.is_loaded, paraphraser_model.load_paraphraser)
 
@@ -391,9 +389,7 @@ async def paraphrase(request: Request, body: ParaphraseRequest, response: Respon
 
 @app.post("/outline", response_model=OutlineResponse, dependencies=[Depends(verify_api_key)], tags=["AI"])
 @limiter.limit("20/minute")
-async def outline(body: OutlineRequest, request: Request, response: Response = None):
-    if response is None:
-        response = Response()
+async def outline(body: OutlineRequest, request: Request, response: Response):
 
     await _ensure_model_loaded("outline_generator", outline_model.is_loaded, outline_model.load_model)
 
@@ -440,9 +436,7 @@ async def outline(body: OutlineRequest, request: Request, response: Response = N
 
 @app.post("/lesson", response_model=LessonResponse, dependencies=[Depends(verify_api_key)], tags=["AI"])
 @limiter.limit("20/minute")
-async def lesson(body: LessonRequest, request: Request, response: Response = None):
-    if response is None:
-        response = Response()
+async def lesson(body: LessonRequest, request: Request, response: Response):
 
     await _ensure_model_loaded("lesson_generator", lesson_model.is_loaded, lesson_model.load_model)
 
@@ -485,9 +479,7 @@ async def lesson(body: LessonRequest, request: Request, response: Response = Non
 
 @app.post("/quiz", response_model=QuizResponse, dependencies=[Depends(verify_api_key)], tags=["AI"])
 @limiter.limit("20/minute")
-async def quiz(request: Request, body: QuizRequest, response: Response = None):
-    if response is None:
-        response = Response()
+async def quiz(request: Request, body: QuizRequest, response: Response):
 
     await _ensure_model_loaded("quiz_pipeline", quiz_model.is_loaded, quiz_model.load_models)
 
@@ -532,9 +524,7 @@ async def quiz(request: Request, body: QuizRequest, response: Response = None):
 
 @app.post("/chat", response_model=ChatResponse, dependencies=[Depends(verify_api_key)], tags=["AI"])
 @limiter.limit("30/minute")
-async def chat(body: ChatRequest, request: Request, response: Response = None):
-    if response is None:
-        response = Response()
+async def chat(body: ChatRequest, request: Request, response: Response):
     try:
         user_id = request.headers.get("X-User-ID", "default_user")
         cache_params = {**body.model_dump(), "user_id": user_id}
@@ -590,12 +580,7 @@ async def chat_stream_endpoint(body: ChatRequest, request: Request):
 
 @app.post("/completion", response_model=CompletionResponse, dependencies=[Depends(verify_api_key)], tags=["AI"])
 @limiter.limit("30/minute")
-async def completion(body: CompletionRequest, request: Request, response: Response = None):
-    """
-    Generic AI completion endpoint used for quiz explanations and flashcard generation.
-    """
-    if response is None:
-        response = Response()
+async def completion(body: CompletionRequest, request: Request, response: Response):
     try:
         user_id = request.headers.get("X-User-ID", "default_user")
         cache_key = cache.generate_key("completion", {**body.model_dump(), "user_id": user_id})

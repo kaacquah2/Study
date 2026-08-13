@@ -84,7 +84,6 @@
 
 <div class="my-6 flex flex-col items-center gap-3">
 	<!-- 3D Flip Card -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="flip-card h-52 w-full max-w-md cursor-pointer"
 		onclick={flipCard}
