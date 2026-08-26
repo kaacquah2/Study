@@ -39,6 +39,7 @@
 	let selectedOption = $state<number | null>(null);
 	let isAnswered = $state(false);
 	let reviewCount = $state(0);
+	let drillSessionStarted = $state(false);
 
 	// Interactive enhancements
 	let cardAnimKey = $state(0);
@@ -406,64 +407,122 @@
 			{errorMsg}
 		</div>
 	{:else if dueQuestions.length === 0}
+		<!-- All Caught Up / Session Complete Screen -->
 		<div
-			class="flex flex-col items-center justify-center gap-4 rounded-3xl border border-border bg-surface p-12 text-center shadow-xs"
+			class="flex flex-col items-center justify-center gap-5 rounded-3xl border border-border bg-surface p-8 text-center shadow-xs sm:p-12"
 		>
 			<div
 				class="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/20 text-3xl"
 			>
-				🎉
+				{reviewCount > 0 ? '🏆' : '🎉'}
 			</div>
 			<div>
-				<h2 class="font-display text-xl font-bold text-text">
-					{reviewMode === 'due' ? 'No Due Cards Scheduled for Selected Quiz!' : 'No Cards Found'}
+				<h2 class="font-display text-xl font-bold text-text sm:text-2xl">
+					{reviewCount > 0
+						? 'Session Complete!'
+						: reviewMode === 'due'
+							? 'All Caught Up for Today!'
+							: 'No Cards Found'}
 				</h2>
-				<p class="mt-1 max-w-md text-xs text-text-muted">
-					{#if reviewMode === 'due'}
-						Great job! All spaced repetition cards in this deck scheduled for today are complete.
-						Switch to
-						<strong>Practice Mode</strong> to review all quiz cards on demand.
+				<p class="mt-1.5 max-w-md text-xs leading-relaxed text-text-muted sm:text-sm">
+					{#if reviewCount > 0}
+						Awesome work! You reviewed <strong>{reviewCount} card{reviewCount > 1 ? 's' : ''}</strong>. Your FSRS memory stability ratings have been synchronized to Firestore.
+					{:else if reviewMode === 'due'}
+						You have no cards due for review right now. All scheduled spaced-repetition questions are up to date!
 					{:else}
-						No flashcard quiz questions available for the selected filter. Try selecting another
-						course or quiz.
+						No quiz cards available for the selected filter. Try selecting another course or quiz.
 					{/if}
 				</p>
 			</div>
+
+			{#if reviewCount > 0}
+				<div class="grid grid-cols-2 gap-3 w-full max-w-md">
+					<div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-center">
+						<span class="block text-[10px] font-bold uppercase text-emerald-400">Cards Reviewed</span>
+						<span class="font-display text-lg font-bold text-emerald-300">{reviewCount}</span>
+					</div>
+					<div class="rounded-2xl border border-primary/30 bg-primary-soft/40 p-3.5 text-center">
+						<span class="block text-[10px] font-black uppercase text-primary">FSRS Status</span>
+						<span class="font-display text-lg font-bold text-text">Updated</span>
+					</div>
+				</div>
+			{/if}
 
 			<div class="mt-2 flex flex-wrap items-center justify-center gap-3">
 				{#if reviewMode === 'due'}
 					<button
 						type="button"
-						onclick={() => handleModeToggle('all')}
+						onclick={() => {
+							drillSessionStarted = false;
+							handleModeToggle('all');
+						}}
 						class="inline-flex cursor-pointer items-center justify-center rounded-2xl bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary-hover active:scale-95"
 					>
-						🎯 Switch to Practice All Cards
-					</button>
-				{/if}
-				{#if selectedCourseId || selectedModuleId}
-					<button
-						type="button"
-						onclick={() => applyFilterChange('', '', 'due')}
-						class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-border bg-surface-muted px-5 py-2.5 text-xs font-bold text-text shadow-xs hover:border-primary active:scale-95"
-					>
-						🌐 View All Courses & Quizzes
+						🎯 Practice All Deck Cards
 					</button>
 				{/if}
 				<a
+					href={resolve('/app/knowledge-map')}
+					class="inline-flex items-center justify-center rounded-2xl border border-border bg-surface px-5 py-2.5 text-xs font-bold text-text shadow-xs hover:border-primary active:scale-95"
+				>
+					🗺️ View Knowledge Map
+				</a>
+				<a
 					href={resolve('/app')}
-					class="inline-flex items-center justify-center rounded-2xl border border-border bg-surface px-5 py-2.5 text-xs font-bold text-text-muted hover:text-text active:scale-95"
+					class="inline-flex items-center justify-center rounded-2xl border border-border bg-surface-muted px-5 py-2.5 text-xs font-bold text-text-muted hover:text-text active:scale-95"
 				>
 					Return to Dashboard &rarr;
 				</a>
 			</div>
-
-			{#if reviewCount > 0}
+		</div>
+	{:else if dueQuestions.length > 0 && !drillSessionStarted}
+		<!-- Pre-Session Memory Drill Briefing Card -->
+		<div class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8">
+			<div class="flex flex-col gap-2">
 				<div
-					class="mt-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-400"
+					class="inline-flex items-center gap-1.5 self-start rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-black tracking-wider uppercase text-amber-400"
 				>
-					✓ Completed {reviewCount} card review{reviewCount > 1 ? 's' : ''} in this session
+					<span>🧠 FSRS Memory Retention Session</span>
 				</div>
-			{/if}
+				<h2 class="font-display text-xl font-bold text-text sm:text-2xl">
+					Ready for your spaced repetition drill?
+				</h2>
+				<p class="text-xs leading-relaxed text-text-muted sm:text-sm">
+					Reviewing key questions right before memory decay maximizes long-term recall stability with minimum effort.
+				</p>
+			</div>
+
+			<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+				<div class="rounded-2xl border border-border bg-surface-muted p-4">
+					<span class="block text-[10px] font-bold text-text-muted uppercase">Cards in Queue</span>
+					<span class="font-display text-base font-bold text-text">
+						{dueQuestions.length} {reviewMode === 'due' ? 'Due Cards' : 'Cards'}
+					</span>
+				</div>
+				<div class="rounded-2xl border border-border bg-surface-muted p-4">
+					<span class="block text-[10px] font-bold text-text-muted uppercase">Estimated Time</span>
+					<span class="font-display text-base font-bold text-text">
+						~{Math.max(1, Math.ceil(dueQuestions.length * 0.75))} mins
+					</span>
+				</div>
+				<div class="col-span-2 rounded-2xl border border-border bg-surface-muted p-4 sm:col-span-1">
+					<span class="block text-[10px] font-bold text-text-muted uppercase">Algorithm</span>
+					<span class="font-display text-base font-bold text-amber-400">
+						FSRS-4.5
+					</span>
+				</div>
+			</div>
+
+			<div class="flex items-center justify-between border-t border-border/80 pt-4">
+				<span class="text-xs text-text-muted">Keyboard shortcuts [1], [2], [3], [4] supported</span>
+				<button
+					type="button"
+					onclick={() => (drillSessionStarted = true)}
+					class="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-amber-500 px-6 py-3 text-xs font-bold text-slate-950 shadow-md transition-all hover:bg-amber-400 active:scale-95"
+				>
+					<span>Start Review Session &rarr;</span>
+				</button>
+			</div>
 		</div>
 	{:else if currentQ}
 		<!-- Session progress bar -->

@@ -58,7 +58,7 @@ import models.outline_generator as outline_model
 import models.lesson_generator as lesson_model
 import models.quiz_pipeline as quiz_model
 import models.chat_assistant as chat_model
-from models.model_registry import inference_lock, is_any_inference_busy, get_device_diagnostics
+from models.model_registry import inference_lock, is_any_inference_busy, get_device_diagnostics, inference_start, inference_end
 from models.rag_pipeline import rag
 
 # ── Structured JSON Logging ────────────────────────────────────────────────────
@@ -173,8 +173,12 @@ async def _async_seed_rag():
 
     if texts:
         try:
-            added = await asyncio.to_thread(rag.add_documents, texts)
-            logger.info(f"[RAG auto-seed] Done. {added} chunks added from {len(texts)} sample documents.")
+            # Seed documents are GLOBAL scope: visible to all authenticated users,
+            # not tied to any individual user's private namespace.
+            added = await asyncio.to_thread(
+                rag.add_documents, texts, "__system__", "global"
+            )
+            logger.info(f"[RAG auto-seed] Done. {added} global chunks added from {len(texts)} sample documents.")
         except Exception as e:
             logger.error(f"[RAG auto-seed] Failed to seed documents: {e}")
     else:
@@ -205,14 +209,35 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
-# ── X-Request-ID Middleware ──────────────────────────────────────────────────
+# ── X-Request-ID and Latency Middleware ─────────────────────────────────────────
+import time
+import psutil  # type: ignore[import-untyped]
+
+_METRICS_COUNTERS = {
+    "total_requests": 0,
+    "total_errors": 0,
+    "start_time": time.time(),
+}
+
 @app.middleware("http")
-async def request_id_middleware(request: Request, call_next):
+async def request_metrics_middleware(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
     request.state.request_id = request_id
-    response = await call_next(request)
-    response.headers["X-Request-ID"] = request_id
-    return response
+    start_time = time.perf_counter()
+    _METRICS_COUNTERS["total_requests"] += 1
+
+    try:
+        response = await call_next(request)
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        response.headers["X-Request-ID"] = request_id
+        response.headers["X-Response-Time-Ms"] = str(duration_ms)
+        logger.info(f"[{request.method}] {request.url.path} - status={response.status_code} - duration={duration_ms}ms [req_id={request_id}]")
+        return response
+    except Exception as e:
+        _METRICS_COUNTERS["total_errors"] += 1
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        logger.error(f"[{request.method}] {request.url.path} - FAILED - duration={duration_ms}ms [req_id={request_id}]: {e}")
+        raise
 
 
 allowed_origins_raw = os.getenv("ALLOWED_ORIGINS", "")
@@ -362,12 +387,21 @@ async def health_alias():
 
 
 @app.get("/metrics", dependencies=[Depends(verify_api_key)], tags=["Health"])
+@app.get("/admin/metrics", dependencies=[Depends(verify_api_key)], tags=["Health"])
 def metrics():
-    """System and inference metrics endpoint."""
+    """Protected system, inference, and operational metrics endpoint."""
     import torch
     cuda_available = torch.cuda.is_available()
+    process = psutil.Process(os.getpid())
+    ram_mb = round(process.memory_info().rss / (1024 * 1024), 2)
+    uptime_sec = round(time.time() - _METRICS_COUNTERS["start_time"], 1)
+
     metrics_data: dict[str, Any] = {
         "status": "up",
+        "uptime_seconds": uptime_sec,
+        "total_requests": _METRICS_COUNTERS["total_requests"],
+        "total_errors": _METRICS_COUNTERS["total_errors"],
+        "process_ram_mb": ram_mb,
         "cuda_available": cuda_available,
         "device_name": torch.cuda.get_device_name(0) if cuda_available else "CPU",
         "inference_lock_held": is_any_inference_busy(),
@@ -385,8 +419,8 @@ def metrics():
 
 @app.get("/rag-stats", dependencies=[Depends(verify_api_key)], tags=["RAG"])
 def rag_stats(request: Request):
-    """Return current RAG vector store statistics."""
-    user_id = request.headers.get("X-User-ID", "default_user")
+    """Return current RAG vector store statistics for the requesting user."""
+    user_id = request.headers.get("X-User-ID", "__anonymous__")
     return {
         "chunk_count": rag.chunk_count(user_id=user_id),
         "has_documents": rag.has_documents(user_id=user_id),
@@ -470,7 +504,10 @@ async def outline(body: OutlineRequest, request: Request, response: Response):
 
     await _ensure_model_loaded("outline_generator", outline_model.is_loaded, outline_model.load_model)
 
-    user_id = request.headers.get("X-User-ID", "default_user")
+    # user_id derived from the trusted X-User-ID header set by the SvelteKit server
+    # after Firebase token verification. Never from client-supplied body fields.
+    user_id = request.headers.get("X-User-ID", "__anonymous__")
+    # Outline is RAG-augmented: output varies per user — include user_id in cache key.
     cache_params = {**body.model_dump(), "user_id": user_id}
     cache_key = cache.generate_key("outline", cache_params)
     cached_val, status = cache.get(cache_key)
@@ -517,7 +554,8 @@ async def lesson(body: LessonRequest, request: Request, response: Response):
 
     await _ensure_model_loaded("lesson_generator", lesson_model.is_loaded, lesson_model.load_model)
 
-    user_id = request.headers.get("X-User-ID", "default_user")
+    user_id = request.headers.get("X-User-ID", "__anonymous__")
+    # Lesson is RAG-augmented: output varies per user — include user_id in cache key.
     cache_params = {**body.model_dump(), "user_id": user_id}
     cache_key = cache.generate_key("lesson", cache_params)
     cached_val, status = cache.get(cache_key)
@@ -603,7 +641,8 @@ async def quiz(request: Request, body: QuizRequest, response: Response):
 @limiter.limit("30/minute")
 async def chat(body: ChatRequest, request: Request, response: Response):
     try:
-        user_id = request.headers.get("X-User-ID", "default_user")
+        user_id = request.headers.get("X-User-ID", "__anonymous__")
+        # Chat is RAG-augmented and conversation-specific — user_id is in cache key.
         cache_params = {**body.model_dump(), "user_id": user_id}
         cache_key = cache.generate_key("chat", cache_params)
         cached_val, status = cache.get(cache_key)
@@ -642,7 +681,7 @@ async def chat_stream_endpoint(body: ChatRequest, request: Request):
     """
     Stream AI chat response via Server-Sent Events (SSE).
     """
-    user_id = request.headers.get("X-User-ID", "default_user")
+    user_id = request.headers.get("X-User-ID", "__anonymous__")
     return StreamingResponse(
         chat_model.chat_stream(
             messages=[m.model_dump() for m in body.messages],
@@ -659,7 +698,7 @@ async def chat_stream_endpoint(body: ChatRequest, request: Request):
 @limiter.limit("30/minute")
 async def completion(body: CompletionRequest, request: Request, response: Response):
     try:
-        user_id = request.headers.get("X-User-ID", "default_user")
+        user_id = request.headers.get("X-User-ID", "__anonymous__")
         cache_key = cache.generate_key("completion", {**body.model_dump(), "user_id": user_id})
         cached_val, status = cache.get(cache_key)
         response.headers["X-Cache"] = status
@@ -698,11 +737,17 @@ async def completion(body: CompletionRequest, request: Request, response: Respon
 @limiter.limit("20/minute")
 async def add_documents(body: DocumentsRequest, request: Request):
     """
-    Add plain-text documents to the RAG vector store for a specific user.
+    Add plain-text documents to the RAG vector store for the requesting user.
+
+    Trust boundary: user_id is derived EXCLUSIVELY from the X-User-ID header,
+    which is set by the SvelteKit application server after verifying the user's
+    Firebase ID token. The ML backend API key + optional HMAC signing ensure
+    only the trusted SvelteKit server can reach this endpoint.
+    Client-supplied identity fields in the request body are ignored.
     """
-    user_id = body.user_id or request.headers.get("X-User-ID", "default_user")
+    user_id = request.headers.get("X-User-ID", "__anonymous__")
     added = await asyncio.wait_for(
-        asyncio.to_thread(rag.add_documents, body.texts, user_id=user_id),
+        asyncio.to_thread(rag.add_documents, body.texts, user_id, "private"),
         timeout=_INFERENCE_TIMEOUT,
     )
     return {"status": "ok", "chunks_added": added, "user_id": user_id}
@@ -711,7 +756,10 @@ async def add_documents(body: DocumentsRequest, request: Request):
 @app.delete("/documents", dependencies=[Depends(verify_api_key)], tags=["RAG"])
 @limiter.limit("20/minute")
 async def clear_documents(request: Request):
-    """Clear documents for the requesting user from the RAG vector store."""
-    user_id = request.headers.get("X-User-ID", "default_user")
+    """
+    Clear private documents for the requesting user from the RAG vector store.
+    Global reference documents are never affected by user-initiated clears.
+    """
+    user_id = request.headers.get("X-User-ID", "__anonymous__")
     await asyncio.to_thread(rag.clear, user_id=user_id)
-    return {"status": "ok", "message": f"Vector store cleared for user {user_id}."}
+    return {"status": "ok", "message": f"Private vector store cleared for user {user_id}."}

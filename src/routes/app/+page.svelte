@@ -4,7 +4,9 @@
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BadgeStrip from '$lib/components/BadgeStrip.svelte';
+	import Onboarding from '$lib/components/Onboarding.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import { chatStore } from '$lib/stores/chat.svelte';
 	import { db, auth } from '$lib/firebase/client';
 	import { collection, query, where, onSnapshot } from 'firebase/firestore';
 	import { goto } from '$app/navigation';
@@ -15,6 +17,17 @@
 	let loadError = $state('');
 	let shareUrl = $state('');
 	let showShareModal = $state(false);
+	let showAchievements = $state(false);
+	let showOnboardingDismissed = $state(false);
+
+	let showOnboardingModal = $derived(
+		!loading &&
+		authStore.authResolved &&
+		Boolean(authStore.user) &&
+		!showOnboardingDismissed &&
+		authStore.profile?.onboardingComplete !== true &&
+		courses.length === 0
+	);
 
 	let firstName = $derived.by(() => {
 		const name = authStore.user?.displayName || authStore.profile?.displayName;
@@ -22,6 +35,23 @@
 		const email = authStore.user?.email;
 		if (email) return email.split('@')[0];
 		return 'Learner';
+	});
+
+	let greetingTime = $derived.by(() => {
+		const hour = new Date().getHours();
+		if (hour < 12) return 'Good morning';
+		if (hour < 18) return 'Good afternoon';
+		return 'Good evening';
+	});
+
+	let currentStreak = $derived(authStore.profile?.streak?.current ?? 0);
+	let longestStreak = $derived(authStore.profile?.streak?.longest ?? authStore.profile?.longestStreak ?? currentStreak);
+	let lastStudiedOn = $derived(authStore.profile?.streak?.lastStudiedOn || null);
+
+	let studiedToday = $derived.by(() => {
+		if (!lastStudiedOn) return false;
+		const todayStr = new Date().toISOString().split('T')[0];
+		return String(lastStudiedOn).startsWith(todayStr);
 	});
 
 	let userBadges = $derived(authStore.profile?.badges ?? []);
@@ -39,7 +69,7 @@
 
 	let dueReviewsCount = $state(0);
 
-	// Item #15: Categorize In-Progress vs Completed courses
+	// Categorize In-Progress vs Completed courses
 	let inProgressCourses = $derived(
 		courses.filter((c) => {
 			const completed = c.progress?.completed || 0;
@@ -56,13 +86,84 @@
 		})
 	);
 
-	// Item #14: Abandoned Course Re-engagement
+	// Most relevant abandoned/in-progress course
 	let abandonedCourse = $derived.by(() => {
 		return inProgressCourses.find((c) => {
 			const completed = c.progress?.completed || 0;
 			const total = c.moduleCount || 1;
 			return completed > 0 && completed < total;
 		});
+	});
+
+	// Deterministic Learning Recommendation logic (Priority 1 -> 4)
+	let primaryRecommendation = $derived.by(() => {
+		if (dueReviewsCount > 0) {
+			return {
+				type: 'review' as const,
+				badge: '🧠 Active Recall Due',
+				badgeBg: 'bg-amber-500/20 border-amber-500/40 text-amber-300',
+				cardBg: 'border-amber-500/30 bg-linear-to-br from-amber-500/10 via-surface to-surface',
+				btnBg: 'bg-amber-500 text-slate-950 hover:bg-amber-400',
+				title: `Review ${dueReviewsCount} Due Question${dueReviewsCount > 1 ? 's' : ''}`,
+				description: 'Strengthen long-term memory with FSRS spaced repetition before concepts begin to decay.',
+				actionLabel: 'Start Review Session →',
+				actionHref: '/app/review'
+			};
+		}
+		if (abandonedCourse) {
+			const completed = abandonedCourse.progress?.completed || 0;
+			const total = abandonedCourse.moduleCount || 1;
+			const pct = Math.min(100, Math.round((completed / total) * 100));
+			return {
+				type: 'continue' as const,
+				badge: '📍 Resume Learning',
+				badgeBg: 'bg-primary-soft border-primary/40 text-primary',
+				cardBg: 'border-primary/30 bg-linear-to-br from-primary-soft/30 via-surface to-surface',
+				btnBg: 'bg-primary text-white hover:bg-primary-hover',
+				title: `Continue "${abandonedCourse.title}"`,
+				description: `You are ${pct}% through (${completed}/${total} modules completed). Keep your momentum going!`,
+				actionLabel: 'Resume Course →',
+				actionHref: `/app/courses/${abandonedCourse.id}`
+			};
+		}
+		if (inProgressCourses.length > 0) {
+			const c = inProgressCourses[0];
+			return {
+				type: 'continue' as const,
+				badge: '🚀 Continue Learning',
+				badgeBg: 'bg-primary-soft border-primary/40 text-primary',
+				cardBg: 'border-primary/30 bg-linear-to-br from-primary-soft/30 via-surface to-surface',
+				btnBg: 'bg-primary text-white hover:bg-primary-hover',
+				title: `Next Up: "${c.title}"`,
+				description: c.description || 'Master key concepts through interactive explanations, checks, and quizzes.',
+				actionLabel: 'Open Course →',
+				actionHref: `/app/courses/${c.id}`
+			};
+		}
+		if (courses.length > 0) {
+			return {
+				type: 'explore' as const,
+				badge: '🎓 All Courses Complete',
+				badgeBg: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300',
+				cardBg: 'border-emerald-500/30 bg-linear-to-br from-emerald-500/10 via-surface to-surface',
+				btnBg: 'bg-emerald-500 text-slate-950 hover:bg-emerald-400',
+				title: 'Great job! Explore a New Topic',
+				description: 'You have mastered all your courses. Create a new AI curriculum or explore shared courses.',
+				actionLabel: '+ Create New Course',
+				actionHref: '/app/courses/createCourse'
+			};
+		}
+		return {
+			type: 'create' as const,
+			badge: '🌱 Welcome to Study AI',
+			badgeBg: 'bg-primary-soft border-primary/40 text-primary',
+			cardBg: 'border-primary/30 bg-linear-to-br from-primary-soft/30 via-surface to-surface',
+			btnBg: 'bg-primary text-white hover:bg-primary-hover',
+			title: 'Build Your First Intelligent Course',
+			description: 'Generate structured lessons, quizzes, mindmaps, and active-recall flashcards from any topic.',
+			actionLabel: '+ Create Your First Course',
+			actionHref: '/app/courses/createCourse'
+		};
 	});
 
 	$effect(() => {
@@ -129,126 +230,198 @@
 </script>
 
 <svelte:head>
-	<title>Dashboard &mdash; AI Study Buddy</title>
+	<title>Dashboard &mdash; Study AI</title>
 </svelte:head>
 
-<div class="flex w-full flex-col gap-8">
-	<!-- Welcome Header Banner -->
+<div class="flex w-full flex-col gap-7">
+	<!-- Zone 1: Personalized Header Banner with Verified Streak Stats -->
 	<div
-		class="relative overflow-hidden rounded-3xl bg-linear-to-r from-indigo-900 via-indigo-800 to-purple-900 p-6 text-white shadow-xl sm:p-8"
+		class="relative overflow-hidden rounded-3xl bg-linear-to-r from-indigo-950 via-indigo-900 to-purple-950 p-6 text-white shadow-xl sm:p-8"
 	>
-		<div class="absolute -top-10 -right-10 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl"></div>
-		<div class="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
-			<div>
-				<div
-					class="mb-2 inline-flex items-center gap-2 rounded-full border border-indigo-300/20 bg-indigo-500/20 px-3 py-1 text-xs font-semibold text-indigo-200"
-				>
-					<span>👋 Welcome back, {firstName}</span>
+		<div class="absolute -top-12 -right-12 h-64 w-64 rounded-full bg-purple-500/15 blur-3xl"></div>
+		<div class="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
+			<div class="flex flex-col gap-2">
+				<div class="inline-flex items-center gap-2">
+					<span
+						class="rounded-full border border-indigo-300/30 bg-indigo-500/25 px-3 py-1 text-xs font-semibold text-indigo-200"
+					>
+						{greetingTime}, {firstName} 👋
+					</span>
+					{#if studiedToday}
+						<span
+							class="rounded-full border border-emerald-400/30 bg-emerald-500/20 px-2.5 py-1 text-[11px] font-bold text-emerald-300"
+						>
+							✓ Studied Today
+						</span>
+					{/if}
 				</div>
-				<h1 class="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-					Your Learning Dashboard
+
+				<h1 class="font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
+					What would you like to learn today?
 				</h1>
-				<p class="mt-1 text-xs text-indigo-200/80 sm:text-sm">
-					Track your daily progress, earn badges, and explore interactive AI courses.
-				</p>
+
+				<!-- Verified Streak Info Pill -->
+				<div class="mt-1 flex flex-wrap items-center gap-3 text-xs text-indigo-200/90">
+					<span class="flex items-center gap-1.5 font-semibold">
+						<span class="text-base">🔥</span>
+						<strong>{currentStreak} day streak</strong>
+						{#if longestStreak > currentStreak}
+							<span class="text-indigo-300/60">(Best: {longestStreak}d)</span>
+						{/if}
+					</span>
+					<span class="text-indigo-300/40">•</span>
+					<span>{courses.length} course{courses.length === 1 ? '' : 's'} enrolled</span>
+					{#if dueReviewsCount > 0}
+						<span class="text-indigo-300/40">•</span>
+						<span class="font-bold text-amber-300">🧠 {dueReviewsCount} cards due</span>
+					{/if}
+				</div>
 			</div>
 
-			<a
-				href="/app/courses/createCourse"
-				class="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3 text-xs font-bold text-indigo-900 shadow-lg transition-all duration-180 hover:bg-indigo-50 active:scale-95"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-4 w-4"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
+			<div class="flex shrink-0 items-center gap-3">
+				<a
+					href="/app/courses/createCourse"
+					class="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-xs font-bold text-indigo-950 shadow-lg transition-all duration-180 hover:bg-indigo-50 active:scale-95"
 				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2.5"
-						d="M12 4v16m8-8H4"
-					/>
-				</svg>
-				+ Create New Course
-			</a>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-4 w-4"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2.5"
+							d="M12 4v16m8-8H4"
+						/>
+					</svg>
+					<span>+ New Course</span>
+				</a>
+			</div>
 		</div>
 	</div>
 
-	<!-- Spaced-Repetition Due Review Card Nudge -->
-	{#if dueReviewsCount > 0}
-		<div
-			class="flex items-center justify-between gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 shadow-xs"
+	<!-- Zone 2: Today's Focus — Deterministic Primary Learning Recommendation -->
+	<section class="flex flex-col gap-3">
+		<div class="flex items-center justify-between">
+			<h2 class="font-display text-sm font-bold tracking-wider uppercase text-text-muted">
+				🎯 Today's Learning Focus
+			</h2>
+			{#if dueReviewsCount > 0}
+				<span class="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-500">
+					{dueReviewsCount} due for review
+				</span>
+			{/if}
+		</div>
+
+		<div class="rounded-3xl border p-6 shadow-sm sm:p-7 {primaryRecommendation.cardBg}">
+			<div class="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+				<div class="flex max-w-2xl flex-col gap-2">
+					<div
+						class="inline-flex items-center gap-1.5 self-start rounded-full border px-3 py-1 text-[10px] font-black tracking-wider uppercase {primaryRecommendation.badgeBg}"
+					>
+						<span>{primaryRecommendation.badge}</span>
+					</div>
+					<h3 class="font-display text-lg font-bold text-text sm:text-xl">
+						{primaryRecommendation.title}
+					</h3>
+					<p class="text-xs leading-relaxed text-text-muted sm:text-sm">
+						{primaryRecommendation.description}
+					</p>
+				</div>
+
+				<div class="flex shrink-0 items-center gap-3">
+					<a
+						href={primaryRecommendation.actionHref}
+						class="inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-xs font-bold shadow-md transition-all duration-180 hover:scale-[1.02] active:scale-95 {primaryRecommendation.btnBg}"
+					>
+						<span>{primaryRecommendation.actionLabel}</span>
+					</a>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Quick Action Learning Grid -->
+	<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+		<!-- 1. Practice & Recall -->
+		<a
+			href="/app/review"
+			class="group flex items-center justify-between rounded-2xl border border-border bg-surface p-4.5 shadow-2xs transition-all duration-180 hover:border-primary/40 hover:bg-surface-muted/50"
 		>
-			<div class="flex items-center gap-3">
-				<div
-					class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-lg font-bold text-slate-950"
-				>
+			<div class="flex items-center gap-3.5">
+				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-lg">
 					🧠
 				</div>
 				<div>
-					<h3 class="font-display text-sm font-bold text-text">Spaced-Repetition Memory Boost</h3>
-					<p class="text-xs text-text-muted">
-						You have <strong
-							>{dueReviewsCount} question{dueReviewsCount > 1 ? 's' : ''} due for review</strong
-						> today to strengthen long-term recall.
-					</p>
-				</div>
-			</div>
-			<a
-				href="/app/review"
-				class="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-xs transition-all hover:bg-amber-400 active:scale-95"
-			>
-				Start Review Session &rarr;
-			</a>
-		</div>
-	{/if}
-
-	<!-- Item #14: Abandoned Course Idle Re-engagement Nudge Banner -->
-	{#if abandonedCourse}
-		{@const completed = abandonedCourse.progress?.completed || 0}
-		{@const total = abandonedCourse.moduleCount || 1}
-		{@const pct = Math.min(100, Math.round((completed / total) * 100))}
-		<div
-			class="flex items-center justify-between gap-4 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-4 shadow-xs"
-		>
-			<div class="flex items-center gap-3">
-				<span class="text-2xl">⏳</span>
-				<div>
-					<h4 class="font-display text-xs font-bold tracking-wider text-indigo-300 uppercase">
-						Keep your momentum going!
+					<h4 class="font-display text-xs font-bold text-text group-hover:text-primary">
+						Practice & Recall
 					</h4>
-					<p class="text-xs font-semibold text-text">
-						You're <strong>{pct}% through "{abandonedCourse.title}"</strong> ({completed}/{total} modules
-						completed). Pick up where you left off!
+					<p class="text-[11px] text-text-muted">
+						{dueReviewsCount > 0 ? `${dueReviewsCount} questions due` : 'FSRS Memory scheduler'}
 					</p>
 				</div>
 			</div>
-			<a
-				href={`/app/courses/${abandonedCourse.id}`}
-				class="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-500 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-600 active:scale-95"
-			>
-				Resume Course &rarr;
-			</a>
-		</div>
-	{/if}
+			<span class="text-xs text-text-muted transition-transform group-hover:translate-x-0.5">→</span>
+		</a>
 
-	<!-- Badges Strip -->
-	<div class="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-xs">
-		<div class="flex items-center justify-between">
-			<h3 class="font-display text-sm font-bold text-text">Your Achievements</h3>
-			<span class="text-xs font-semibold text-text-muted"
-				>{userBadges.length} of 5 badges unlocked</span
-			>
-		</div>
-		<BadgeStrip badges={userBadges} />
+		<!-- 2. Knowledge Map -->
+		<a
+			href="/app/knowledge-map"
+			class="group flex items-center justify-between rounded-2xl border border-border bg-surface p-4.5 shadow-2xs transition-all duration-180 hover:border-primary/40 hover:bg-surface-muted/50"
+		>
+			<div class="flex items-center gap-3.5">
+				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-lg text-primary">
+					🗺️
+				</div>
+				<div>
+					<h4 class="font-display text-xs font-bold text-text group-hover:text-primary">
+						Knowledge Map
+					</h4>
+					<p class="text-[11px] text-text-muted">
+						Prerequisite concept tree
+					</p>
+				</div>
+			</div>
+			<span class="text-xs text-text-muted transition-transform group-hover:translate-x-0.5">→</span>
+		</a>
+
+		<!-- 3. AI Study Tutor -->
+		<button
+			type="button"
+			onclick={() => chatStore.toggle()}
+			class="group flex cursor-pointer items-center justify-between rounded-2xl border border-border bg-surface p-4.5 text-left shadow-2xs transition-all duration-180 hover:border-primary/40 hover:bg-surface-muted/50"
+		>
+			<div class="flex items-center gap-3.5">
+				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-lg text-purple-600">
+					✨
+				</div>
+				<div>
+					<h4 class="font-display text-xs font-bold text-text group-hover:text-primary">
+						AI Study Tutor
+					</h4>
+					<p class="text-[11px] text-text-muted">
+						Ask questions & explanations
+					</p>
+				</div>
+			</div>
+			<span class="text-xs text-text-muted transition-transform group-hover:translate-x-0.5">→</span>
+		</button>
 	</div>
 
-	<!-- Course Grid Section -->
-	<div class="flex flex-col gap-6">
+	<!-- Zone 3 & 4: Course Section -->
+	<section class="flex flex-col gap-6 pt-2">
 		<div class="flex items-center justify-between">
-			<h2 class="font-display text-lg font-bold text-text">My Courses ({courses.length})</h2>
+			<h2 class="font-display text-lg font-bold text-text">
+				My Courses ({courses.length})
+			</h2>
+			{#if courses.length > 0}
+				<a href="/app/courses/createCourse" class="text-xs font-bold text-primary hover:underline">
+					+ New Course
+				</a>
+			{/if}
 		</div>
 
 		{#if loading}
@@ -266,10 +439,10 @@
 		{:else if courses.length === 0}
 			<EmptyState
 				title="No courses created yet"
-				description="Start by creating your first AI-powered course on any topic, or browse courses created by the community."
-				actionLabel="+ Create New Course"
+				description="Start your learning journey by generating your first AI-powered course on any topic, or explore community materials."
+				actionLabel="+ Create First Course"
 				onAction={() => goto('/app/courses/createCourse')}
-				secondaryActionLabel="or browse a course someone else made"
+				secondaryActionLabel="or explore community courses"
 				secondaryActionHref="/app/explore"
 				suggestions={topicSuggestions}
 				onSelectSuggestion={handleSelectSuggestion}
@@ -280,9 +453,9 @@
 			{@const totalCount = recentCourse.moduleCount ?? 1}
 			{@const pct = Math.min(100, Math.round((completedCount / totalCount) * 100))}
 
-			<!-- Prominent Resume / Pick Up Where You Left Off Card -->
+			<!-- Prominent Resume / Active Course Card -->
 			<div
-				class="relative overflow-hidden rounded-3xl border border-primary/30 bg-linear-to-br from-primary-soft/40 via-surface to-surface p-6 shadow-md sm:p-8"
+				class="relative overflow-hidden rounded-3xl border border-primary/25 bg-surface p-6 shadow-xs sm:p-8"
 			>
 				<div class="flex flex-col justify-between gap-6 md:flex-row md:items-center">
 					<div class="flex max-w-2xl flex-col gap-2.5">
@@ -318,7 +491,7 @@
 					<div class="flex shrink-0 flex-col items-stretch gap-3 sm:flex-row md:flex-col">
 						<a
 							href={`/app/courses/${recentCourse.id}`}
-							class="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-xs font-bold text-white shadow-lg shadow-primary/25 transition-all duration-180 hover:scale-[1.02] hover:bg-primary-hover active:scale-95"
+							class="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all duration-180 hover:scale-[1.02] hover:bg-primary-hover active:scale-95"
 						>
 							<span>Resume Learning</span>
 							<svg
@@ -348,15 +521,15 @@
 				</div>
 			</div>
 
-			<!-- Item #15: Grouped Courses Sections -->
+			<!-- In Progress Courses -->
 			{#if inProgressCourses.length > 0}
-				<div class="flex flex-col gap-4 pt-4">
+				<div class="flex flex-col gap-4 pt-2">
 					<h3 class="font-display text-xs font-bold tracking-wider text-text-muted uppercase">
-						In Progress Courses ({inProgressCourses.length})
+						In Progress ({inProgressCourses.length})
 					</h3>
 					<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
 						{#each inProgressCourses as course, idx (course.id)}
-							<div class="anim-slide-up" style="animation-delay: {idx * 70}ms">
+							<div class="anim-slide-up" style="animation-delay: {idx * 60}ms">
 								<CourseCard
 									id={course.id || ''}
 									title={course.title}
@@ -373,14 +546,15 @@
 				</div>
 			{/if}
 
+			<!-- Completed Courses -->
 			{#if completedCourses.length > 0}
 				<div class="flex flex-col gap-4 pt-4">
-					<h3 class="font-display text-xs font-bold tracking-wider text-emerald-400 uppercase">
+					<h3 class="font-display text-xs font-bold tracking-wider text-emerald-500 uppercase">
 						🎓 Completed Courses & Certificates ({completedCourses.length})
 					</h3>
 					<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
 						{#each completedCourses as course, idx (course.id)}
-							<div class="anim-slide-up" style="animation-delay: {idx * 70}ms">
+							<div class="anim-slide-up" style="animation-delay: {idx * 60}ms">
 								<CourseCard
 									id={course.id || ''}
 									title={course.title}
@@ -397,7 +571,35 @@
 				</div>
 			{/if}
 		{/if}
-	</div>
+	</section>
+
+	<!-- Zone 5: Collapsible Achievements Section -->
+	{#if userBadges.length > 0}
+		<section class="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-xs">
+			<button
+				type="button"
+				onclick={() => (showAchievements = !showAchievements)}
+				class="flex w-full cursor-pointer items-center justify-between text-left"
+			>
+				<div class="flex items-center gap-2">
+					<span class="text-base">🏆</span>
+					<h3 class="font-display text-sm font-bold text-text">Your Achievements</h3>
+					<span class="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-bold text-primary">
+						{userBadges.length} Unlocked
+					</span>
+				</div>
+				<span class="text-xs text-text-muted transition-transform duration-200 {showAchievements ? 'rotate-180' : ''}">
+					▼
+				</span>
+			</button>
+
+			{#if showAchievements}
+				<div class="pt-2">
+					<BadgeStrip badges={userBadges} />
+				</div>
+			{/if}
+		</section>
+	{/if}
 </div>
 
 <ShareModal
@@ -406,3 +608,8 @@
 	courseTitle="Shared Course"
 	onClose={() => (showShareModal = false)}
 />
+
+{#if showOnboardingModal}
+	<Onboarding onClose={() => (showOnboardingDismissed = true)} />
+{/if}
+

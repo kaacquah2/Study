@@ -8,10 +8,21 @@
 	import { studySessionStore } from '$lib/stores/studySession.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 
+	interface RAGSourceCitation {
+		chunkId?: string;
+		sourceTitle: string;
+		pageNumber?: number;
+		chapter?: string;
+		section?: string;
+		sourceType?: 'uploaded_document' | 'generated_lesson' | 'web_content';
+	}
+
 	interface Message {
 		role: 'user' | 'assistant';
 		content: string;
-		sources?: Array<{ moduleId: string; pageTitle: string }>;
+		sources?: RAGSourceCitation[];
+		sourceSupport?: 'strong' | 'limited' | 'none';
+		isError?: boolean;
 	}
 
 	// State using Svelte 5 runes
@@ -19,7 +30,7 @@
 		{
 			role: 'assistant',
 			content:
-				'Hi! I am your AI Study Buddy. Ask me anything about your current lesson, concepts, or quiz!'
+				'Hi! I am your AI Study Tutor. Choose a learning mode below or ask me any question about your courses.'
 		}
 	]);
 	let inputMessage = $state('');
@@ -27,12 +38,30 @@
 	let socraticMode = $state(true);
 	let messagesContainer = $state<HTMLDivElement | null>(null);
 
+	// User-dismissable context state
+	let contextDismissed = $state(false);
+
 	// Resizing state
 	let isResizing = $state(false);
 
 	// Derive route params
 	const courseId = $derived(page.params.id);
 	const moduleId = $derived(page.params.moduleId || page.params.mid);
+
+	// Active study context
+	let activeContextLabel = $derived.by(() => {
+		if (contextDismissed) return null;
+		if (studySessionStore.activeHeading) {
+			return studySessionStore.activeHeading;
+		}
+		if (moduleId) {
+			return `Module ${moduleId}`;
+		}
+		if (courseId) {
+			return `Course Workspace`;
+		}
+		return null;
+	});
 
 	// Sync active module with studySessionStore and chatStore
 	$effect(() => {
@@ -78,12 +107,52 @@
 		}, 60);
 	};
 
+	// 6 Structured Quick-Start Mode Cards
+	const tutorModes = [
+		{
+			icon: '💡',
+			title: 'Explain Concept',
+			desc: 'Plain English explanation with relatable intuition',
+			prompt: 'Can you explain the main concept in simple, intuitive terms?'
+		},
+		{
+			icon: '❓',
+			title: 'Quiz Me',
+			desc: 'Interactive check question with reasoning',
+			prompt: 'Can you give me a focused multiple-choice practice question to test my understanding?'
+		},
+		{
+			icon: '🧪',
+			title: 'Practical Example',
+			desc: 'Real-world application and walk-through',
+			prompt: 'Can you provide a concrete, real-world example or practical scenario of this?'
+		},
+		{
+			icon: '🔍',
+			title: 'Review Tricky Areas',
+			desc: 'Common mistakes and edge cases',
+			prompt: 'What are the most common mistakes, pitfalls, and misconceptions students make here?'
+		},
+		{
+			icon: '📝',
+			title: 'Key Takeaways',
+			desc: 'Top 3 high-yield summary points',
+			prompt: 'What are the top 3 high-yield takeaways I must remember from this topic?'
+		},
+		{
+			icon: '🪜',
+			title: 'Teach Step-by-Step',
+			desc: 'Structured guided walkthrough',
+			prompt: 'Can you guide me step-by-step from fundamentals to advanced nuance?'
+		}
+	];
+
 	// Quick-Action Prompt Chips
 	const promptChips = [
 		{ label: '💡 Analogy', prompt: 'Can you explain this concept using a simple real-world analogy?' },
-		{ label: '🧪 Practical Example', prompt: 'Can you give me a concrete, practical code or real-world example?' },
-		{ label: '❓ Quiz Me', prompt: 'Can you give me a quick 1-question check to test my understanding of this section?' },
-		{ label: '📝 Key Takeaways', prompt: 'What are the 3 most important key takeaways from this topic?' }
+		{ label: '🧪 Example', prompt: 'Can you give me a concrete, practical code or real-world example?' },
+		{ label: '❓ Quiz Me', prompt: 'Can you give me a quick 1-question check to test my understanding?' },
+		{ label: '📝 Takeaways', prompt: 'What are the 3 most important key takeaways from this topic?' }
 	];
 
 	const handleChipClick = (prompt: string) => {
@@ -98,6 +167,15 @@
 		} catch {
 			toastStore.error('Failed to copy text.');
 		}
+	};
+
+	const clearChat = () => {
+		messages = [
+			{
+				role: 'assistant',
+				content: 'Chat refreshed. What would you like to study next?'
+			}
+		];
 	};
 
 	// Drag to resize handler
@@ -210,9 +288,24 @@
 											: m
 									);
 									scrollToBottom();
-								} else if (payload.type === 'done' && payload.sources) {
+								} else if (payload.type === 'done') {
+									const rawSources = payload.sources || [];
+									const sourceSupport =
+										rawSources.length >= 2 ? 'strong' : rawSources.length === 1 ? 'limited' : 'none';
 									messages = messages.map((m, idx) =>
-										idx === assistantMessageIndex ? { ...m, sources: payload.sources } : m
+										idx === assistantMessageIndex
+											? {
+													...m,
+													sources: rawSources.map((s: any) => ({
+														sourceTitle: s.pageTitle || s.sourceTitle || 'Study Document',
+														pageNumber: s.pageNumber,
+														chapter: s.chapter,
+														section: s.section,
+														sourceType: s.sourceType || 'uploaded_document'
+													})),
+													sourceSupport
+												}
+											: m
 									);
 								}
 							} catch (e) {
@@ -237,7 +330,8 @@
 				...messages.filter((m) => m.content !== ''),
 				{
 					role: 'assistant',
-					content: connectionMsg
+					content: connectionMsg,
+					isError: true
 				}
 			];
 		} finally {
@@ -323,24 +417,10 @@
 					<div
 						class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-soft text-primary shadow-xs"
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							class="h-4.5 w-4.5"
-						>
-							<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-							<path d="M8 10h.01" stroke-width="3" />
-							<path d="M16 10h.01" stroke-width="3" />
-							<path d="M9 14h6" />
-						</svg>
+						<span class="text-sm">✨</span>
 					</div>
 					<div>
-						<h3 class="font-display text-xs font-bold text-text">AI Study Assistant</h3>
+						<h3 class="font-display text-xs font-bold text-text">AI Study Tutor</h3>
 						<div class="flex items-center gap-2">
 							<span class="text-[10px] font-bold tracking-wider text-success uppercase"
 								>● Online</span
@@ -363,6 +443,18 @@
 				</div>
 
 				<div class="flex items-center gap-1">
+					{#if messages.length > 1}
+						<button
+							type="button"
+							onclick={clearChat}
+							class="cursor-pointer rounded-lg p-1.5 text-xs text-text-muted hover:bg-surface-muted hover:text-text"
+							title="Clear conversation"
+							aria-label="Clear chat"
+						>
+							🔄
+						</button>
+					{/if}
+
 					<!-- Dock Mode Toggle (Hidden on mobile/tablet < 1024px) -->
 					<button
 						type="button"
@@ -372,7 +464,6 @@
 						aria-label={chatStore.isDocked ? 'Undock companion' : 'Dock companion'}
 					>
 						{#if chatStore.isDocked}
-							<!-- Undock / Float icon -->
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								class="h-4 w-4"
@@ -388,7 +479,6 @@
 								/>
 							</svg>
 						{:else}
-							<!-- Dock icon -->
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								class="h-4 w-4"
@@ -430,6 +520,25 @@
 				</div>
 			</div>
 
+			<!-- Active Study Context Banner -->
+			{#if activeContextLabel}
+				<div class="flex items-center justify-between border-b border-primary/20 bg-primary-soft/40 px-3.5 py-1.5 text-[11px] font-semibold text-primary">
+					<div class="flex items-center gap-1.5 truncate">
+						<span>📍 Context:</span>
+						<span class="truncate font-bold text-text">{activeContextLabel}</span>
+					</div>
+					<button
+						type="button"
+						onclick={() => (contextDismissed = true)}
+						class="text-text-muted hover:text-text"
+						title="Clear active context"
+						aria-label="Clear active context"
+					>
+						✕
+					</button>
+				</div>
+			{/if}
+
 			<!-- Quick Action Prompt Chips Strip -->
 			<div
 				class="flex gap-1.5 overflow-x-auto border-b border-border/60 bg-surface-muted/40 px-3 py-2 text-[11px]"
@@ -451,6 +560,39 @@
 				bind:this={messagesContainer}
 				class="flex-1 space-y-3.5 overflow-y-auto scroll-smooth p-3.5"
 			>
+				<!-- Initial Mode Entry Panel when conversation is fresh -->
+				{#if messages.length <= 1}
+					<div class="rounded-2xl border border-border/80 bg-surface-muted/50 p-4">
+						<div class="mb-3 flex items-center justify-between">
+							<span class="text-[10px] font-bold tracking-wider uppercase text-text-muted">
+								Choose a learning mode:
+							</span>
+							<span class="text-[10px] font-semibold text-primary">
+								{socraticMode ? '💡 Socratic Mode Active' : '⚡ Direct Mode Active'}
+							</span>
+						</div>
+
+						<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+							{#each tutorModes as mode (mode.title)}
+								<button
+									type="button"
+									onclick={() => handleChipClick(mode.prompt)}
+									disabled={loading}
+									class="flex cursor-pointer flex-col items-start rounded-xl border border-border bg-surface p-2.5 text-left transition-all hover:border-primary/50 hover:bg-primary-soft/20 hover:shadow-xs active:scale-98 disabled:opacity-50"
+								>
+									<div class="flex items-center gap-1.5 font-bold text-text text-xs">
+										<span>{mode.icon}</span>
+										<span>{mode.title}</span>
+									</div>
+									<span class="mt-0.5 line-clamp-2 text-[10px] text-text-muted">
+										{mode.desc}
+									</span>
+								</button>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
 				{#each messages as msg, idx (idx)}
 					<div class="group flex {msg.role === 'user' ? 'justify-end' : 'justify-start'}">
 						<div
@@ -479,11 +621,59 @@
 							{/if}
 
 							{#if msg.sources && msg.sources.length > 0}
-								<div
-									class="mt-2 border-t border-border/40 pt-1 text-[10px] font-semibold opacity-85"
-								>
-									<span class="font-bold">Sources:</span>
-									{msg.sources.map((s) => s.pageTitle).join(', ')}
+								<div class="mt-2.5 border-t border-border/40 pt-2 text-[11px]">
+									<div class="flex items-center gap-1.5 font-bold mb-1">
+										{#if msg.sourceSupport === 'strong'}
+											<span class="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-600 dark:text-emerald-400">
+												📘 Strong source support
+											</span>
+										{:else}
+											<span class="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-600 dark:text-blue-400">
+												📘 Limited source support
+											</span>
+										{/if}
+									</div>
+									<div class="flex flex-col gap-0.5 text-muted-foreground text-[10px]">
+										{#each msg.sources as src}
+											<div>
+												• <strong>{src.sourceTitle}</strong>
+												{#if src.pageNumber}
+													<span> (Page {src.pageNumber})</span>
+												{/if}
+												{#if src.chapter}
+													<span> ({src.chapter})</span>
+												{/if}
+											</div>
+										{/each}
+									</div>
+								</div>
+							{:else if msg.role === 'assistant' && msg.sourceSupport === 'none' && !msg.isError}
+								<div class="mt-2 border-t border-border/40 pt-1 text-[10px] text-muted-foreground flex items-center gap-1">
+									<span>🌐 General knowledge explanation</span>
+								</div>
+							{/if}
+
+							{#if msg.isError}
+								<div class="mt-3 flex flex-wrap items-center gap-2 border-t border-border/50 pt-2">
+									<a
+										href="/app/review"
+										class="rounded-lg border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-muted"
+									>
+										🧠 Review Flashcards
+									</a>
+									<a
+										href="/app/courses"
+										class="rounded-lg border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-muted"
+									>
+										📖 Continue Lesson
+									</a>
+									<button
+										type="button"
+										onclick={() => handleSend()}
+										class="rounded-lg bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20"
+									>
+										🔄 Retry Question
+									</button>
 								</div>
 							{/if}
 						</div>
@@ -519,7 +709,7 @@
 						type="text"
 						bind:value={inputMessage}
 						onkeydown={handleKeyDown}
-						placeholder="Ask about this lesson..."
+						placeholder={activeContextLabel ? `Ask about "${activeContextLabel}"...` : "Ask a study question..."}
 						aria-label="Ask a question"
 						class="grow rounded-xl border border-border bg-surface-muted px-3.5 py-2.5 text-xs transition-colors duration-180 hover:border-text-muted focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 						disabled={loading}

@@ -49,6 +49,34 @@
 					"order": "DESCENDING"
 				}
 			]
+		},
+		{
+			"collectionGroup": "events",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "userId",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "timestamp",
+					"order": "DESCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "mistakes",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "resolved",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "lastMistakeAt",
+					"order": "DESCENDING"
+				}
+			]
 		}
 	],
 	"fieldOverrides": []

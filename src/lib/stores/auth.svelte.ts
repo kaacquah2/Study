@@ -15,6 +15,7 @@ export interface UserProfile {
 	isSuperAdmin?: boolean;
 	badges?: string[];
 	longestStreak?: number;
+	onboardingComplete?: boolean;
 	streak: {
 		current: number;
 		longest: number;

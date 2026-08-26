@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity';
 	import ELK, { type ElkNode } from 'elkjs/lib/elk.bundled.js';
+	import { chatStore } from '$lib/stores/chat.svelte';
 	import type {
 		ConceptNode,
 		PrerequisiteEdge,
@@ -20,7 +21,7 @@
 	let {
 		graph,
 		mastery = {},
-		recommendation,
+		recommendation = null,
 		isStale = false,
 		onNodeAction,
 		onFlagEdge
@@ -30,7 +31,7 @@
 	let elkLayout = $state<ElkNode | null>(null);
 	let layoutLoading = $state(true);
 	let selectedNode = $state<ConceptNode | null>(null);
-	let collapsedModules = $state(new SvelteSet<string>());
+	let collapsedModules = new SvelteSet<string>();
 	let viewMode = $state<'canvas' | 'tree'>('canvas');
 	let searchQuery = $state('');
 
@@ -233,8 +234,16 @@
 	}
 </script>
 
-<div class="flex w-full flex-col gap-5">
-	<!-- Top Control & Search Bar -->
+<svelte:window
+	onkeydown={(e) => {
+		if (e.key === 'Escape' && selectedNode) {
+			selectedNode = null;
+		}
+	}}
+/>
+
+<div class="flex w-full flex-col gap-4">
+	<!-- Toolbar: View Switcher, Search & Zoom Controls -->
 	<div
 		class="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
 	>
@@ -437,6 +446,9 @@
 											{@const absoluteX = (cluster.x || 0) + (n.x || 0)}
 											{@const absoluteY = (cluster.y || 0) + (n.y || 0)}
 											{@const colors = getNodeMasteryColor(modId)}
+											{@const isRecommended =
+												recommendation?.node?.id === n.id ||
+												recommendation?.recommendation?.node?.id === n.id}
 											{@const isMatchesSearch =
 												searchQuery &&
 												(n.labels?.[0]?.text?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -457,8 +469,8 @@
 													height={n.height}
 													rx="12"
 													fill={colors.bg}
-													stroke={isMatchesSearch ? '#38bdf8' : colors.border}
-													stroke-width={isMatchesSearch ? '3' : '2'}
+													stroke={isMatchesSearch ? '#38bdf8' : isRecommended ? '#f59e0b' : colors.border}
+													stroke-width={isMatchesSearch || isRecommended ? '3' : '2'}
 												/>
 												<text
 													x="14"
@@ -478,7 +490,7 @@
 													font-weight="bold"
 													font-family="system-ui"
 												>
-													{colors.label}
+													{isRecommended ? '✨ Next Up' : colors.label}
 												</text>
 											</g>
 										{/each}
@@ -535,15 +547,27 @@
 						<!-- Concept Nodes List -->
 						<div class="grid grid-cols-1 gap-2 pt-2 sm:grid-cols-2 lg:grid-cols-3">
 							{#each group.nodes as node (node.id)}
+								{@const isRecommended =
+									recommendation?.node?.id === node.id ||
+									recommendation?.recommendation?.node?.id === node.id}
 								<div
-									class="flex cursor-pointer items-center justify-between rounded-xl border border-border bg-surface p-3 transition-colors hover:border-primary/50"
+									class="flex cursor-pointer items-center justify-between rounded-xl border border-border bg-surface p-3 transition-colors hover:border-primary/50 {isRecommended
+										? 'border-amber-500/60 bg-amber-500/5'
+										: ''}"
 									onclick={() => (selectedNode = node)}
 									onkeydown={(e) => e.key === 'Enter' && (selectedNode = node)}
 									role="button"
 									tabindex="0"
 								>
 									<div class="flex flex-col gap-0.5">
-										<span class="text-xs font-bold text-text">{node.label}</span>
+										<div class="flex items-center gap-1.5">
+											<span class="text-xs font-bold text-text">{node.label}</span>
+											{#if isRecommended}
+												<span class="rounded-full bg-amber-500/20 px-1.5 py-0.2 text-[9px] font-bold text-amber-400">
+													✨ Next
+												</span>
+											{/if}
+										</div>
 										<span class="text-[10px] font-semibold text-text-muted">{node.id}</span>
 									</div>
 									<span class="text-xs font-bold text-primary">&rarr;</span>
@@ -556,46 +580,179 @@
 		</div>
 	{/if}
 
-	<!-- Selected Concept Node Detail Modal / Flyout -->
+	<!-- Selected Concept Node Detail Action Drawer / Panel -->
 	{#if selectedNode}
+		{@const nodeMastery = mastery[selectedNode.moduleId]}
+		{@const masteryPct = nodeMastery ? nodeMastery.masteryPercent : -1}
+		{@const dueCount = nodeMastery ? nodeMastery.questionsDue : 0}
+		{@const avgStability = nodeMastery ? nodeMastery.averageStability : 0}
+
 		<div
-			class="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-surface p-5 shadow-lg"
+			class="flex flex-col gap-4 rounded-3xl border border-primary/30 bg-surface p-6 shadow-xl"
 		>
 			<div class="flex items-start justify-between">
 				<div>
-					<span class="text-[10px] font-bold tracking-wider text-primary uppercase">Concept Details</span>
-					<h3 class="font-display text-base font-bold text-text">{selectedNode.label}</h3>
+					<div class="flex items-center gap-2">
+						<span class="rounded-full bg-primary-soft px-2.5 py-0.5 text-[10px] font-black tracking-wider text-primary uppercase">
+							Concept Knowledge Node
+						</span>
+						{#if masteryPct >= 80}
+							<span class="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+								🟢 Mastered
+							</span>
+						{:else if masteryPct >= 40}
+							<span class="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-bold text-primary">
+								🔵 Reviewing
+							</span>
+						{:else if masteryPct >= 0}
+							<span class="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-400">
+								🟡 Learning
+							</span>
+						{:else}
+							<span class="rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-bold text-text-muted">
+								⚪ Not Assessed
+							</span>
+						{/if}
+					</div>
+					<h3 class="mt-1 font-display text-lg font-bold text-text">{selectedNode.label}</h3>
+					<p class="text-xs text-text-muted">
+						Part of: <strong class="text-text">{selectedNode.moduleTitle || 'Module'}</strong>
+					</p>
 				</div>
 				<button
 					type="button"
 					onclick={() => (selectedNode = null)}
-					class="cursor-pointer text-xs font-bold text-text-muted hover:text-text"
+					class="cursor-pointer rounded-lg p-1.5 text-xs font-bold text-text-muted hover:bg-surface-muted hover:text-text"
+					aria-label="Close concept panel"
 				>
 					✕
 				</button>
 			</div>
 
-			<p class="text-xs leading-relaxed text-text-muted">
-				Module: <strong>{selectedNode.moduleTitle || 'Current Course Module'}</strong>
-			</p>
+			<!-- AI Recommendation Callout if Selected Node is Recommended -->
+			{#if recommendation && (selectedNode.id === recommendation.node?.id || selectedNode.id === recommendation.recommendation?.node?.id)}
+				<div class="flex items-start gap-2.5 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3.5 text-xs text-amber-300">
+					<span class="text-base">✨</span>
+					<div class="flex flex-col gap-0.5">
+						<span class="font-bold">Recommended Learning Path Priority</span>
+						<p class="text-amber-200/90">
+							{recommendation.reason ||
+								recommendation.recommendation?.reason ||
+								'Recommended next step for your curriculum progression.'}
+						</p>
+					</div>
+				</div>
+			{/if}
 
-			<div class="flex flex-wrap items-center gap-2 pt-2">
+			<!-- Prerequisite Edge Flagging -->
+			{#if onFlagEdge && (graph?.edges || []).some((e) => e.target === selectedNode?.id)}
+				{@const inEdges = (graph?.edges || []).filter((e) => e.target === selectedNode?.id)}
+				<div class="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-surface-muted/30 p-2.5 text-[11px] text-text-muted">
+					<span class="font-semibold">Prerequisites:</span>
+					{#each inEdges as edge (`${edge.source}->${edge.target}`)}
+						<button
+							type="button"
+							onclick={() => onFlagEdge?.(edge.source, edge.target)}
+							class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-[10px] font-medium text-text-muted transition-colors hover:border-rose-500/50 hover:text-rose-400"
+							title="Flag prerequisite relation as inaccurate"
+						>
+							<span>🚩 Flag {edge.source}</span>
+						</button>
+					{/each}
+				</div>
+			{/if}
+
+			<!-- Real Metrics Grid & Confidence Level -->
+			<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+				<div class="rounded-xl border border-border bg-surface-muted p-3">
+					<span class="block text-[10px] font-bold text-text-muted uppercase">Module Mastery</span>
+					<span class="font-display text-sm font-bold text-text">
+						{masteryPct >= 0 ? `${masteryPct}%` : 'Not Assessed'}
+					</span>
+				</div>
+
+				<div class="rounded-xl border border-border bg-surface-muted p-3">
+					<span class="block text-[10px] font-bold text-text-muted uppercase">Confidence Level</span>
+					<span class="font-display text-sm font-bold {nodeMastery?.confidenceLevel === 'high' ? 'text-emerald-400' : nodeMastery?.confidenceLevel === 'medium' ? 'text-blue-400' : 'text-amber-400'}">
+						{nodeMastery?.confidenceLevel ? `${nodeMastery.confidenceLevel.toUpperCase()}` : 'ESTIMATE'}
+						<span class="text-[10px] font-normal text-text-muted">({nodeMastery?.evidenceCount ?? 0} ev.)</span>
+					</span>
+				</div>
+
+				<div class="rounded-xl border border-border bg-surface-muted p-3">
+					<span class="block text-[10px] font-bold text-text-muted uppercase">Questions Due</span>
+					<span class="font-display text-sm font-bold {dueCount > 0 ? 'text-amber-400' : 'text-text'}">
+						{dueCount} Due
+					</span>
+				</div>
+
+				<div class="rounded-xl border border-border bg-surface-muted p-3">
+					<span class="block text-[10px] font-bold text-text-muted uppercase">Memory Stability</span>
+					<span class="font-display text-sm font-bold text-text">
+						{avgStability > 0 ? `${avgStability}d avg` : 'New'}
+					</span>
+				</div>
+			</div>
+
+			<!-- Formula Breakdown Mini-Bar -->
+			{#if nodeMastery?.masteryBreakdown}
+				<div class="rounded-xl border border-border/80 bg-surface-muted/50 p-3.5 text-xs">
+					<div class="flex items-center justify-between font-semibold text-text mb-2">
+						<span>Mastery Evidence Breakdown</span>
+						<span class="text-[11px] font-normal text-text-muted">Weighted Heuristic</span>
+					</div>
+					<div class="grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-4">
+						<div class="flex flex-col">
+							<span class="text-text-muted">Quiz (45%):</span>
+							<strong class="text-text">{nodeMastery.masteryBreakdown.quizAccuracy}%</strong>
+						</div>
+						<div class="flex flex-col">
+							<span class="text-text-muted">FSRS (35%):</span>
+							<strong class="text-text">{nodeMastery.masteryBreakdown.fsrsPerformance}%</strong>
+						</div>
+						<div class="flex flex-col">
+							<span class="text-text-muted">Recency (15%):</span>
+							<strong class="text-text">{nodeMastery.masteryBreakdown.recencyScore}%</strong>
+						</div>
+						<div class="flex flex-col">
+							<span class="text-text-muted">Lesson (5%):</span>
+							<strong class="text-text">{nodeMastery.masteryBreakdown.lessonCompletion}%</strong>
+						</div>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Action Buttons -->
+			<div class="flex flex-wrap items-center gap-2.5 border-t border-border/80 pt-3">
 				{#if onNodeAction}
 					<button
 						type="button"
 						onclick={() => selectedNode && onNodeAction(selectedNode, 'lesson')}
-						class="cursor-pointer rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-primary-hover active:scale-95"
+						class="cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-primary-hover active:scale-95"
 					>
-						📖 Open Lesson
+						📖 Study Lesson
 					</button>
+
 					<button
 						type="button"
 						onclick={() => selectedNode && onNodeAction(selectedNode, 'review')}
-						class="cursor-pointer rounded-xl border border-primary bg-primary-soft px-4 py-2 text-xs font-bold text-primary hover:bg-primary hover:text-white active:scale-95"
+						class="cursor-pointer rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-bold text-amber-400 transition-all hover:bg-amber-500/20 active:scale-95"
 					>
-						🧠 Practice Flashcard
+						🧠 Drill Memory Cards
 					</button>
 				{/if}
+
+				<button
+					type="button"
+					onclick={() => {
+						if (!selectedNode) return;
+						chatStore.seedMessage = `Can you explain the concept "${selectedNode.label}" and give me a practical exercise to test my understanding?`;
+						if (!chatStore.isOpen) chatStore.isOpen = true;
+					}}
+					class="cursor-pointer rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text transition-all hover:border-primary hover:text-primary active:scale-95"
+				>
+					✨ Ask AI Tutor
+				</button>
 			</div>
 		</div>
 	{/if}

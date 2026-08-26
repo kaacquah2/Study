@@ -18,22 +18,77 @@ export interface CanonicalConcept {
 
 class StudySessionStore {
 	activeModuleId = $state<string>('');
+	activeCourseId = $state<string>('');
 	activeHeading = $state<string>('');
+	sessionId = $state<string>('');
 	recentEvents = $state<StudySessionEvent[]>([]);
 
 	constructor() {
 		if (browser) {
+			this.sessionId = sessionStorage.getItem('study_session_id') || `sess_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+			sessionStorage.setItem('study_session_id', this.sessionId);
 			this.restoreFromStorage();
 		}
 	}
 
-	setModule(moduleId: string, heading: string = '') {
+	setModule(moduleId: string, heading: string = '', courseId: string = '') {
 		if (this.activeModuleId !== moduleId) {
 			this.activeModuleId = moduleId;
+			this.activeCourseId = courseId;
 			this.activeHeading = heading;
 			this.restoreFromStorage();
 		} else if (heading) {
 			this.activeHeading = heading;
+		}
+	}
+
+	/**
+	 * Dispatches a formal learning event to the server analytics pipeline.
+	 */
+	async dispatchServerEvent(payload: {
+		eventType: string;
+		result?: 'correct' | 'incorrect' | 'skipped';
+		conceptId?: string;
+		courseId?: string;
+		moduleId?: string;
+		durationMs?: number;
+		questionId?: string;
+		questionSnapshot?: {
+			prompt: string;
+			options: string[];
+			correctIndex: number;
+			explanation: string;
+		};
+		selectedIndex?: number;
+		metadata?: Record<string, unknown>;
+	}) {
+		if (!browser) return;
+		try {
+			const eventBody = {
+				eventId: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+				sessionId: this.sessionId,
+				eventType: payload.eventType,
+				timestamp: new Date().toISOString(),
+				courseId: payload.courseId || this.activeCourseId || undefined,
+				moduleId: payload.moduleId || this.activeModuleId || undefined,
+				conceptId: payload.conceptId,
+				result: payload.result,
+				durationMs: payload.durationMs,
+				questionId: payload.questionId,
+				questionSnapshot: payload.questionSnapshot,
+				selectedIndex: payload.selectedIndex,
+				metadata: payload.metadata
+			};
+
+			fetch('/api/analytics/events', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(eventBody)
+			}).catch((err) => {
+				console.debug('[analytics] Failed background dispatch:', err);
+			});
+		} catch (e) {
+			console.debug('[analytics] Error dispatching event:', e);
 		}
 	}
 

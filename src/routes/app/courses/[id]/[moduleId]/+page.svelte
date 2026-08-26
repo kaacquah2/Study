@@ -28,6 +28,7 @@
 	let currentPageIndex = $state(0);
 
 	// Quiz state
+	let quizStarted = $state(false);
 	let quizReviewRecords = $state<QuizReviewRecord[]>([]);
 
 	// Completion state
@@ -349,18 +350,85 @@
 			isRegenerating={isRegeneratingItem}
 		/>
 	{:else if moduleData?.type === 'quiz'}
-		<!-- Adaptive Quiz Runner -->
-		<QuizRunner
-			courseId={courseId || ''}
-			moduleId={moduleId || ''}
-			moduleTitle={moduleData.title}
-			questions={moduleData.questions || []}
-			currentQuestionIndex={0}
-			onComplete={handleFinishModule}
-			onRegenerateQuestion={handleRegenerateItem}
-			onFlagContent={() => (showFlagModal = true)}
-			isRegenerating={isRegeneratingItem}
-		/>
+		{#if !quizStarted}
+			<!-- Quiz Pre-Session Briefing Card -->
+			<div class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8">
+				<div class="flex flex-col gap-2">
+					<div class="inline-flex items-center gap-1.5 self-start rounded-full border border-primary/30 bg-primary-soft px-3 py-1 text-[10px] font-black tracking-wider text-primary uppercase">
+						<span>🎯 Focused Assessment</span>
+					</div>
+					<h2 class="font-display text-xl font-bold text-text sm:text-2xl">
+						{moduleData.title}
+					</h2>
+					<p class="text-xs leading-relaxed text-text-muted sm:text-sm">
+						{moduleData.summary || 'Test your comprehension with adaptive questions, instant reasoning, and long-term memory scheduling.'}
+					</p>
+				</div>
+
+				<!-- Quick Session Stats -->
+				<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+					<div class="rounded-2xl border border-border bg-surface-muted p-3.5">
+						<span class="block text-[10px] font-bold text-text-muted uppercase">Questions</span>
+						<span class="font-display text-base font-bold text-text">
+							{moduleData.questions?.length || 0} Questions
+						</span>
+					</div>
+
+					<div class="rounded-2xl border border-border bg-surface-muted p-3.5">
+						<span class="block text-[10px] font-bold text-text-muted uppercase">Estimated Time</span>
+						<span class="font-display text-base font-bold text-text">
+							~{moduleData.estimatedMinutes || (moduleData.questions?.length ? Math.max(2, Math.ceil(moduleData.questions.length * 0.8)) : 5)} mins
+						</span>
+					</div>
+
+					<div class="col-span-2 rounded-2xl border border-border bg-surface-muted p-3.5 sm:col-span-1">
+						<span class="block text-[10px] font-bold text-text-muted uppercase">Difficulty</span>
+						<span class="font-display text-base font-bold text-primary">
+							Adaptive FSRS
+						</span>
+					</div>
+				</div>
+
+				<!-- Concepts Covered Tag List -->
+				{#if moduleData.concepts && moduleData.concepts.length > 0}
+					<div class="flex flex-col gap-2 border-t border-border/80 pt-4">
+						<span class="text-xs font-bold text-text">Key Concepts Tested:</span>
+						<div class="flex flex-wrap gap-1.5">
+							{#each moduleData.concepts as c}
+								<span class="rounded-lg border border-border bg-surface-muted px-2.5 py-1 text-xs font-medium text-text">
+									{c.term}
+								</span>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
+				<!-- Start Quiz CTA -->
+				<div class="flex items-center justify-between border-t border-border/80 pt-4">
+					<span class="text-xs text-text-muted">Keyboard navigation [1-4, Enter] supported</span>
+					<button
+						type="button"
+						onclick={() => (quizStarted = true)}
+						class="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-95"
+					>
+						<span>Start Quiz Practice &rarr;</span>
+					</button>
+				</div>
+			</div>
+		{:else}
+			<!-- Adaptive Quiz Runner -->
+			<QuizRunner
+				courseId={courseId || ''}
+				moduleId={moduleId || ''}
+				moduleTitle={moduleData.title}
+				questions={moduleData.questions || []}
+				currentQuestionIndex={0}
+				onComplete={handleFinishModule}
+				onRegenerateQuestion={handleRegenerateItem}
+				onFlagContent={() => (showFlagModal = true)}
+				isRegenerating={isRegeneratingItem}
+			/>
+		{/if}
 	{/if}
 
 	<!-- Educational Video Recommendations -->

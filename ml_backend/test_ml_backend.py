@@ -152,16 +152,23 @@ def test_outline_json_codeblock_parsing():
 
 
 def test_healthcheck_lock_status():
-    """Verify that healthcheck reports inference_busy=False when lock is idle, and True when acquired."""
+    """Verify that healthcheck correctly reports inference_busy via per-model active counts."""
     from main import healthcheck
-    from models.model_registry import inference_lock
+    from models.model_registry import inference_start, inference_end
 
     res_idle = asyncio.run(healthcheck())
     assert res_idle.inference_busy is False
 
-    with inference_lock:
+    # Simulate an in-flight inference call
+    inference_start("test-model-busy-check")
+    try:
         res_busy = asyncio.run(healthcheck())
         assert res_busy.inference_busy is True
+    finally:
+        inference_end("test-model-busy-check")
+
+    res_idle_again = asyncio.run(healthcheck())
+    assert res_idle_again.inference_busy is False
 
 
 def test_summarize_request_length_bounds_validation():
@@ -196,7 +203,7 @@ def test_documents_request_item_validation():
     """Verify that DocumentsRequest rejects empty or ultra-short string items."""
     from pydantic import ValidationError
 
-    # Valid
+    # Valid: no user_id field — identity is derived server-side
     req = DocumentsRequest(texts=["This is a valid document content string."])
     assert len(req.texts) == 1
 

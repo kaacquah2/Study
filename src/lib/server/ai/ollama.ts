@@ -61,10 +61,14 @@ async function callOllamaGenerate(prompt: string, formatJson = false): Promise<s
 	const timeout = setTimeout(() => controller.abort(), 120_000);
 
 	try {
+		const numCtx = parseInt(env.OLLAMA_NUM_CTX || process.env.OLLAMA_NUM_CTX || '2048', 10);
 		const bodyData: Record<string, unknown> = {
 			model,
 			prompt,
-			stream: false
+			stream: false,
+			options: {
+				num_ctx: isNaN(numCtx) ? 2048 : numCtx
+			}
 		};
 		if (formatJson) {
 			bodyData.format = 'json';

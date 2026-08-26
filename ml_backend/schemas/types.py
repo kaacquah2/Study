@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, field_validator
 from typing import Optional
 
 
@@ -58,11 +58,11 @@ class OutlineResponse(BaseModel):
 
 # ── RAG Documents ─────────────────────────────────────────────────────────────
 
-from pydantic import BaseModel, Field, model_validator, field_validator
 
 class DocumentsRequest(BaseModel):
     texts: list[str] = Field(..., min_length=1, max_length=100)
-    user_id: Optional[str] = Field(default="default_user", max_length=128)
+    # user_id is intentionally absent here — identity is derived server-side
+    # from the X-User-ID header (set by SvelteKit after Firebase token verification).
 
     @field_validator("texts")
     @classmethod
@@ -71,9 +71,6 @@ class DocumentsRequest(BaseModel):
             if not text or len(text.strip()) < 10:
                 raise ValueError(f"Document text at index {idx} must contain at least 10 non-whitespace characters.")
         return v
-
-
-
 
 # ── Lesson ─────────────────────────────────────────────────────────────────────
 

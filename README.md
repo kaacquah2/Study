@@ -1,4 +1,4 @@
-# AI Study Buddy
+# Study AI — Adaptive AI-Powered Learning System
 
 [![Svelte](https://img.shields.io/badge/Svelte-v5.56-FF3E00?logo=svelte&logoColor=white)](https://svelte.dev/)
 [![SvelteKit](https://img.shields.io/badge/SvelteKit-v2.63-FF3E00?logo=svelte&logoColor=white)](https://kit.svelte.dev/)
@@ -13,7 +13,20 @@
 [![Playwright](https://img.shields.io/badge/Playwright-v1.60-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![Deploy Netlify](https://img.shields.io/badge/Deploy-Netlify-00AD9F?logo=netlify&logoColor=white)](https://www.netlify.com/)
 
-**AI Study Buddy** is an intelligent, personalized e-learning platform powered by a multi-provider Generative AI engine, spaced repetition memory schedulers (SM-2 & FSRS), weak topic detection, custom document RAG search, interactive study microservices, peer study groups, and gamified daily streak mechanisms. Developed as a Final Year Project for the Department of Computer Science at **Kwame Nkrumah University of Science & Technology (KNUST)**.
+**Study AI** is an **Adaptive AI-Powered Learning System** engineered around a central **Learning Intelligence Engine**. Rather than functioning as a collection of isolated AI utilities, the platform continuously logs student interaction signals (lesson reads, quiz performance, active recall errors, and FSRS review states) into an authoritative learning analytics stream. The engine synthesizes these signals to compute defensible mastery estimates and answer the core educational question: ***"What should this student study next, and why?"***
+
+Developed as a Final Year Project for the Department of Computer Science at **Kwame Nkrumah University of Science & Technology (KNUST)**.
+
+---
+
+## 📚 Academic & Architectural Documentation
+
+- 🏛️ **[System Architecture Document (`docs/ARCHITECTURE.md`)](docs/ARCHITECTURE.md):** Learning Intelligence Engine pipeline, `LearningEvent` schema, heuristic mastery formula derivation, adaptation rules, and multi-model registry.
+- 🔬 **[Evaluation Framework (`docs/EVALUATION.md`)](docs/EVALUATION.md):** RAG retrieval precision, answer groundedness, hallucination mitigation, and quiz generation quality rubrics.
+- ⚡ **[Performance Benchmarks (`docs/BENCHMARKS.md`)](docs/BENCHMARKS.md):** End-to-end latency benchmarks across cloud and local inference tiers, memory profiles, and caching ratios.
+- 👥 **[User Study Protocol (`docs/USER_STUDY.md`)](docs/USER_STUDY.md):** Ethical experiment guidelines, informed consent, and 10-item System Usability Scale (SUS) survey.
+- 🎬 **[Examiner Demonstration Script (`docs/DEMO_SCRIPT.md`)](docs/DEMO_SCRIPT.md):** 12-step structured demonstration narrative.
+- 🔒 **[Privacy & Retention Policy (`docs/PRIVACY.md`)](docs/PRIVACY.md):** Data retention, vector isolation, and GDPR-compliant cascade deletion workflows.
 
 ---
 
@@ -29,35 +42,16 @@
 
 ---
 
-## ✨ Key Features
+## ✨ Key Intelligent Capabilities
 
-- **Self-Hosted AI Course Generation & Draft Outline Editor:** Instantly generate structured multi-module course outlines from any topic or prompt. Features an interactive draft editor (`DraftOutlineEditor.svelte`) to review, reorder, add, or customize modules before committing course creation.
-- **Asynchronous Serverless Workflows:** Instantly renders skeletal course containers and module placeholders while generating lesson content and interactive multiple-choice quizzes on-demand with built-in retry mechanisms and background generation queueing (`generationQueue.ts`).
-- **Spaced Repetition Knowledge Hub (`/app/review`, `/api/spaced-repetition`):** Features personalized flashcard review scheduling powered by **SuperMemo 2 (SM-2)** (`sm2.ts`) and **Free Spaced Repetition Scheduler (FSRS-4.5)** (`fsrs.ts`) algorithms for optimal long-term memory retention. Includes course, topic, and quiz selector filters for targeted practice sessions.
-- **Interactive Knowledge Map (`/app/knowledge-map`, `KnowledgeMap.svelte`):** Visual interactive concept graph powered by ELK.js (`elkjs`) layout engine. Visualizes course hierarchy, module mastery levels (`masteryCalculator.ts`), prerequisite dependencies, and weak topic alerts, offering automated next-step learning recommendations (`recommendNext.ts`).
-- **Weak Topic Detection (`weakTopicDetector.ts`):** Automatically analyzes quiz attempt histories to pinpoint student knowledge gaps and prioritize weak concepts for review.
-- **Custom Document RAG Ingestion (`/app/knowledge`, `/api/documents`):** Upload custom PDF/text reference documents into a vector store to ground AI course outline generation, lesson content, and assistant queries in user-provided study materials.
-- **Gamified Daily Streaks & Milestones:** Keeps students motivated with an interactive streak counter computed authoritatively on the server based on client IANA timezone headers (`X-Client-Timezone`). Includes daily goal activity rings (`DailyGoalRing.svelte`), calendar heatmaps (`StreakHeatmap.svelte`), and target badge progression (`BadgeStrip.svelte`).
-- **Interactive AI Study Buddy & Microservices:**
-  - **Assistant Chat (`AssistantChat.svelte`):** Context-aware in-app chatbot to answer course questions in real time.
-  - **Text Summarizer (`/api/summarize`):** Condenses dense lesson material into actionable bullet points and key takeaways.
-  - **Text Paraphraser (`/api/paraphrase`):** Rephrases complex sentences into **Academic**, **Simple**, or **Formal** tone options.
-  - **Quiz Step Explanation (`/api/quiz/explain`):** Provides detailed step-by-step AI explanations for quiz questions and answers.
-  - **Educational Video Finder (`youtube.ts`):** On-demand lookup of relevant YouTube educational videos per module with 90-day Firestore caching and stampede prevention locks.
-  - **Lesson Audio Player (`LessonAudioPlayer.svelte`):** Listen to generated lesson text via built-in audio playback.
-  - **Interactive Mermaid Visualizer (`MermaidDiagram.svelte`):** Automatically renders interactive visual diagrams and flowcharts within lesson content.
-- **Study Groups & Peer Collaboration (`/api/study-groups`, `/api/study-groups/join`):** Create and join collaborative study groups for peer learning and joint progress tracking.
-- **Course Sharing & Community Catalog:**
-  - **Share Links & Token Generation:** Create secure share links (`ShareModal.svelte`) for public course distribution (`/share/[token]`).
-  - **Public Explore Catalog (`/app/explore`):** Browse public courses created by peers.
-  - **Course Cloning (`/shared/[shareId]`):** Clone public shared courses directly into your personal user workspace.
-  - **Course Completion Certificates (`CertificateModal.svelte`):** Generate and download official certificates upon completing course modules and quizzes.
-- **Multi-Provider AI Resiliency Architecture:** High-availability AI layer supporting Google Gemini as the primary provider, local Ollama models (`llama3.2`), and a dedicated Python FastAPI inference pipeline (`ml_backend`) with domain classification (`domainClassifier.ts`), memorization guards (`memorizationGuard.ts`), moderation filters (`moderation.ts`), and pricing configuration (`pricingConfig.ts`).
-- **Superadmin Portal & Platform Administration (`/superadmin`, `/app/admin`, `/api/admin/analytics`):** Comprehensive admin dashboard for platform metrics, user management, role control, content moderation flag reviews (`ContentFlagModal.svelte`), analytics, and classifier calibration.
-- **Multi-Provider Authentication & User Settings:**
-  - Secure Email/Password registration & Google OAuth SSO via Firebase Authentication.
-  - Interactive profile menu with email verification badge, direct access to user settings (`/app/settings`), theme switching, and instant logout.
-  - Email verification workflow (`/app/verify-email`) with resend confirmation capabilities.
+- **Learning Intelligence Engine & Next-Action Guidance (`recommendNext.ts`):** Dynamic rule-based adaptation engine that prioritizes urgent FSRS reviews, mistake corrections, and prerequisite-ready curriculum paths.
+- **Defensible Heuristic Mastery Score (`masteryCalculator.ts`):** Transparent multi-signal formula combining Quiz Accuracy (45%), FSRS Memory Retention (35%), Practice Recency (15%), and Lesson Completion (5%), accompanied by empirical confidence level ratings.
+- **Mistake Notebook & Error Bank (`/app/mistakes`, `MistakeNotebook.svelte`):** Automatically captures full question snapshots and student misconceptions on missed quiz questions, enabling targeted error drills.
+- **Interactive Onboarding Workflow (`Onboarding.svelte`):** First-time guided setup directing students across material uploads, course generation, knowledge mapping, and AI tutoring.
+- **RAG Citations & Source Support Attribution (`AssistantChat.svelte`):** Grounded assistant chat with metadata-aware citations (`📘 Strong source support`) and transparent distinction from general explanation.
+- **Interactive Knowledge Map (`/app/knowledge-map`, `KnowledgeMap.svelte`):** Concept graph visualization powered by ELK.js with 'Explain My Progress' diagnostics.
+- **Spaced Repetition Knowledge Hub (`/app/review`, `/api/spaced-repetition`):** Flashcard scheduling powered by **SuperMemo 2 (SM-2)** (`sm2.ts`) and **Free Spaced Repetition Scheduler (FSRS-4.5)** (`fsrs.ts`).
+- **Custom Document RAG Ingestion (`/app/knowledge`, `/api/documents`):** User PDF/notes vector store ingestion with isolated FAISS semantic search.
   - User data deletion and privacy compliance endpoints (`deleteUserData.ts`, `/api/user`).
 - **Curated Theme System & Security:**
   - Dynamic style switching between curated color palettes (**Calm**, **Sage**, **Focus Dark**).

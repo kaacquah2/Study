@@ -141,6 +141,26 @@
 			summary: isCorrect ? 'Answered correctly' : `Answered incorrectly (chose option ${selectedOptionIndex + 1})`
 		});
 
+		// Dispatch authoritative learning event and mistake record if incorrect
+		studySessionStore.dispatchServerEvent({
+			eventType: 'question_answered',
+			result: isCorrect ? 'correct' : 'incorrect',
+			conceptId: activeQuestion.conceptId || activeQuestion.conceptTag,
+			courseId,
+			moduleId,
+			questionId: `${moduleId}_q${currentQuestionIndex}`,
+			questionSnapshot: {
+				prompt: questionPrompt,
+				options: activeQuestion.options,
+				correctIndex,
+				explanation: activeQuestion.explanation || ''
+			},
+			selectedIndex: selectedOptionIndex,
+			metadata: {
+				sourceLabel: moduleTitle
+			}
+		});
+
 		onAnswer?.(currentQuestionIndex, selectedOptionIndex, isCorrect);
 	};
 
@@ -214,53 +234,83 @@
 			console.error('Explanation stream error:', err);
 			toastStore.error('Could not load AI explanation.');
 			aiExplanation =
-				activeQuestion.explanation ||
-				'The selected answer is incorrect. Review the lesson concept and explanation above.';
+				activeQuestion.explanation || 'No step-by-step explanation available for this question.';
 		} finally {
 			isExplaining = false;
 		}
 	};
+
+	let progressPct = $derived(
+		questions.length > 0
+			? Math.min(100, Math.round(((currentQuestionIndex + (isAnswerLocked ? 1 : 0)) / questions.length) * 100))
+			: 0
+	);
+
+	let questionsAnsweredCount = $derived(
+		currentQuestionIndex + (isAnswerLocked ? 1 : 0)
+	);
 </script>
 
-<div class="flex w-full flex-col gap-6">
-	<!-- Top Bar -->
-	<div class="flex items-center justify-between border-b border-border pb-3">
-		<div class="flex items-center gap-2">
-			<span class="rounded-lg bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary"
-				>Question {currentQuestionIndex + 1} of {questions.length}</span
-			>
-			<span class="text-xs font-semibold text-text-muted">Score: {score} / {questions.length}</span>
+<div class="flex w-full flex-col gap-5">
+	<!-- Top Bar with Progress -->
+	<div class="flex flex-col gap-2.5 border-b border-border pb-3.5">
+		<div class="flex items-center justify-between">
+			<div class="flex items-center gap-2.5">
+				<span class="rounded-lg bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary">
+					Question {currentQuestionIndex + 1} of {questions.length}
+				</span>
+				<span class="text-xs font-semibold text-text-muted">
+					Score: {score}/{questions.length}
+					{#if questionsAnsweredCount > 0}
+						<span class="text-text-muted/60">({Math.round((score / questionsAnsweredCount) * 100)}% accuracy)</span>
+					{/if}
+				</span>
+			</div>
+
+			<div class="flex items-center gap-2">
+				{#if onFlagContent}
+					<button
+						type="button"
+						onclick={onFlagContent}
+						class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold text-text-muted hover:border-danger hover:text-danger active:scale-95"
+						title="Report issue with this quiz"
+					>
+						🚩 Report
+					</button>
+				{/if}
+
+				{#if onRegenerateQuestion}
+					<button
+						type="button"
+						onclick={onRegenerateQuestion}
+						disabled={isRegenerating}
+						class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-primary/40 bg-primary-soft/50 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary hover:text-white disabled:opacity-50"
+						title="Regenerate this specific question with AI"
+					>
+						{#if isRegenerating}
+							<span class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"
+							></span>
+							<span>Regenerating...</span>
+						{:else}
+							<span>✨ Regenerate Question</span>
+						{/if}
+					</button>
+				{/if}
+			</div>
 		</div>
 
-		<div class="flex items-center gap-2">
-			{#if onFlagContent}
-				<button
-					type="button"
-					onclick={onFlagContent}
-					class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold text-text-muted hover:border-danger hover:text-danger active:scale-95"
-					title="Report issue with this quiz"
-				>
-					🚩 Report
-				</button>
-			{/if}
-
-			{#if onRegenerateQuestion}
-				<button
-					type="button"
-					onclick={onRegenerateQuestion}
-					disabled={isRegenerating}
-					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-primary/40 bg-primary-soft/50 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary hover:text-white disabled:opacity-50"
-					title="Regenerate this specific question with AI"
-				>
-					{#if isRegenerating}
-						<span class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"
-						></span>
-						<span>Regenerating...</span>
-					{:else}
-						<span>✨ Regenerate Question</span>
-					{/if}
-				</button>
-			{/if}
+		<!-- Animated Progress Bar -->
+		<div
+			class="h-1.5 w-full overflow-hidden rounded-full bg-border/60"
+			role="progressbar"
+			aria-valuenow={currentQuestionIndex + 1}
+			aria-valuemin={1}
+			aria-valuemax={questions.length}
+		>
+			<div
+				class="h-full rounded-full bg-primary transition-all duration-300"
+				style="width: {progressPct}%"
+			></div>
 		</div>
 	</div>
 

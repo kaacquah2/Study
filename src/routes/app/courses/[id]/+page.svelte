@@ -240,30 +240,37 @@
 			} else {
 				toastStore.error(data.error?.message || 'Consistency check failed');
 			}
-		} catch (err) {
-			console.error('Consistency check error:', err);
-			toastStore.error('Consistency check failed');
 		} finally {
 			actionLoading = false;
 		}
 	};
+
+	let nextIncompleteModule = $derived.by(() => {
+		return (
+			modules.find(
+				(m) => m.status === 'ready' && !userCompletedModuleIds.includes(m.id || '')
+			) || modules[0]
+		);
+	});
+
+	let showExportMenu = $state(false);
 </script>
 
 <svelte:head>
-	<title>{course?.title || 'Course Overview'} &mdash; AI Study Buddy</title>
+	<title>{course?.title || 'Course Workspace'} &mdash; Study AI</title>
 </svelte:head>
 
-<div class="mx-auto flex w-full max-w-4xl flex-col gap-8 py-4">
-	<!-- Back Link & Action Bar -->
-	<div class="flex flex-wrap items-center justify-between gap-3">
+<div class="mx-auto flex w-full max-w-4xl flex-col gap-6 py-4">
+	<!-- Top Bar -->
+	<div class="flex items-center justify-between gap-3 border-b border-border pb-3">
 		<a
 			href="/app"
 			class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
 		>
-			&larr; Back to Courses
+			&larr; Return to Dashboard
 		</a>
 
-		<div class="flex flex-wrap items-center gap-2">
+		<div class="flex items-center gap-2">
 			<a
 				href={`/app/review?courseId=${courseId}`}
 				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-300 shadow-xs transition-colors hover:border-amber-400"
@@ -274,90 +281,71 @@
 
 			<button
 				type="button"
-				onclick={handleConsistencyCheck}
-				disabled={actionLoading}
-				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text shadow-xs transition-colors hover:border-primary disabled:opacity-50"
-				title="Audit course consistency across modules"
-			>
-				<span>🔍 Audit</span>
-			</button>
-
-			<button
-				type="button"
-				onclick={handleExportAnki}
-				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text shadow-xs transition-colors hover:border-primary"
-				title="Export Quiz Flashcards for Anki"
-			>
-				<span>🗂️ Anki Deck</span>
-			</button>
-
-			<button
-				type="button"
-				onclick={handleExportMarkdown}
-				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text shadow-xs transition-colors hover:border-primary"
-				title="Export Course as Markdown file"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-4 w-4 text-primary"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-					/>
-				</svg>
-				<span>Export MD</span>
-			</button>
-
-			<button
-				type="button"
-				onclick={handleExportPDF}
-				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text shadow-xs transition-colors hover:border-primary"
-				title="Print or Save Course as PDF"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-4 w-4 text-primary"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-					/>
-				</svg>
-				<span>Print / PDF</span>
-			</button>
-
-			<button
-				type="button"
 				onclick={handleOpenShare}
 				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text shadow-xs transition-colors hover:border-primary"
 			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-4 w-4 text-primary"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-					/>
-				</svg>
-				<span>Share Course</span>
+				<span>🔗 Share</span>
 			</button>
+
+			<!-- Export & Tools Dropdown -->
+			<div class="relative">
+				<button
+					type="button"
+					onclick={() => (showExportMenu = !showExportMenu)}
+					class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text-muted hover:border-primary hover:text-text"
+					aria-label="Course actions and exports"
+				>
+					<span>⚙️ Export & Audit</span>
+					<span class="text-[10px]">▼</span>
+				</button>
+
+				{#if showExportMenu}
+					<div
+						class="absolute right-0 z-30 mt-2 flex w-48 flex-col gap-1 rounded-2xl border border-border bg-surface p-2 shadow-xl"
+					>
+						<button
+							type="button"
+							onclick={() => {
+								showExportMenu = false;
+								handleConsistencyCheck();
+							}}
+							class="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-text hover:bg-surface-muted"
+						>
+							<span>🔍 Consistency Audit</span>
+						</button>
+						<button
+							type="button"
+							onclick={() => {
+								showExportMenu = false;
+								handleExportAnki();
+							}}
+							class="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-text hover:bg-surface-muted"
+						>
+							<span>🗂️ Anki Deck (.txt)</span>
+						</button>
+						<button
+							type="button"
+							onclick={() => {
+								showExportMenu = false;
+								handleExportMarkdown();
+							}}
+							class="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-text hover:bg-surface-muted"
+						>
+							<span>📄 Markdown File</span>
+						</button>
+						<button
+							type="button"
+							onclick={() => {
+								showExportMenu = false;
+								handleExportPDF();
+							}}
+							class="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-text hover:bg-surface-muted"
+						>
+							<span>🖨️ Print / Save PDF</span>
+						</button>
+					</div>
+				{/if}
+			</div>
 		</div>
 	</div>
 
@@ -471,7 +459,7 @@
 				</div>
 			{/if}
 
-			<!-- Certificate Card OR Progress Bar -->
+			<!-- Certificate Card OR Progress Bar & Continue CTA -->
 			{#if isCourseCompleted}
 				<div
 					class="mt-2 flex flex-col items-center justify-center rounded-2xl border border-emerald-500/30 bg-linear-to-r from-emerald-950/40 to-teal-950/40 p-6 text-center shadow-lg"
@@ -499,13 +487,47 @@
 					</div>
 				</div>
 			{:else}
-				<div class="mt-2">
+				<div class="mt-2 flex flex-col gap-3">
 					<ProgressBar
 						progress={progressPercentage}
 						showLabel={true}
 						label="Course Completion"
 						accent={course.accent || 'primary'}
 					/>
+
+					{#if nextIncompleteModule && nextIncompleteModule.status === 'ready'}
+						<div
+							class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary-soft/30 p-3.5"
+						>
+							<div class="flex items-center gap-3">
+								<span class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-xs font-bold text-white shadow-xs">
+									→
+								</span>
+								<div>
+									<div class="flex items-center gap-2">
+										<span class="text-[10px] font-black tracking-wider uppercase text-primary">
+											Up Next
+										</span>
+										{#if nextIncompleteModule.estimatedMinutes}
+											<span class="text-[10px] text-text-muted">
+												• ~{nextIncompleteModule.estimatedMinutes} mins
+											</span>
+										{/if}
+									</div>
+									<h4 class="font-display text-xs font-bold text-text">
+										{nextIncompleteModule.title}
+									</h4>
+								</div>
+							</div>
+
+							<a
+								href={`/app/courses/${courseId}/${nextIncompleteModule.id}`}
+								class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-primary-hover active:scale-95"
+							>
+								<span>Continue Learning &rarr;</span>
+							</a>
+						</div>
+					{/if}
 				</div>
 			{/if}
 		</div>
@@ -544,13 +566,16 @@
 					{@const isReady = mod.status === 'ready'}
 					{@const isGenerating = mod.status === 'generating' || mod.status === 'pending'}
 					{@const isFailed = mod.status === 'failed'}
+					{@const isNextUp = nextIncompleteModule?.id === mod.id && !isCompleted}
 
 					<div
-						class="flex flex-col gap-3 rounded-2xl border p-4 shadow-xs transition-all duration-200 sm:flex-row sm:items-center sm:justify-between {isReady
-							? 'border-border bg-surface hover:border-primary/40'
-							: isGenerating
-								? 'animate-pulse border-border/60 bg-surface-muted/40 opacity-70'
-								: 'border-danger/30 bg-danger-soft/20'}"
+						class="flex flex-col gap-3 rounded-2xl border p-4 shadow-xs transition-all duration-200 sm:flex-row sm:items-center sm:justify-between {isNextUp
+							? 'border-primary/50 bg-primary-soft/10 ring-1 ring-primary/30'
+							: isReady
+								? 'border-border bg-surface hover:border-primary/40'
+								: isGenerating
+									? 'animate-pulse border-border/60 bg-surface-muted/40 opacity-70'
+									: 'border-danger/30 bg-danger-soft/20'}"
 					>
 						<div class="flex items-center gap-3.5">
 							<!-- Status Check / Icon -->
@@ -559,6 +584,12 @@
 									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-sm font-bold text-emerald-400"
 								>
 									✓
+								</div>
+							{:else if isNextUp}
+								<div
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold text-white shadow-xs"
+								>
+									→
 								</div>
 							{:else if isGenerating}
 								<div
@@ -584,13 +615,21 @@
 
 							<!-- Module Info -->
 							<div>
-								<div class="flex items-center gap-2">
+								<div class="flex flex-wrap items-center gap-2">
 									<h4 class="font-display text-sm font-bold text-text">{mod.title}</h4>
 									<span
-										class="rounded-md border border-border/40 px-2 py-0.5 text-[9px] font-bold text-text-muted uppercase"
+										class="rounded-md border border-border/40 bg-surface-muted px-2 py-0.5 text-[9px] font-bold text-text-muted uppercase"
 									>
 										{mod.type}
 									</span>
+
+									{#if mod.estimatedMinutes}
+										<span
+											class="rounded-md border border-border/40 bg-surface-muted px-2 py-0.5 text-[9px] font-semibold text-text-muted"
+										>
+											⏱️ ~{mod.estimatedMinutes} min
+										</span>
+									{/if}
 
 									<!-- Per-module Granular Progress Badge (Item #5) -->
 									{#if isGenerating}
@@ -620,7 +659,9 @@
 									{/if}
 									<a
 										href={`/app/courses/${courseId}/${mod.id}`}
-										class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-primary-hover active:scale-95"
+										class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold shadow-xs transition-all active:scale-95 {isNextUp
+											? 'bg-primary text-white hover:bg-primary-hover ring-2 ring-primary/20'
+											: 'bg-surface-muted text-text hover:bg-surface-muted/80'}"
 									>
 										<span>{isCompleted ? 'Review' : 'Start'}</span>
 										<span>&rarr;</span>

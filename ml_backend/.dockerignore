@@ -1,12 +1,23 @@
-my_pdfs/
-vector_store/
+# Secrets & environment
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# Python & testing cache
 .venv/
 venv/
 __pycache__/
 .pytest_cache/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.log
+
+# Data & vectors
+my_pdfs/
+vector_store/
+fine_tuned_models/
 *.faiss
-*.json
-!.gitignore

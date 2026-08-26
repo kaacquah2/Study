@@ -22,24 +22,43 @@ else:
 # Lock for thread-safe pipeline instantiation
 _registry_lock = threading.Lock()
 
-# Global lock kept for backwards compatibility
+# Global lock kept for backwards compatibility (no longer acquired during inference)
 inference_lock = threading.Lock()
 
-# Per-model concurrency pools: bounded to 2 workers to strictly limit memory while allowing parallel inference
+# Per-model concurrency pools: bounded to 2 workers to limit memory while allowing parallel inference
 _inference_semaphores: dict[str, threading.BoundedSemaphore] = {}
-_inference_active_counts: dict[str, int] = {}
 
-def get_inference_lock(model_id: str):
-    """Retrieve or create a dedicated concurrency pool semaphore (max 2 workers) for a specific model ID."""
+# Active inference counters — incremented before, decremented after (in finally) each inference call.
+# These replace the deprecated global lock for health reporting.
+_inference_active_counts: dict[str, int] = {}
+_counts_lock = threading.Lock()
+
+
+def get_inference_lock(model_id: str) -> threading.BoundedSemaphore:
+    """Retrieve or create a per-model concurrency semaphore (max 2 concurrent workers)."""
     with _registry_lock:
         if model_id not in _inference_semaphores:
             _inference_semaphores[model_id] = threading.BoundedSemaphore(value=2)
         return _inference_semaphores[model_id]
 
+
+def inference_start(model_id: str) -> None:
+    """Increment the active inference counter for model_id. Call before inference."""
+    with _counts_lock:
+        _inference_active_counts[model_id] = _inference_active_counts.get(model_id, 0) + 1
+
+
+def inference_end(model_id: str) -> None:
+    """Decrement the active inference counter for model_id. Call in finally after inference."""
+    with _counts_lock:
+        current = _inference_active_counts.get(model_id, 0)
+        _inference_active_counts[model_id] = max(0, current - 1)
+
+
 def is_any_inference_busy() -> bool:
-    """Check if any per-model concurrency pool is saturated."""
-    with _registry_lock:
-        return inference_lock.locked()
+    """Return True if any model currently has at least one active inference call."""
+    with _counts_lock:
+        return any(v > 0 for v in _inference_active_counts.values())
 
 
 _pipelines: dict[str, Pipeline] = {}

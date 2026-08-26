@@ -23,6 +23,16 @@
 	--color-success-soft: var(--success-soft);
 	--color-danger: var(--danger);
 	--color-danger-soft: var(--danger-soft);
+
+	/* Semantic Mastery States (derived from FSRS data) */
+	--color-mastery-strong: var(--success);        /* ≥80% — mastered */
+	--color-mastery-strong-soft: var(--success-soft);
+	--color-mastery-learning: var(--primary);      /* 40–79% — reviewing */
+	--color-mastery-learning-soft: var(--primary-soft);
+	--color-mastery-weak: var(--accent);           /* 1–39% — learning/weak */
+	--color-mastery-weak-soft: var(--accent-soft);
+	--color-mastery-none: var(--text-muted);       /* 0% / not-started — gray */
+	--color-mastery-none-soft: var(--surface-muted);
 	--color-hero-from: var(--hero-from);
 	--color-hero-to: var(--hero-to);
 
@@ -406,4 +416,16 @@ h4,
 h5,
 h6 {
 	font-family: var(--font-display);
+}
+
+/* ─── Accessibility: Reduced Motion Support ──────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	::before,
+	::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
 }

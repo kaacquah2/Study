@@ -2,6 +2,7 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import StreakHeatmap from '$lib/components/StreakHeatmap.svelte';
 	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
+	import { chatStore } from '$lib/stores/chat.svelte';
 
 	interface Props {
 		currentPath: string;
@@ -26,6 +27,17 @@
 		}
 		return '??';
 	});
+
+	// Nav section groupings — indices into navItems array
+	// Dashboard(0), +New Course(1), Explore(2) → LEARN
+	// Knowledge Map(3), Study Library(4) → MAP & STUDY
+	// Practice & Review(5) → PRACTICE
+	// Study Groups(6) → COMMUNITY
+	const sectionBreaks: Record<number, string> = {
+		3: 'Map & Study',
+		5: 'Practice',
+		6: 'Community'
+	};
 </script>
 
 <aside
@@ -63,19 +75,40 @@
 			</div>
 		</a>
 
-		<nav class="flex flex-col gap-1.5 xl:gap-2">
-			{#each navItems as item (item.href)}
+		<nav class="flex flex-col gap-1 xl:gap-1.5">
+			<!-- AI Study Tutor Prominent Quick Action -->
+			<button
+				type="button"
+				onclick={() => chatStore.toggle()}
+				class="flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-primary/30 bg-primary-soft/50 px-3 py-2.5 text-xs font-bold text-primary transition-all duration-180 hover:bg-primary hover:text-white xl:px-4 xl:py-2.5 mb-1 shadow-xs"
+				aria-label="Open AI Study Tutor"
+			>
+				<div class="flex items-center gap-2.5 truncate">
+					<span class="text-base leading-none">✨</span>
+					<span class="truncate">AI Study Tutor</span>
+				</div>
+				<span class="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-black uppercase text-primary transition-colors group-hover:bg-white/20 group-hover:text-white">
+					{chatStore.isOpen ? 'Open' : 'Chat'}
+				</span>
+			</button>
+
+			{#each navItems as item, idx (item.href)}
+				{#if sectionBreaks[idx]}
+					<div class="mt-2.5 mb-1 px-3 text-[10px] font-black tracking-wider uppercase text-text-muted/60">
+						{sectionBreaks[idx]}
+					</div>
+				{/if}
 				{@const active =
 					currentPath === item.href || (item.href !== '/app' && currentPath.startsWith(item.href))}
 				<a
 					href={item.href}
-					class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all duration-180 xl:px-4 xl:py-3 {active
+					class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition-all duration-180 xl:px-4 xl:py-2.5 {active
 						? 'bg-primary text-white shadow-md shadow-primary/20'
 						: 'text-text-muted hover:bg-surface-muted hover:text-text'}"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
-						class="h-4.5 w-4.5 shrink-0"
+						class="h-4 w-4 shrink-0"
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke="currentColor"

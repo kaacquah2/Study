@@ -8,6 +8,7 @@
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import KnowledgeMap from '$lib/components/KnowledgeMap.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import type { CourseDoc } from '$lib/firebase/converters';
 	import type {
 		ConceptNode,
@@ -218,11 +219,94 @@
 		</div>
 	</div>
 
-	{#if loadingMap}
+	<!-- Mastery Color Legend Bar -->
+	<div
+		class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-2.5 shadow-2xs text-xs font-semibold text-text-muted"
+	>
+		<div class="flex items-center gap-2 font-bold text-text">
+			<span>🎨 Mastery Legend:</span>
+		</div>
+		<div class="flex flex-wrap items-center gap-4">
+			<span class="flex items-center gap-1.5">
+				<span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+				<strong class="text-text">Mastered</strong> (≥80%)
+			</span>
+			<span class="flex items-center gap-1.5">
+				<span class="h-2.5 w-2.5 rounded-full bg-primary"></span>
+				<strong class="text-text">Reviewing</strong> (40–79%)
+			</span>
+			<span class="flex items-center gap-1.5">
+				<span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+				<strong class="text-text">Learning</strong> (1–39%)
+			</span>
+			<span class="flex items-center gap-1.5">
+				<span class="h-2.5 w-2.5 rounded-full bg-slate-400"></span>
+				<strong class="text-text">Not Assessed</strong>
+			</span>
+		</div>
+	</div>
+
+	<!-- AI Recommended Next Step Banner (if available from recommendNext.ts) -->
+	{#if mapData.recommendation}
+		<div
+			class="flex flex-col justify-between gap-4 rounded-3xl border border-primary/30 bg-linear-to-r from-primary-soft/40 via-surface to-surface p-5 shadow-xs sm:flex-row sm:items-center"
+		>
+			<div class="flex items-center gap-3.5">
+				<div
+					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-xl text-white shadow-md shadow-primary/20"
+				>
+					🎯
+				</div>
+				<div>
+					<div class="flex items-center gap-2">
+						<span
+							class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black tracking-wider uppercase text-primary"
+						>
+							AI Recommended Next Topic
+						</span>
+					</div>
+					<h3 class="font-display text-base font-bold text-text">
+						{mapData.recommendation.node.label}
+						{#if mapData.recommendation.node.moduleTitle}
+							<span class="text-xs font-normal text-text-muted">
+								({mapData.recommendation.node.moduleTitle})
+							</span>
+						{/if}
+					</h3>
+					<p class="mt-0.5 text-xs text-text-muted">
+						{mapData.recommendation.reason}
+					</p>
+				</div>
+			</div>
+
+			<div class="flex shrink-0 items-center gap-2">
+				<button
+					type="button"
+					onclick={() =>
+						mapData.recommendation &&
+						handleNodeAction(mapData.recommendation.node, 'lesson')}
+					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-primary-hover active:scale-95"
+				>
+					<span>Study Topic &rarr;</span>
+				</button>
+			</div>
+		</div>
+	{/if}
+
+	{#if loadingMap || loadingCourses}
 		<div class="flex flex-col gap-4">
 			<Skeleton variant="card" />
 			<Skeleton variant="card" />
 		</div>
+	{:else if courses.length === 0}
+		<EmptyState
+			title="No Knowledge Maps Available Yet"
+			description="Create your first AI-generated course or import shared modules to visualize your concept dependency graph."
+			actionLabel="+ Create First Course"
+			onAction={() => goto('/app/courses/createCourse')}
+			secondaryActionLabel="or explore public courses"
+			secondaryActionHref="/app/explore"
+		/>
 	{:else}
 		<KnowledgeMap
 			graph={filteredGraph}

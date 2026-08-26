@@ -8,7 +8,7 @@ services:
     ports:
       - '5173:5173'
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-production}
       - ML_BACKEND_URL=http://ml-backend:8000
     depends_on:
       ml-backend:
@@ -23,8 +23,11 @@ services:
     ports:
       - '8000:8000'
     environment:
-      - APP_ENV=${APP_ENV:-development}
-      - ML_BACKEND_API_KEY=${ML_BACKEND_API_KEY:-local-dev-key}
+      - APP_ENV=${APP_ENV:-production}
+      - ML_BACKEND_API_KEY=${ML_BACKEND_API_KEY}
+    volumes:
+      # Persist FAISS vector store across container restarts
+      - vector_store:/app/vector_store
     healthcheck:
       test:
         [
@@ -41,3 +44,7 @@ services:
 networks:
   study-network:
     driver: bridge
+
+volumes:
+  # Named volume so FAISS index and docs.json survive ml-backend container restarts
+  vector_store:

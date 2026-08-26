@@ -7,16 +7,16 @@
 	import LessonBlockRenderer from '$lib/components/lesson-blocks/LessonBlockRenderer.svelte';
 	import StudyLensToolbar from '$lib/components/StudyLensToolbar.svelte';
 	import { interceptMermaidBlocks } from '$lib/components/MermaidInterceptor';
-	import { chatStore } from '$lib/stores/chat.svelte';
 	import { studySessionStore, type CanonicalConcept } from '$lib/stores/studySession.svelte';
 	import type { AIProvenanceMetadata } from '$lib/server/ai/provider';
+	import type { LessonBlock } from '$lib/firebase/converters';
 
 	interface LessonPage {
 		order: number;
 		heading: string;
 		subheading?: string | null;
 		body?: string;
-		blocks?: Array<any>;
+		blocks?: LessonBlock[];
 	}
 
 	interface Props {
@@ -61,12 +61,30 @@
 	// Derived active page
 	let activePage = $derived(pages[currentPageIndex] || null);
 
+	function extractBlockText(b: LessonBlock): string {
+		switch (b.type) {
+			case 'text':
+			case 'callout':
+				return b.markdown || '';
+			case 'term':
+				return `${b.term} ${b.definition}`;
+			case 'check':
+				return `${b.prompt} ${b.explanation}`;
+			case 'flashcard':
+				return `${b.front} ${b.back}`;
+			case 'diagram':
+				return b.caption || '';
+			default:
+				return '';
+		}
+	}
+
 	// Derived reading time estimate
 	let totalWords = $derived.by(() => {
 		if (!activePage) return 0;
 		if (activePage.blocks && activePage.blocks.length > 0) {
 			return activePage.blocks.reduce((acc, b) => {
-				const text = b.markdown || b.text || '';
+				const text = extractBlockText(b);
 				return acc + text.split(/\s+/).filter(Boolean).length;
 			}, 0);
 		}
@@ -98,6 +116,14 @@
 		if (currentPageIndex < pages.length - 1) {
 			onPageChange(currentPageIndex + 1);
 		} else {
+			studySessionStore.dispatchServerEvent({
+				eventType: 'lesson_completed',
+				courseId,
+				moduleId,
+				metadata: {
+					sourceLabel: moduleTitle
+				}
+			});
 			onComplete();
 		}
 	};
@@ -202,6 +228,19 @@
 					{/if}
 				</button>
 			{/if}
+
+			<!-- Flag / Report Content Issue -->
+			{#if onFlagContent}
+				<button
+					type="button"
+					onclick={onFlagContent}
+					class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-text-muted shadow-2xs transition-colors hover:border-rose-500/40 hover:text-rose-400"
+					title="Report an issue or flag content"
+					aria-label="Flag or report content issue"
+				>
+					<span>🚩 Flag</span>
+				</button>
+			{/if}
 		</div>
 	</div>
 
@@ -296,7 +335,7 @@
 				{@const audioText =
 					activePage.body ||
 					activePage.blocks
-						?.map((b) => b.markdown || b.text || '')
+						?.map(extractBlockText)
 						.filter(Boolean)
 						.join('. ') || ''}
 				<LessonAudioPlayer text={audioText} title={activePage.heading} />

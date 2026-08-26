@@ -91,6 +91,7 @@ export interface UserProfileDoc {
 	longestStreak?: number;
 	streakFreezes?: number;
 	isAdmin?: boolean;
+	onboardingComplete?: boolean;
 	streak?: {
 		current: number;
 		longest: number;

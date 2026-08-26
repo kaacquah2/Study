@@ -57,18 +57,32 @@ service cloud.firestore {
       allow write: if false; // Admin SDK only via /api/study-groups
     }
 
-    // Peer question submission allowed for signedIn users; moderation and updates strictly Admin SDK.
-    match /peerQuestions/{questionId} {
-      allow read: if signedIn() && (
-        resource.data.status == 'approved' || 
-        resource.data.submittedBy == request.auth.uid
-      );
-      allow create: if signedIn() 
-        && request.resource.data.submittedBy == request.auth.uid
-        && request.resource.data.status == 'pending'
-        && request.resource.data.prompt is string
-        && request.resource.data.prompt.size() <= 2000;
-      allow update, delete: if false; // Moderation updates via Admin SDK only
+    // Learning events — read owner only; write strictly via Admin SDK (/api/analytics/events)
+    match /learningEvents/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if false;
+
+      match /events/{eventId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+    }
+
+    // Aggregated user learning profile — server authoritative via Admin SDK
+    match /userLearningProfile/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if false;
+    }
+
+    // Mistake records & error bank — server authoritative via Admin SDK
+    match /mistakeRecords/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if false;
+
+      match /mistakes/{questionId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
     }
   }
 }
