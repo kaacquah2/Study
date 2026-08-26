@@ -55,7 +55,6 @@ export async function invalidateUserSessionCache(uid: string): Promise<void> {
 	}
 }
 
-
 function isValidTimezone(tz: string): boolean {
 	try {
 		Intl.DateTimeFormat(undefined, { timeZone: tz });
@@ -177,4 +176,3 @@ export async function verifySessionUser(request: Request): Promise<Authenticated
 		name: decodedToken.name || null
 	};
 }
-

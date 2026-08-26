@@ -221,7 +221,7 @@
 
 	<!-- Mastery Color Legend Bar -->
 	<div
-		class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-2.5 shadow-2xs text-xs font-semibold text-text-muted"
+		class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-text-muted shadow-2xs"
 	>
 		<div class="flex items-center gap-2 font-bold text-text">
 			<span>🎨 Mastery Legend:</span>
@@ -260,7 +260,7 @@
 				<div>
 					<div class="flex items-center gap-2">
 						<span
-							class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black tracking-wider uppercase text-primary"
+							class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black tracking-wider text-primary uppercase"
 						>
 							AI Recommended Next Topic
 						</span>
@@ -283,8 +283,7 @@
 				<button
 					type="button"
 					onclick={() =>
-						mapData.recommendation &&
-						handleNodeAction(mapData.recommendation.node, 'lesson')}
+						mapData.recommendation && handleNodeAction(mapData.recommendation.node, 'lesson')}
 					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-primary-hover active:scale-95"
 				>
 					<span>Study Topic &rarr;</span>

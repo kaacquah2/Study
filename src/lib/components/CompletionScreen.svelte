@@ -202,7 +202,9 @@
 				<div>
 					<h4 class="font-display text-xs font-bold text-text">Reinforce Missed Concepts</h4>
 					<p class="text-[11px] text-text-muted">
-						You missed <strong>{missedItems.length} question{missedItems.length > 1 ? 's' : ''}</strong>. Add them directly to your FSRS review deck.
+						You missed <strong
+							>{missedItems.length} question{missedItems.length > 1 ? 's' : ''}</strong
+						>. Add them directly to your FSRS review deck.
 					</p>
 				</div>
 			</div>

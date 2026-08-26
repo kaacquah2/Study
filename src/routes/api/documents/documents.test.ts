@@ -234,9 +234,7 @@ describe('/api/documents RAG Proxy Integration Tests', () => {
 
 		it('returns 502 when ML backend returns error on clear', async () => {
 			vi.mocked(verifySessionUser).mockResolvedValue({ uid: 'user1' });
-			mockFetch.mockResolvedValue(
-				new Response('Service Unavailable', { status: 503 })
-			);
+			mockFetch.mockResolvedValue(new Response('Service Unavailable', { status: 503 }));
 
 			const req = new Request('http://localhost/api/documents', { method: 'DELETE' });
 			const res = await DELETE({ request: req } as unknown as Parameters<typeof DELETE>[0]);

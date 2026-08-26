@@ -80,7 +80,7 @@
 		activeQuestion ? (activeQuestion.answerIndex ?? activeQuestion.correctIndex ?? 0) : 0
 	);
 	let questionPrompt = $derived(
-		activeQuestion ? (activeQuestion.prompt || activeQuestion.question || '') : ''
+		activeQuestion ? activeQuestion.prompt || activeQuestion.question || '' : ''
 	);
 
 	// Keyboard shortcuts
@@ -138,7 +138,9 @@
 			type: 'quiz_answered',
 			snippet: questionPrompt,
 			conceptId: activeQuestion.conceptId,
-			summary: isCorrect ? 'Answered correctly' : `Answered incorrectly (chose option ${selectedOptionIndex + 1})`
+			summary: isCorrect
+				? 'Answered correctly'
+				: `Answered incorrectly (chose option ${selectedOptionIndex + 1})`
 		});
 
 		// Dispatch authoritative learning event and mistake record if incorrect
@@ -242,13 +244,14 @@
 
 	let progressPct = $derived(
 		questions.length > 0
-			? Math.min(100, Math.round(((currentQuestionIndex + (isAnswerLocked ? 1 : 0)) / questions.length) * 100))
+			? Math.min(
+					100,
+					Math.round(((currentQuestionIndex + (isAnswerLocked ? 1 : 0)) / questions.length) * 100)
+				)
 			: 0
 	);
 
-	let questionsAnsweredCount = $derived(
-		currentQuestionIndex + (isAnswerLocked ? 1 : 0)
-	);
+	let questionsAnsweredCount = $derived(currentQuestionIndex + (isAnswerLocked ? 1 : 0));
 </script>
 
 <div class="flex w-full flex-col gap-5">
@@ -262,7 +265,9 @@
 				<span class="text-xs font-semibold text-text-muted">
 					Score: {score}/{questions.length}
 					{#if questionsAnsweredCount > 0}
-						<span class="text-text-muted/60">({Math.round((score / questionsAnsweredCount) * 100)}% accuracy)</span>
+						<span class="text-text-muted/60"
+							>({Math.round((score / questionsAnsweredCount) * 100)}% accuracy)</span
+						>
 					{/if}
 				</span>
 			</div>
@@ -288,7 +293,8 @@
 						title="Regenerate this specific question with AI"
 					>
 						{#if isRegenerating}
-							<span class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"
+							<span
+								class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"
 							></span>
 							<span>Regenerating...</span>
 						{:else}
@@ -341,7 +347,7 @@
 								? 'anim-shake border-danger bg-danger/10 font-bold text-danger'
 								: isSelected
 									? 'border-primary bg-primary-soft font-bold text-primary ring-2 ring-primary/40'
-									: 'border-border bg-surface hover:border-text-muted hover:bg-surface-muted/60 text-text'}"
+									: 'border-border bg-surface text-text hover:border-text-muted hover:bg-surface-muted/60'}"
 					>
 						<div class="flex items-center gap-3">
 							<span
@@ -370,7 +376,9 @@
 
 			<!-- Post-Answer Feedback & AI Explanation Section -->
 			{#if isAnswerLocked}
-				<div class="flex flex-col gap-3 rounded-2xl border border-border/80 bg-surface-muted/60 p-4">
+				<div
+					class="flex flex-col gap-3 rounded-2xl border border-border/80 bg-surface-muted/60 p-4"
+				>
 					{#if selectedOptionIndex === correctIndex}
 						<div class="flex items-center gap-2 text-xs font-bold text-emerald-400">
 							<span>🎉 Great job! That's correct.</span>
@@ -378,7 +386,9 @@
 					{:else}
 						<div class="flex items-center justify-between gap-2">
 							<span class="text-xs font-bold text-danger"
-								>Incorrect. The correct answer was option {['A', 'B', 'C', 'D'][correctIndex]}.</span
+								>Incorrect. The correct answer was option {['A', 'B', 'C', 'D'][
+									correctIndex
+								]}.</span
 							>
 							{#if !aiExplanation && !isExplaining}
 								<button
@@ -395,7 +405,8 @@
 					<!-- Explanation Text -->
 					{#if activeQuestion.explanation && !aiExplanation}
 						<p class="text-xs leading-relaxed text-text-muted">
-							<strong class="text-text">Explanation:</strong> {activeQuestion.explanation}
+							<strong class="text-text">Explanation:</strong>
+							{activeQuestion.explanation}
 						</p>
 					{/if}
 
@@ -440,7 +451,11 @@
 				onclick={handleNextQuestion}
 				class="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-95"
 			>
-				<span>{currentQuestionIndex < questions.length - 1 ? 'Next Question &rarr;' : 'Finish Quiz 🏁'}</span>
+				<span
+					>{currentQuestionIndex < questions.length - 1
+						? 'Next Question &rarr;'
+						: 'Finish Quiz 🏁'}</span
+				>
 			</button>
 		{/if}
 	</div>

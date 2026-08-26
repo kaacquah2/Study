@@ -13,7 +13,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-v1.60-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![Deploy Netlify](https://img.shields.io/badge/Deploy-Netlify-00AD9F?logo=netlify&logoColor=white)](https://www.netlify.com/)
 
-**Study AI** is an **Adaptive AI-Powered Learning System** engineered around a central **Learning Intelligence Engine**. Rather than functioning as a collection of isolated AI utilities, the platform continuously logs student interaction signals (lesson reads, quiz performance, active recall errors, and FSRS review states) into an authoritative learning analytics stream. The engine synthesizes these signals to compute defensible mastery estimates and answer the core educational question: ***"What should this student study next, and why?"***
+**Study AI** is an **Adaptive AI-Powered Learning System** engineered around a central **Learning Intelligence Engine**. Rather than functioning as a collection of isolated AI utilities, the platform continuously logs student interaction signals (lesson reads, quiz performance, active recall errors, and FSRS review states) into an authoritative learning analytics stream. The engine synthesizes these signals to compute defensible mastery estimates and answer the core educational question: _**"What should this student study next, and why?"**_
 
 Developed as a Final Year Project for the Department of Computer Science at **Kwame Nkrumah University of Science & Technology (KNUST)**.
 

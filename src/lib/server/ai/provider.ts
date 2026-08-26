@@ -728,14 +728,12 @@ export async function* streamChat(
 		}
 	}
 
-
 	// Fallback: standard chat call
 	const fallbackRes = await chat(messages, courseContext, userId);
 	yield { token: fallbackRes.result.reply, provider: fallbackRes.provider };
 }
 
 // ── Enhance Topic ─────────────────────────────────────────────────────────────
-
 
 export async function enhanceTopic(
 	topic: string
@@ -746,8 +744,7 @@ export async function enhanceTopic(
 				'/completion',
 				{
 					prompt: `Expand the following vague topic into a specific, high-quality, targeted course subject. Provide a JSON object with "enhancedTopic" (string) and "suggestions" (array of 3 alternative strings).\n\nRaw Topic: "${topic}"`,
-					system_instruction:
-						'You are an expert curriculum consultant. Return valid JSON only.'
+					system_instruction: 'You are an expert curriculum consultant. Return valid JSON only.'
 				},
 				20_000
 			);

@@ -17,7 +17,6 @@ vi.mock('$lib/server/ai/provider', () => ({
 	paraphrase: vi.fn()
 }));
 
-
 vi.mock('$lib/server/rateLimiter', () => ({
 	enforceRateLimit: vi.fn()
 }));

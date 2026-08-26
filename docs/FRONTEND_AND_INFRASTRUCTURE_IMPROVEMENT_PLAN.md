@@ -49,19 +49,20 @@ graph TD
 ## 2. Deep-Dive Architectural Resolutions
 
 ### 2.1 Canonical Concept Taxonomy & Flashcard Deduplication
+
 - **Problem**: Study Lens text highlights and Quiz Misses generating uncontrolled free-form slugs (`newtons-second-law` vs `f-equals-ma`) causes exact-match deduplication to fail.
 - **Architectural Resolution**:
   1. **Canonical Taxonomy at Module Creation**:
      During course/module generation (`generateLessonV2`), the AI outputs a canonical `concepts` dictionary stored directly on the module document:
      ```typescript
      export interface CanonicalConcept {
-         id: string;             // e.g. 'concept_newtons_second_law'
-         term: string;           // e.g. "Newton's Second Law of Motion"
-         aliases: string[];      // e.g. ["F=ma", "force equals mass times acceleration"]
-         summary: string;
+     	id: string; // e.g. 'concept_newtons_second_law'
+     	term: string; // e.g. "Newton's Second Law of Motion"
+     	aliases: string[]; // e.g. ["F=ma", "force equals mass times acceleration"]
+     	summary: string;
      }
      ```
-  2. **Study Lens Concept Resolution**: When a student highlights text and clicks *"Generate Flashcard"*, the client resolves the highlight against the module's canonical `concepts` list (via exact alias match or token overlap). If matched, it anchors to `concept.id`.
+  2. **Study Lens Concept Resolution**: When a student highlights text and clicks _"Generate Flashcard"_, the client resolves the highlight against the module's canonical `concepts` list (via exact alias match or token overlap). If matched, it anchors to `concept.id`.
   3. **Quiz Miss Pipeline**: Quiz questions are explicitly generated with `conceptId: string` tied to the module's canonical concept dictionary.
   4. **Deterministic Dedup Key**:
      ```typescript
@@ -72,6 +73,7 @@ graph TD
 ---
 
 ### 2.2 FSRS-4.5 Authoritative Engine & Persisted One-Time Backfill
+
 - **Problem**: Coexistence of FSRS-4.5 and legacy SM-2 math corrupts stability curves. Runtime recomputation drifts without persistence.
 - **Architectural Resolution**:
   1. **Deprecate `sm2.ts`**: Permanently remove `sm2.ts` and `sm2.test.ts` from the codebase.
@@ -89,40 +91,43 @@ graph TD
 ---
 
 ### 2.3 Persisted AI Provenance & Content Versioning
+
 - **Problem**: Silent failover and model drift cause untraceable quality drops unless provenance is permanently persisted in Firestore.
 - **Architectural Resolution**:
   1. Every generated course, module, quiz, and chat log document in Firestore stores a typed `AIProvenanceMetadata` signature:
      ```typescript
      export interface AIProvenanceMetadata {
-         provider: 'gemini' | 'ollama' | 'ml_backend';
-         isGrounded: boolean;              // True only if grounded via RAG vector chunks
-         groundingChunkCount: number;      // Source chunks used
-         degradedTier: boolean;            // True if served by fallback tier
-         promptVersion: string;            // e.g. '2026.08-v2-blocks'
-         schemaVersion: number;            // e.g. 2
-         domainConfidenceScore?: number;
-         generatedAt: string;
+     	provider: 'gemini' | 'ollama' | 'ml_backend';
+     	isGrounded: boolean; // True only if grounded via RAG vector chunks
+     	groundingChunkCount: number; // Source chunks used
+     	degradedTier: boolean; // True if served by fallback tier
+     	promptVersion: string; // e.g. '2026.08-v2-blocks'
+     	schemaVersion: number; // e.g. 2
+     	domainConfidenceScore?: number;
+     	generatedAt: string;
      }
      ```
   2. **Subtle UI Signal**: When `degradedTier === true`, display a non-intrusive badge:
-     > ⚡ *Generated with lightweight model during peak traffic.* `[✨ Upgrade with Gemini Pro]`
+     > ⚡ _Generated with lightweight model during peak traffic._ `[✨ Upgrade with Gemini Pro]`
   3. Server logs failovers to `/analytics/failovers` for platform QA.
 
 ---
 
 ### 2.4 Shared Working Memory (`studySessionStore` with `sessionStorage`)
+
 - **Problem**: In-memory state loss on page refresh breaks the single-tutor mental model.
 - **Architectural Resolution**:
   1. [`src/lib/stores/studySession.svelte.ts`](file:///c:/Users/USER/Downloads/Telegram%20Desktop/Study/src/lib/stores/studySession.svelte.ts) synchronizes with `sessionStorage` scoped by `study_session_${moduleId}`.
-  2. Captures all Study Lens events (*Explain, Example, Instant Quiz, Flashcard creation, TTS*) and quiz answers.
+  2. Captures all Study Lens events (_Explain, Example, Instant Quiz, Flashcard creation, TTS_) and quiz answers.
   3. When `/api/chat/stream` is called, recent events (last 15 minutes) are injected into the system prompt. Survives browser refresh and inter-module navigation.
 
 ---
 
 ### 2.5 Bulk Flashcard Creation & Rate Limiting (Upstash Redis)
+
 - **Problem**: CompletionScreen's "Drill Missed Concepts" creates bursts of cards; Study Lens micro-actions need dedicated quotas.
 - **Architectural Resolution**:
-  1. **Zero-AI Bulk Creation**: CompletionScreen "Drill Missed Concepts" does *not* invoke AI models; it directly maps existing quiz question prompts and explanations into FSRS cards using batched Firestore writes.
+  1. **Zero-AI Bulk Creation**: CompletionScreen "Drill Missed Concepts" does _not_ invoke AI models; it directly maps existing quiz question prompts and explanations into FSRS cards using batched Firestore writes.
   2. **Multi-Tiered Redis Action Buckets**:
      - `study_lens`: 30 calls / 10 min window (~150 tokens/call).
      - `chat_stream`: 20 messages / 10 min window (~600 tokens/call).
@@ -133,6 +138,7 @@ graph TD
 ---
 
 ### 2.6 Full-Parity Accessible Tree View (WCAG 2.2 SC 2.5.1)
+
 - **Problem**: Screen-reader users need 100% functional parity with the Knowledge Map canvas.
 - **Architectural Resolution**:
   - The Accessible Tree View (`<nav aria-label="Course Knowledge Hierarchy">`) provides full parity:
@@ -146,6 +152,7 @@ graph TD
 ---
 
 ### 2.7 Dock Mode Specifications & Responsive Breakpoints
+
 - **Desktop ($\ge 1024\text{px}$)**: Toggle between Floating Modal and Docked Side-by-Side Mode.
 - **Dock Width**: Default $380\text{px}$, resizable with hard constraints: **Min $300\text{px}$, Max $540\text{px}$**, clamped so the main lesson container remains $\ge 560\text{px}$.
 - **Tablet & Mobile ($< 1024\text{px}$)**: Dock mode automatically disables and collapses to full-height drawer mode.
@@ -154,12 +161,14 @@ graph TD
 ---
 
 ### 2.8 Single-Listener Orchestrator Pattern
+
 - Parent route [`[moduleId]/+page.svelte`](file:///c:/Users/USER/Downloads/Telegram%20Desktop/Study/src/routes/app/courses/[id]/[moduleId]/+page.svelte) maintains the **sole** centralized Firestore snapshot listener.
 - Data passed to `<LessonReader />`, `<QuizRunner />`, `<CompletionScreen />`, and `<ModuleVideoGallery />` strictly via reactive Svelte 5 `$props()`. Zero child listeners.
 
 ---
 
 ### 2.9 SSE Streaming for AI Endpoints
+
 - `/api/chat/stream` (existing)
 - `/api/quiz/explain` (upgraded to SSE so step explanations render progressively)
 - `/api/summarize` & `/api/paraphrase` (upgraded to SSE streaming)

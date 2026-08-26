@@ -7,8 +7,15 @@ import {
 	getRecentUserLearningEvents,
 	type LearningEvent
 } from '$lib/server/analytics/learningEvents';
-import { recordMistake, resolveMistake, type QuestionSnapshot } from '$lib/server/analytics/mistakeRecords';
-import { aggregateSessionEvents, getUserLearningProfile } from '$lib/server/analytics/profileAggregator';
+import {
+	recordMistake,
+	resolveMistake,
+	type QuestionSnapshot
+} from '$lib/server/analytics/mistakeRecords';
+import {
+	aggregateSessionEvents,
+	getUserLearningProfile
+} from '$lib/server/analytics/profileAggregator';
 import { enforceRateLimit } from '$lib/server/rateLimiter';
 import { adminDb } from '$lib/server/admin';
 
@@ -22,7 +29,14 @@ export const POST: RequestHandler = async ({ request }) => {
 		const minKey = Math.floor(Date.now() / 60000).toString();
 		const usageRef = adminDb.collection('usage').doc(user.uid);
 		try {
-			await enforceRateLimit(usageRef, 120, minKey, 'analyticsEventCount', 'analyticsEventWindow', 60);
+			await enforceRateLimit(
+				usageRef,
+				120,
+				minKey,
+				'analyticsEventCount',
+				'analyticsEventWindow',
+				60
+			);
 		} catch (rateErr) {
 			if (rateErr instanceof Error && rateErr.message === 'RATE_LIMIT_EXCEEDED') {
 				return json(
@@ -99,7 +113,10 @@ export const POST: RequestHandler = async ({ request }) => {
 	} catch (err: unknown) {
 		const errorMessage = err instanceof Error ? err.message : 'Unknown error';
 		if (errorMessage.includes('UNAUTHORIZED') || errorMessage.includes('Session expired')) {
-			return json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } }, { status: 401 });
+			return json(
+				{ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
+				{ status: 401 }
+			);
 		}
 
 		console.error('[analytics/events] Internal error:', err);
@@ -129,7 +146,10 @@ export const GET: RequestHandler = async ({ request }) => {
 	} catch (err: unknown) {
 		const errorMessage = err instanceof Error ? err.message : 'Unknown error';
 		if (errorMessage.includes('UNAUTHORIZED') || errorMessage.includes('Session expired')) {
-			return json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } }, { status: 401 });
+			return json(
+				{ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
+				{ status: 401 }
+			);
 		}
 
 		console.error('[analytics/events GET] Internal error:', err);

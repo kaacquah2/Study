@@ -313,7 +313,9 @@
 
 		<!-- Body View Render -->
 		<div class="flex min-h-0 grow overflow-hidden">
-			<main class="mx-auto flex w-full max-w-7xl grow flex-col overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+			<main
+				class="mx-auto flex w-full max-w-7xl grow flex-col overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8"
+			>
 				{@render children()}
 			</main>
 			{#if chatStore.isDocked && chatStore.isOpen}

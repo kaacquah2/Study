@@ -90,7 +90,9 @@
 			summary: 'Requested explanation via Study Lens'
 		});
 
-		chatStore.openWithSeed(`Can you explain this part in simple terms using an analogy?\n\n"${snippet}"`);
+		chatStore.openWithSeed(
+			`Can you explain this part in simple terms using an analogy?\n\n"${snippet}"`
+		);
 	};
 
 	// Action: Practical Example
@@ -105,7 +107,9 @@
 			summary: 'Requested practical example via Study Lens'
 		});
 
-		chatStore.openWithSeed(`Can you provide a practical, concrete example illustrating this concept?\n\n"${snippet}"`);
+		chatStore.openWithSeed(
+			`Can you provide a practical, concrete example illustrating this concept?\n\n"${snippet}"`
+		);
 	};
 
 	// Action: Instant Quiz
@@ -120,7 +124,9 @@
 			summary: 'Requested instant quiz question via Study Lens'
 		});
 
-		chatStore.openWithSeed(`Can you test my understanding of this with a quick 1-question check?\n\n"${snippet}"`);
+		chatStore.openWithSeed(
+			`Can you test my understanding of this with a quick 1-question check?\n\n"${snippet}"`
+		);
 	};
 
 	// Action: Generate Flashcard with Canonical Concept Resolution

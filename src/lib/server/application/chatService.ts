@@ -17,7 +17,7 @@ export class ChatApplicationService {
 		let contextToUse = options.courseContext;
 		if (options.socraticMode) {
 			const socraticInstruction =
-				'\n[Pedagogy Instruction: Socratic Mode Active. Act as an encouraging Socratic tutor: 1) Validate the student\'s attempt. 2) Ask targeted guiding questions to help the student derive answers independently. 3) Offer hints or structured comparison points.]';
+				"\n[Pedagogy Instruction: Socratic Mode Active. Act as an encouraging Socratic tutor: 1) Validate the student's attempt. 2) Ask targeted guiding questions to help the student derive answers independently. 3) Offer hints or structured comparison points.]";
 			contextToUse = contextToUse ? contextToUse + socraticInstruction : socraticInstruction;
 		}
 
@@ -33,7 +33,7 @@ export class ChatApplicationService {
 		let contextToUse = options.courseContext;
 		if (options.socraticMode) {
 			const socraticInstruction =
-				'\n[Pedagogy Instruction: Socratic Mode Active. Act as an encouraging Socratic tutor: 1) Validate the student\'s attempt. 2) Ask targeted guiding questions to help the student derive answers independently. 3) Offer hints or structured comparison points.]';
+				"\n[Pedagogy Instruction: Socratic Mode Active. Act as an encouraging Socratic tutor: 1) Validate the student's attempt. 2) Ask targeted guiding questions to help the student derive answers independently. 3) Offer hints or structured comparison points.]";
 			contextToUse = contextToUse ? contextToUse + socraticInstruction : socraticInstruction;
 		}
 

@@ -1,6 +1,11 @@
 import { calculateFSRS, type FSRSCard, type FSRSOutput } from '../domain/fsrs/fsrsEngine';
 import { calculateSM2, type SM2Input, type SM2Output } from '../sm2';
-import { generateCardDedupKey, resolveConceptTaxonomy, type CanonicalConcept, type ProvisionalConcept } from '../domain/course/taxonomy';
+import {
+	generateCardDedupKey,
+	resolveConceptTaxonomy,
+	type CanonicalConcept,
+	type ProvisionalConcept
+} from '../domain/course/taxonomy';
 
 export interface ReviewSubmission {
 	cardId: string;
@@ -10,7 +15,6 @@ export interface ReviewSubmission {
 	fsrsCard?: Partial<FSRSCard>;
 	sm2Card?: Partial<SM2Input>;
 }
-
 
 export interface ReviewResult {
 	cardId: string;
@@ -55,7 +59,6 @@ export class FlashcardApplicationService {
 				},
 				currentDate
 			);
-
 
 			return {
 				cardId: submission.cardId,

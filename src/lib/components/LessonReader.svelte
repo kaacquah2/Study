@@ -135,7 +135,12 @@
 		: 'relative'}"
 >
 	<!-- Contextual Selection Toolbar for Study Lens AI -->
-	<StudyLensToolbar {courseId} {moduleId} {canonicalConcepts} containerSelector=".lesson-content-area" />
+	<StudyLensToolbar
+		{courseId}
+		{moduleId}
+		{canonicalConcepts}
+		containerSelector=".lesson-content-area"
+	/>
 
 	<!-- Top Action & Navigation Bar -->
 	<div
@@ -152,7 +157,8 @@
 					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text shadow-2xs hover:border-primary/50"
 				>
 					<span>📖 Contents</span>
-					<span class="rounded-md bg-surface-muted px-1.5 py-0.5 text-[10px] font-bold text-text-muted"
+					<span
+						class="rounded-md bg-surface-muted px-1.5 py-0.5 text-[10px] font-bold text-text-muted"
 						>{pages.length} Pages</span
 					>
 				</button>
@@ -168,7 +174,8 @@
 				<button
 					type="button"
 					onclick={() => (fontSize = 'sm')}
-					class="cursor-pointer rounded-lg px-2 py-1 text-xs font-bold transition-colors {fontSize === 'sm'
+					class="cursor-pointer rounded-lg px-2 py-1 text-xs font-bold transition-colors {fontSize ===
+					'sm'
 						? 'bg-primary text-white'
 						: 'text-text-muted hover:text-text'}"
 					title="Small font"
@@ -179,7 +186,8 @@
 				<button
 					type="button"
 					onclick={() => (fontSize = 'md')}
-					class="cursor-pointer rounded-lg px-2 py-1 text-xs font-bold transition-colors {fontSize === 'md'
+					class="cursor-pointer rounded-lg px-2 py-1 text-xs font-bold transition-colors {fontSize ===
+					'md'
 						? 'bg-primary text-white'
 						: 'text-text-muted hover:text-text'}"
 					title="Medium font"
@@ -190,7 +198,8 @@
 				<button
 					type="button"
 					onclick={() => (fontSize = 'lg')}
-					class="cursor-pointer rounded-lg px-2 py-1 text-xs font-bold transition-colors {fontSize === 'lg'
+					class="cursor-pointer rounded-lg px-2 py-1 text-xs font-bold transition-colors {fontSize ===
+					'lg'
 						? 'bg-primary text-white'
 						: 'text-text-muted hover:text-text'}"
 					title="Large font"
@@ -220,7 +229,8 @@
 					title="Regenerate this specific lesson page with AI"
 				>
 					{#if isRegenerating}
-						<span class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"
+						<span
+							class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"
 						></span>
 						<span>Regenerating...</span>
 					{:else}
@@ -334,10 +344,8 @@
 			{#if activePage.body || (activePage.blocks && activePage.blocks.length > 0)}
 				{@const audioText =
 					activePage.body ||
-					activePage.blocks
-						?.map(extractBlockText)
-						.filter(Boolean)
-						.join('. ') || ''}
+					activePage.blocks?.map(extractBlockText).filter(Boolean).join('. ') ||
+					''}
 				<LessonAudioPlayer text={audioText} title={activePage.heading} />
 			{/if}
 
@@ -357,7 +365,9 @@
 							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 							{@html section.content}
 						{:else if section.type === 'mermaid'}
-							<div class="my-6 rounded-2xl border border-border/80 bg-surface-muted/60 p-4 shadow-xs">
+							<div
+								class="my-6 rounded-2xl border border-border/80 bg-surface-muted/60 p-4 shadow-xs"
+							>
 								<MermaidDiagram code={section.code} />
 							</div>
 						{/if}
@@ -371,9 +381,7 @@
 	</div>
 
 	<!-- Bottom Navigation & Page Controls -->
-	<div
-		class="flex items-center justify-between pt-2 {zenMode ? 'mx-auto w-full max-w-4xl' : ''}"
-	>
+	<div class="flex items-center justify-between pt-2 {zenMode ? 'mx-auto w-full max-w-4xl' : ''}">
 		<button
 			type="button"
 			onclick={handlePrevPage}

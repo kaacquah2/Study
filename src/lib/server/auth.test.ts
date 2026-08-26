@@ -36,7 +36,6 @@ vi.mock('./redis', () => ({
 	redisPublish: vi.fn().mockResolvedValue(1)
 }));
 
-
 describe('verifySessionUser Unit Tests', () => {
 	const mockUserDoc = { exists: true, data: () => ({ uid: 'user123' }) };
 
@@ -73,7 +72,6 @@ describe('verifySessionUser Unit Tests', () => {
 		expect(user2.uid).toBe('cached_user');
 		expect(mockDocRef.get).toHaveBeenCalledTimes(1);
 	});
-
 
 	it('throws error if Authorization header is missing', async () => {
 		const req = new Request('http://localhost/api/test');

@@ -12,14 +12,22 @@ export const POST: RequestHandler = async ({ request }) => {
 		const tenMinKey = Math.floor(Date.now() / 600000).toString();
 		const usageRef = adminDb.collection('usage').doc(user.uid);
 		try {
-			await enforceRateLimit(usageRef, 50, tenMinKey, 'fsrsCardWriteCount', 'fsrsCardWriteWindow', 600);
+			await enforceRateLimit(
+				usageRef,
+				50,
+				tenMinKey,
+				'fsrsCardWriteCount',
+				'fsrsCardWriteWindow',
+				600
+			);
 		} catch (rateErr) {
 			if (rateErr instanceof Error && rateErr.message === 'RATE_LIMIT_EXCEEDED') {
 				return json(
 					{
 						error: {
 							code: 'RATE_LIMIT_EXCEEDED',
-							message: 'Card creation rate limit reached. Please wait a few minutes before adding more cards.'
+							message:
+								'Card creation rate limit reached. Please wait a few minutes before adding more cards.'
 						}
 					},
 					{ status: 429 }

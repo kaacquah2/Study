@@ -23,7 +23,6 @@ export function getMLBackendSecret(): string | null {
 	return env.ML_BACKEND_SECRET || process.env.ML_BACKEND_SECRET || null;
 }
 
-
 /** Default timeout: 120 seconds (model inference can be slow on CPU) */
 const DEFAULT_TIMEOUT_MS = 120_000;
 
@@ -143,7 +142,6 @@ export async function callML<T>(
 			body: bodyString,
 			signal: AbortSignal.timeout(timeoutMs)
 		});
-
 	} catch (err) {
 		recordFailure();
 		const message = err instanceof Error ? err.message : 'Unknown network error';

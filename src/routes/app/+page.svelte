@@ -22,11 +22,11 @@
 
 	let showOnboardingModal = $derived(
 		!loading &&
-		authStore.authResolved &&
-		Boolean(authStore.user) &&
-		!showOnboardingDismissed &&
-		authStore.profile?.onboardingComplete !== true &&
-		courses.length === 0
+			authStore.authResolved &&
+			Boolean(authStore.user) &&
+			!showOnboardingDismissed &&
+			authStore.profile?.onboardingComplete !== true &&
+			courses.length === 0
 	);
 
 	let firstName = $derived.by(() => {
@@ -45,7 +45,9 @@
 	});
 
 	let currentStreak = $derived(authStore.profile?.streak?.current ?? 0);
-	let longestStreak = $derived(authStore.profile?.streak?.longest ?? authStore.profile?.longestStreak ?? currentStreak);
+	let longestStreak = $derived(
+		authStore.profile?.streak?.longest ?? authStore.profile?.longestStreak ?? currentStreak
+	);
 	let lastStudiedOn = $derived(authStore.profile?.streak?.lastStudiedOn || null);
 
 	let studiedToday = $derived.by(() => {
@@ -105,7 +107,8 @@
 				cardBg: 'border-amber-500/30 bg-linear-to-br from-amber-500/10 via-surface to-surface',
 				btnBg: 'bg-amber-500 text-slate-950 hover:bg-amber-400',
 				title: `Review ${dueReviewsCount} Due Question${dueReviewsCount > 1 ? 's' : ''}`,
-				description: 'Strengthen long-term memory with FSRS spaced repetition before concepts begin to decay.',
+				description:
+					'Strengthen long-term memory with FSRS spaced repetition before concepts begin to decay.',
 				actionLabel: 'Start Review Session →',
 				actionHref: '/app/review'
 			};
@@ -135,7 +138,9 @@
 				cardBg: 'border-primary/30 bg-linear-to-br from-primary-soft/30 via-surface to-surface',
 				btnBg: 'bg-primary text-white hover:bg-primary-hover',
 				title: `Next Up: "${c.title}"`,
-				description: c.description || 'Master key concepts through interactive explanations, checks, and quizzes.',
+				description:
+					c.description ||
+					'Master key concepts through interactive explanations, checks, and quizzes.',
 				actionLabel: 'Open Course →',
 				actionHref: `/app/courses/${c.id}`
 			};
@@ -148,7 +153,8 @@
 				cardBg: 'border-emerald-500/30 bg-linear-to-br from-emerald-500/10 via-surface to-surface',
 				btnBg: 'bg-emerald-500 text-slate-950 hover:bg-emerald-400',
 				title: 'Great job! Explore a New Topic',
-				description: 'You have mastered all your courses. Create a new AI curriculum or explore shared courses.',
+				description:
+					'You have mastered all your courses. Create a new AI curriculum or explore shared courses.',
 				actionLabel: '+ Create New Course',
 				actionHref: '/app/courses/createCourse'
 			};
@@ -160,7 +166,8 @@
 			cardBg: 'border-primary/30 bg-linear-to-br from-primary-soft/30 via-surface to-surface',
 			btnBg: 'bg-primary text-white hover:bg-primary-hover',
 			title: 'Build Your First Intelligent Course',
-			description: 'Generate structured lessons, quizzes, mindmaps, and active-recall flashcards from any topic.',
+			description:
+				'Generate structured lessons, quizzes, mindmaps, and active-recall flashcards from any topic.',
 			actionLabel: '+ Create Your First Course',
 			actionHref: '/app/courses/createCourse'
 		};
@@ -306,11 +313,13 @@
 	<!-- Zone 2: Today's Focus — Deterministic Primary Learning Recommendation -->
 	<section class="flex flex-col gap-3">
 		<div class="flex items-center justify-between">
-			<h2 class="font-display text-sm font-bold tracking-wider uppercase text-text-muted">
+			<h2 class="font-display text-sm font-bold tracking-wider text-text-muted uppercase">
 				🎯 Today's Learning Focus
 			</h2>
 			{#if dueReviewsCount > 0}
-				<span class="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-500">
+				<span
+					class="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-500"
+				>
 					{dueReviewsCount} due for review
 				</span>
 			{/if}
@@ -352,7 +361,9 @@
 			class="group flex items-center justify-between rounded-2xl border border-border bg-surface p-4.5 shadow-2xs transition-all duration-180 hover:border-primary/40 hover:bg-surface-muted/50"
 		>
 			<div class="flex items-center gap-3.5">
-				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-lg">
+				<div
+					class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-lg"
+				>
 					🧠
 				</div>
 				<div>
@@ -364,7 +375,8 @@
 					</p>
 				</div>
 			</div>
-			<span class="text-xs text-text-muted transition-transform group-hover:translate-x-0.5">→</span>
+			<span class="text-xs text-text-muted transition-transform group-hover:translate-x-0.5">→</span
+			>
 		</a>
 
 		<!-- 2. Knowledge Map -->
@@ -373,19 +385,20 @@
 			class="group flex items-center justify-between rounded-2xl border border-border bg-surface p-4.5 shadow-2xs transition-all duration-180 hover:border-primary/40 hover:bg-surface-muted/50"
 		>
 			<div class="flex items-center gap-3.5">
-				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-lg text-primary">
+				<div
+					class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-lg text-primary"
+				>
 					🗺️
 				</div>
 				<div>
 					<h4 class="font-display text-xs font-bold text-text group-hover:text-primary">
 						Knowledge Map
 					</h4>
-					<p class="text-[11px] text-text-muted">
-						Prerequisite concept tree
-					</p>
+					<p class="text-[11px] text-text-muted">Prerequisite concept tree</p>
 				</div>
 			</div>
-			<span class="text-xs text-text-muted transition-transform group-hover:translate-x-0.5">→</span>
+			<span class="text-xs text-text-muted transition-transform group-hover:translate-x-0.5">→</span
+			>
 		</a>
 
 		<!-- 3. AI Study Tutor -->
@@ -395,19 +408,20 @@
 			class="group flex cursor-pointer items-center justify-between rounded-2xl border border-border bg-surface p-4.5 text-left shadow-2xs transition-all duration-180 hover:border-primary/40 hover:bg-surface-muted/50"
 		>
 			<div class="flex items-center gap-3.5">
-				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-lg text-purple-600">
+				<div
+					class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-lg text-purple-600"
+				>
 					✨
 				</div>
 				<div>
 					<h4 class="font-display text-xs font-bold text-text group-hover:text-primary">
 						AI Study Tutor
 					</h4>
-					<p class="text-[11px] text-text-muted">
-						Ask questions & explanations
-					</p>
+					<p class="text-[11px] text-text-muted">Ask questions & explanations</p>
 				</div>
 			</div>
-			<span class="text-xs text-text-muted transition-transform group-hover:translate-x-0.5">→</span>
+			<span class="text-xs text-text-muted transition-transform group-hover:translate-x-0.5">→</span
+			>
 		</button>
 	</div>
 
@@ -588,7 +602,11 @@
 						{userBadges.length} Unlocked
 					</span>
 				</div>
-				<span class="text-xs text-text-muted transition-transform duration-200 {showAchievements ? 'rotate-180' : ''}">
+				<span
+					class="text-xs text-text-muted transition-transform duration-200 {showAchievements
+						? 'rotate-180'
+						: ''}"
+				>
 					▼
 				</span>
 			</button>
@@ -612,4 +630,3 @@
 {#if showOnboardingModal}
 	<Onboarding onClose={() => (showOnboardingDismissed = true)} />
 {/if}
-

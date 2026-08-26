@@ -32,7 +32,8 @@ async function runConceptBackfill() {
 			const modData = modDoc.data();
 
 			if (!modData.concepts || !Array.isArray(modData.concepts) || modData.concepts.length === 0) {
-				const concepts: Array<{ id: string; term: string; aliases: string[]; summary?: string }> = [];
+				const concepts: Array<{ id: string; term: string; aliases: string[]; summary?: string }> =
+					[];
 
 				// 1. Primary module concept
 				if (modData.title) {

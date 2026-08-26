@@ -78,7 +78,10 @@ export function calculateFSRS(input: FSRSInput, currentDate: Date = new Date()):
 		// Update Difficulty (Mean Reversion to initial target)
 		const deltaD = -FSRS_WEIGHTS[6] * (rating - 3);
 		const targetD = difficulty + deltaD;
-		difficulty = Math.max(1, Math.min(10, FSRS_WEIGHTS[7] * FSRS_WEIGHTS[4] + (1 - FSRS_WEIGHTS[7]) * targetD));
+		difficulty = Math.max(
+			1,
+			Math.min(10, FSRS_WEIGHTS[7] * FSRS_WEIGHTS[4] + (1 - FSRS_WEIGHTS[7]) * targetD)
+		);
 
 		if (rating === 1) {
 			// Lapse (Failed Recall)

@@ -80,21 +80,25 @@
 			<button
 				type="button"
 				onclick={() => chatStore.toggle()}
-				class="flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-primary/30 bg-primary-soft/50 px-3 py-2.5 text-xs font-bold text-primary transition-all duration-180 hover:bg-primary hover:text-white xl:px-4 xl:py-2.5 mb-1 shadow-xs"
+				class="mb-1 flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-primary/30 bg-primary-soft/50 px-3 py-2.5 text-xs font-bold text-primary shadow-xs transition-all duration-180 hover:bg-primary hover:text-white xl:px-4 xl:py-2.5"
 				aria-label="Open AI Study Tutor"
 			>
 				<div class="flex items-center gap-2.5 truncate">
 					<span class="text-base leading-none">✨</span>
 					<span class="truncate">AI Study Tutor</span>
 				</div>
-				<span class="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-black uppercase text-primary transition-colors group-hover:bg-white/20 group-hover:text-white">
+				<span
+					class="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-black text-primary uppercase transition-colors group-hover:bg-white/20 group-hover:text-white"
+				>
 					{chatStore.isOpen ? 'Open' : 'Chat'}
 				</span>
 			</button>
 
 			{#each navItems as item, idx (item.href)}
 				{#if sectionBreaks[idx]}
-					<div class="mt-2.5 mb-1 px-3 text-[10px] font-black tracking-wider uppercase text-text-muted/60">
+					<div
+						class="mt-2.5 mb-1 px-3 text-[10px] font-black tracking-wider text-text-muted/60 uppercase"
+					>
 						{sectionBreaks[idx]}
 					</div>
 				{/if}

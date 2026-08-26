@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { POST as sharePostHandler, DELETE as shareDeleteHandler } from '../courses/[id]/share/+server';
+import {
+	POST as sharePostHandler,
+	DELETE as shareDeleteHandler
+} from '../courses/[id]/share/+server';
 import { GET as getSharePreviewHandler } from './[token]/+server';
 import { POST as claimShareHandler } from './[token]/claim/+server';
 import { verifySessionUser } from '$lib/server/auth';
@@ -111,8 +114,7 @@ vi.mock('$lib/server/admin', () => {
 						if (path.includes('claims')) {
 							return {
 								exists: mockClaimExists,
-								data: () =>
-									mockClaimExists ? { courseId: 'already-claimed-course' } : null
+								data: () => (mockClaimExists ? { courseId: 'already-claimed-course' } : null)
 							};
 						}
 						if (path.includes('sharedCourses')) {

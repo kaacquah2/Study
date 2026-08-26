@@ -482,7 +482,6 @@ export async function* streamChatViaGemini(
 	}
 }
 
-
 // ── Enhance Topic via Gemini ───────────────────────────────────────────────────
 
 const ENHANCE_TOPIC_RESPONSE_SCHEMA = {

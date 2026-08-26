@@ -18,7 +18,10 @@ export const GET: RequestHandler = async ({ request, url }) => {
 	} catch (err: unknown) {
 		const errorMessage = err instanceof Error ? err.message : 'Unknown error';
 		if (errorMessage.includes('UNAUTHORIZED') || errorMessage.includes('Session expired')) {
-			return json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } }, { status: 401 });
+			return json(
+				{ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
+				{ status: 401 }
+			);
 		}
 
 		console.error('[analytics/mistakes GET] Error:', err);
@@ -50,7 +53,10 @@ export const PATCH: RequestHandler = async ({ request }) => {
 	} catch (err: unknown) {
 		const errorMessage = err instanceof Error ? err.message : 'Unknown error';
 		if (errorMessage.includes('UNAUTHORIZED') || errorMessage.includes('Session expired')) {
-			return json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } }, { status: 401 });
+			return json(
+				{ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
+				{ status: 401 }
+			);
 		}
 
 		console.error('[analytics/mistakes PATCH] Error:', err);

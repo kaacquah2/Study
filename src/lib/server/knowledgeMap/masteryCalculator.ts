@@ -147,7 +147,8 @@ export function computeModuleMastery(
 
 			const state = q.fsrsState || 'Learning';
 			if (state === 'Review') {
-				totalFsrsWeight += stability >= 10 ? FSRS_STATE_WEIGHTS.Review_high : FSRS_STATE_WEIGHTS.Review;
+				totalFsrsWeight +=
+					stability >= 10 ? FSRS_STATE_WEIGHTS.Review_high : FSRS_STATE_WEIGHTS.Review;
 			} else if (state === 'Learning') {
 				totalFsrsWeight += FSRS_STATE_WEIGHTS.Learning;
 			} else if (state === 'Relearning') {
@@ -210,14 +211,11 @@ export function computeModuleMastery(
 	}
 
 	// Component 4: Lesson Completion (0-100)
-	const lessonCompletion = isLessonCompleted ? 100 : (questionsReviewed > 0 ? 80 : 0);
+	const lessonCompletion = isLessonCompleted ? 100 : questionsReviewed > 0 ? 80 : 0;
 
 	// Composite Weighted Formula: 0.45 * Quiz + 0.35 * FSRS + 0.15 * Recency + 0.05 * Lesson
 	const compositeScore =
-		0.45 * quizAccuracy +
-		0.35 * fsrsPerformance +
-		0.15 * recencyScore +
-		0.05 * lessonCompletion;
+		0.45 * quizAccuracy + 0.35 * fsrsPerformance + 0.15 * recencyScore + 0.05 * lessonCompletion;
 
 	const masteryPercent = Math.min(100, Math.max(0, Math.round(compositeScore)));
 	const averageStability = Number((totalStability / questionsReviewed).toFixed(1));

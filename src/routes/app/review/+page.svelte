@@ -426,9 +426,12 @@
 				</h2>
 				<p class="mt-1.5 max-w-md text-xs leading-relaxed text-text-muted sm:text-sm">
 					{#if reviewCount > 0}
-						Awesome work! You reviewed <strong>{reviewCount} card{reviewCount > 1 ? 's' : ''}</strong>. Your FSRS memory stability ratings have been synchronized to Firestore.
+						Awesome work! You reviewed <strong
+							>{reviewCount} card{reviewCount > 1 ? 's' : ''}</strong
+						>. Your FSRS memory stability ratings have been synchronized to Firestore.
 					{:else if reviewMode === 'due'}
-						You have no cards due for review right now. All scheduled spaced-repetition questions are up to date!
+						You have no cards due for review right now. All scheduled spaced-repetition questions
+						are up to date!
 					{:else}
 						No quiz cards available for the selected filter. Try selecting another course or quiz.
 					{/if}
@@ -436,13 +439,15 @@
 			</div>
 
 			{#if reviewCount > 0}
-				<div class="grid grid-cols-2 gap-3 w-full max-w-md">
+				<div class="grid w-full max-w-md grid-cols-2 gap-3">
 					<div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-center">
-						<span class="block text-[10px] font-bold uppercase text-emerald-400">Cards Reviewed</span>
+						<span class="block text-[10px] font-bold text-emerald-400 uppercase"
+							>Cards Reviewed</span
+						>
 						<span class="font-display text-lg font-bold text-emerald-300">{reviewCount}</span>
 					</div>
 					<div class="rounded-2xl border border-primary/30 bg-primary-soft/40 p-3.5 text-center">
-						<span class="block text-[10px] font-black uppercase text-primary">FSRS Status</span>
+						<span class="block text-[10px] font-black text-primary uppercase">FSRS Status</span>
 						<span class="font-display text-lg font-bold text-text">Updated</span>
 					</div>
 				</div>
@@ -477,10 +482,12 @@
 		</div>
 	{:else if dueQuestions.length > 0 && !drillSessionStarted}
 		<!-- Pre-Session Memory Drill Briefing Card -->
-		<div class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8">
+		<div
+			class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8"
+		>
 			<div class="flex flex-col gap-2">
 				<div
-					class="inline-flex items-center gap-1.5 self-start rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-black tracking-wider uppercase text-amber-400"
+					class="inline-flex items-center gap-1.5 self-start rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-black tracking-wider text-amber-400 uppercase"
 				>
 					<span>🧠 FSRS Memory Retention Session</span>
 				</div>
@@ -488,7 +495,8 @@
 					Ready for your spaced repetition drill?
 				</h2>
 				<p class="text-xs leading-relaxed text-text-muted sm:text-sm">
-					Reviewing key questions right before memory decay maximizes long-term recall stability with minimum effort.
+					Reviewing key questions right before memory decay maximizes long-term recall stability
+					with minimum effort.
 				</p>
 			</div>
 
@@ -496,7 +504,8 @@
 				<div class="rounded-2xl border border-border bg-surface-muted p-4">
 					<span class="block text-[10px] font-bold text-text-muted uppercase">Cards in Queue</span>
 					<span class="font-display text-base font-bold text-text">
-						{dueQuestions.length} {reviewMode === 'due' ? 'Due Cards' : 'Cards'}
+						{dueQuestions.length}
+						{reviewMode === 'due' ? 'Due Cards' : 'Cards'}
 					</span>
 				</div>
 				<div class="rounded-2xl border border-border bg-surface-muted p-4">
@@ -507,9 +516,7 @@
 				</div>
 				<div class="col-span-2 rounded-2xl border border-border bg-surface-muted p-4 sm:col-span-1">
 					<span class="block text-[10px] font-bold text-text-muted uppercase">Algorithm</span>
-					<span class="font-display text-base font-bold text-amber-400">
-						FSRS-4.5
-					</span>
+					<span class="font-display text-base font-bold text-amber-400"> FSRS-4.5 </span>
 				</div>
 			</div>
 
@@ -660,25 +667,65 @@
 						{/if}
 
 						<!-- FSRS Retention Decay Visualizer -->
-						<div class="flex flex-col gap-2 rounded-2xl border border-primary/20 bg-primary-soft/30 p-4">
+						<div
+							class="flex flex-col gap-2 rounded-2xl border border-primary/20 bg-primary-soft/30 p-4"
+						>
 							<div class="flex items-center justify-between text-xs">
-								<span class="font-bold text-primary">📈 FSRS Memory Stability & Retention Curve</span>
+								<span class="font-bold text-primary"
+									>📈 FSRS Memory Stability & Retention Curve</span
+								>
 								<span class="font-mono text-[11px] font-bold text-text-muted">
-									Stability (S): {currentQ?.intervalDays ? Math.max(1, currentQ.intervalDays) : 3}d &bull; Decay: R = e^(-Δt/S)
+									Stability (S): {currentQ?.intervalDays ? Math.max(1, currentQ.intervalDays) : 3}d
+									&bull; Decay: R = e^(-Δt/S)
 								</span>
 							</div>
 
 							<!-- SVG Retention Curve Graph -->
-							<div class="relative h-20 w-full overflow-hidden rounded-xl border border-border/60 bg-surface p-2">
+							<div
+								class="relative h-20 w-full overflow-hidden rounded-xl border border-border/60 bg-surface p-2"
+							>
 								<svg class="h-full w-full" viewBox="0 0 300 60" preserveAspectRatio="none">
 									<!-- Grid lines -->
-									<line x1="0" y1="15" x2="300" y2="15" stroke="currentColor" class="text-border/40" stroke-dasharray="3 3" />
-									<line x1="0" y1="35" x2="300" y2="35" stroke="currentColor" class="text-border/40" stroke-dasharray="3 3" />
-									<line x1="0" y1="55" x2="300" y2="55" stroke="currentColor" class="text-border/60" />
+									<line
+										x1="0"
+										y1="15"
+										x2="300"
+										y2="15"
+										stroke="currentColor"
+										class="text-border/40"
+										stroke-dasharray="3 3"
+									/>
+									<line
+										x1="0"
+										y1="35"
+										x2="300"
+										y2="35"
+										stroke="currentColor"
+										class="text-border/40"
+										stroke-dasharray="3 3"
+									/>
+									<line
+										x1="0"
+										y1="55"
+										x2="300"
+										y2="55"
+										stroke="currentColor"
+										class="text-border/60"
+									/>
 
 									<!-- 90% Target Retention Threshold line -->
-									<line x1="0" y1="20" x2="300" y2="20" stroke="currentColor" class="text-emerald-500/40" stroke-width="1.5" />
-									<text x="5" y="16" class="fill-emerald-400 text-[8px] font-bold">90% Target Retention Threshold</text>
+									<line
+										x1="0"
+										y1="20"
+										x2="300"
+										y2="20"
+										stroke="currentColor"
+										class="text-emerald-500/40"
+										stroke-width="1.5"
+									/>
+									<text x="5" y="16" class="fill-emerald-400 text-[8px] font-bold"
+										>90% Target Retention Threshold</text
+									>
 
 									<!-- Retention Decay Exponential Curve -->
 									<path
@@ -690,8 +737,16 @@
 									/>
 
 									<!-- Current Review Point Marker -->
-									<circle cx="85" cy="22" r="4" fill="currentColor" class="text-amber-400 animate-pulse" />
-									<text x="95" y="24" class="fill-text text-[9px] font-bold">Review Scheduled Point (Today)</text>
+									<circle
+										cx="85"
+										cy="22"
+										r="4"
+										fill="currentColor"
+										class="animate-pulse text-amber-400"
+									/>
+									<text x="95" y="24" class="fill-text text-[9px] font-bold"
+										>Review Scheduled Point (Today)</text
+									>
 								</svg>
 							</div>
 						</div>
@@ -719,7 +774,14 @@
 									class="cursor-pointer rounded-xl border border-amber-500/40 bg-amber-500/15 py-3 text-center text-xs font-bold text-amber-300 transition-all hover:bg-amber-500/30 active:scale-95"
 								>
 									<div>🟠 [2] Hard</div>
-									<span class="text-[10px] opacity-75">~{Math.max(1, Math.round((currentQ?.intervalDays ? Math.max(1, currentQ.intervalDays) : 3) * 0.8))}d</span>
+									<span class="text-[10px] opacity-75"
+										>~{Math.max(
+											1,
+											Math.round(
+												(currentQ?.intervalDays ? Math.max(1, currentQ.intervalDays) : 3) * 0.8
+											)
+										)}d</span
+									>
 								</button>
 								<button
 									type="button"
@@ -727,7 +789,14 @@
 									class="cursor-pointer rounded-xl border border-blue-500/40 bg-blue-500/15 py-3 text-center text-xs font-bold text-blue-300 transition-all hover:bg-blue-500/30 active:scale-95"
 								>
 									<div>🟢 [3] Good</div>
-									<span class="text-[10px] opacity-75">~{Math.max(2, Math.round((currentQ?.intervalDays ? Math.max(1, currentQ.intervalDays) : 3) * 2.2))}d</span>
+									<span class="text-[10px] opacity-75"
+										>~{Math.max(
+											2,
+											Math.round(
+												(currentQ?.intervalDays ? Math.max(1, currentQ.intervalDays) : 3) * 2.2
+											)
+										)}d</span
+									>
 								</button>
 								<button
 									type="button"
@@ -735,7 +804,14 @@
 									class="cursor-pointer rounded-xl border border-emerald-500/40 bg-emerald-500/15 py-3 text-center text-xs font-bold text-emerald-300 transition-all hover:bg-emerald-500/30 active:scale-95"
 								>
 									<div>⚡ [4] Easy</div>
-									<span class="text-[10px] opacity-75">~{Math.max(4, Math.round((currentQ?.intervalDays ? Math.max(1, currentQ.intervalDays) : 3) * 3.8))}d</span>
+									<span class="text-[10px] opacity-75"
+										>~{Math.max(
+											4,
+											Math.round(
+												(currentQ?.intervalDays ? Math.max(1, currentQ.intervalDays) : 3) * 3.8
+											)
+										)}d</span
+									>
 								</button>
 							</div>
 						</div>

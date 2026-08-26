@@ -55,12 +55,8 @@
 	let activeVideoId = $state<string | null>(null);
 
 	// Derived module sequence navigation
-	let sortedModules = $derived(
-		[...allModules].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-	);
-	let currentModuleIndex = $derived(
-		sortedModules.findIndex((m) => m.id === moduleId)
-	);
+	let sortedModules = $derived([...allModules].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+	let currentModuleIndex = $derived(sortedModules.findIndex((m) => m.id === moduleId));
 	let nextModule = $derived(
 		currentModuleIndex >= 0 && currentModuleIndex < sortedModules.length - 1
 			? sortedModules[currentModuleIndex + 1]
@@ -352,16 +348,21 @@
 	{:else if moduleData?.type === 'quiz'}
 		{#if !quizStarted}
 			<!-- Quiz Pre-Session Briefing Card -->
-			<div class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8">
+			<div
+				class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8"
+			>
 				<div class="flex flex-col gap-2">
-					<div class="inline-flex items-center gap-1.5 self-start rounded-full border border-primary/30 bg-primary-soft px-3 py-1 text-[10px] font-black tracking-wider text-primary uppercase">
+					<div
+						class="inline-flex items-center gap-1.5 self-start rounded-full border border-primary/30 bg-primary-soft px-3 py-1 text-[10px] font-black tracking-wider text-primary uppercase"
+					>
 						<span>🎯 Focused Assessment</span>
 					</div>
 					<h2 class="font-display text-xl font-bold text-text sm:text-2xl">
 						{moduleData.title}
 					</h2>
 					<p class="text-xs leading-relaxed text-text-muted sm:text-sm">
-						{moduleData.summary || 'Test your comprehension with adaptive questions, instant reasoning, and long-term memory scheduling.'}
+						{moduleData.summary ||
+							'Test your comprehension with adaptive questions, instant reasoning, and long-term memory scheduling.'}
 					</p>
 				</div>
 
@@ -375,17 +376,21 @@
 					</div>
 
 					<div class="rounded-2xl border border-border bg-surface-muted p-3.5">
-						<span class="block text-[10px] font-bold text-text-muted uppercase">Estimated Time</span>
+						<span class="block text-[10px] font-bold text-text-muted uppercase">Estimated Time</span
+						>
 						<span class="font-display text-base font-bold text-text">
-							~{moduleData.estimatedMinutes || (moduleData.questions?.length ? Math.max(2, Math.ceil(moduleData.questions.length * 0.8)) : 5)} mins
+							~{moduleData.estimatedMinutes ||
+								(moduleData.questions?.length
+									? Math.max(2, Math.ceil(moduleData.questions.length * 0.8))
+									: 5)} mins
 						</span>
 					</div>
 
-					<div class="col-span-2 rounded-2xl border border-border bg-surface-muted p-3.5 sm:col-span-1">
+					<div
+						class="col-span-2 rounded-2xl border border-border bg-surface-muted p-3.5 sm:col-span-1"
+					>
 						<span class="block text-[10px] font-bold text-text-muted uppercase">Difficulty</span>
-						<span class="font-display text-base font-bold text-primary">
-							Adaptive FSRS
-						</span>
+						<span class="font-display text-base font-bold text-primary"> Adaptive FSRS </span>
 					</div>
 				</div>
 
@@ -394,8 +399,10 @@
 					<div class="flex flex-col gap-2 border-t border-border/80 pt-4">
 						<span class="text-xs font-bold text-text">Key Concepts Tested:</span>
 						<div class="flex flex-wrap gap-1.5">
-							{#each moduleData.concepts as c}
-								<span class="rounded-lg border border-border bg-surface-muted px-2.5 py-1 text-xs font-medium text-text">
+							{#each moduleData.concepts as c, idx (c.id || c.term || idx)}
+								<span
+									class="rounded-lg border border-border bg-surface-muted px-2.5 py-1 text-xs font-medium text-text"
+								>
 									{c.term}
 								</span>
 							{/each}
@@ -517,7 +524,8 @@
 				</div>
 
 				<p class="text-xs leading-relaxed text-text-muted">
-					Help us improve learning quality. Let us know if you spotted incorrect information, formatting issues, or broken elements in this module.
+					Help us improve learning quality. Let us know if you spotted incorrect information,
+					formatting issues, or broken elements in this module.
 				</p>
 
 				<textarea

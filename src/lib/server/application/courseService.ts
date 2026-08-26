@@ -23,9 +23,7 @@ export class CourseApplicationService {
 	/**
 	 * Generate an outline with distributed singleflight locking to prevent duplicate simultaneous AI invocations.
 	 */
-	public async generateOutlineWithLock(
-		params: GenerateOutlineParams
-	): Promise<CourseOutline> {
+	public async generateOutlineWithLock(params: GenerateOutlineParams): Promise<CourseOutline> {
 		const lockKey = `outline_gen:${params.topic.toLowerCase().replace(/\s+/g, '_')}`;
 		return runWithSingleflight<CourseOutline>(
 			lockKey,
@@ -40,11 +38,9 @@ export class CourseApplicationService {
 				return aiResult.result;
 			},
 			86400, // 24h cache
-			45000  // 45s lock timeout with crash fallback
+			45000 // 45s lock timeout with crash fallback
 		);
 	}
-
-
 
 	/**
 	 * Invalidate cached outline across L1 memory and L2 Redis.

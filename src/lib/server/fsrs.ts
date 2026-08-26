@@ -187,7 +187,8 @@ export function convertSM2ToFSRS(sm2Card: {
 	repetitions?: number;
 	lapses?: number;
 }): FSRSCard {
-	const ef = typeof sm2Card.easeFactor === 'number' ? Math.max(1.3, Math.min(3.0, sm2Card.easeFactor)) : 2.5;
+	const ef =
+		typeof sm2Card.easeFactor === 'number' ? Math.max(1.3, Math.min(3.0, sm2Card.easeFactor)) : 2.5;
 	const interval = typeof sm2Card.intervalDays === 'number' ? Math.max(1, sm2Card.intervalDays) : 1;
 	const reps = typeof sm2Card.repetitions === 'number' ? sm2Card.repetitions : 0;
 	const lapses = typeof sm2Card.lapses === 'number' ? sm2Card.lapses : 0;

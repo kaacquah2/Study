@@ -97,10 +97,7 @@ export async function persistLearningEvent(event: LearningEvent): Promise<void> 
 		return;
 	}
 
-	const userEventsCol = adminDb
-		.collection('learningEvents')
-		.doc(event.userId)
-		.collection('events');
+	const userEventsCol = adminDb.collection('learningEvents').doc(event.userId).collection('events');
 
 	await userEventsCol.doc(event.eventId).set({
 		...event,

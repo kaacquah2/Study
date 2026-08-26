@@ -57,15 +57,15 @@ graph TB
 
 An exhaustive code inspection of the existing backend services identified the following critical areas requiring refactoring:
 
-| Component | Current State | Root Cause & Bottleneck | Target Architecture |
-|---|---|---|---|
-| **Session Verification** (`auth.ts`) | Reads Firestore on every request | `verifySessionUser()` calls `adminDb.collection('users').doc(uid).get()` for every single authenticated API request to confirm profile existence. | **Bounded L1 LRU (5k Max) + L2 Redis + Active Ban Invalidation**: LRU cache with explicit size cap & 15m TTL, backed by Redis and instant Pub/Sub ban invalidation. |
-| **Chat Streaming & Lock Contention** (`chat_assistant.py`) | Space-split SSE + Global `inference_lock` | Single lock forces all users into a sequential queue; streaming splits finished text with `setTimeout(15ms)`. | **Phase 1 Combined Concurrency & Quantization**: Quantize Flan-T5 & TinyLlama to INT8/GGUF alongside lock removal with a 2-worker pool ceiling (<2.2GB RSS). |
-| **Concept Taxonomy Resolution** (`taxonomy.ts`) | Unspecified slug matching & terminal hash fallback | Highlight text misses match canonical list and mint distinct hashes, reopening card duplicate drift. | **5-Stage Dual-Loop Concept Resolver**: Exact $\to$ Token Jaccard $\to$ Canonical Cosine $\to$ **Existing Provisional Cosine** $\to$ Mint new provisional with merge hook. |
-| **Vector Store & RAG** (`rag_pipeline.py`) | Single flat FAISS index in memory + JSON disk file | Single `IndexFlatL2` stores all users' vectors together; search fetches $5 \times k$ items and filters by `user_id` via a Python loop in memory. | **User-Partitioned Clustered Vector Store**: Qdrant 2-node cluster / Firestore Vector Search with native payload filtering and legacy FAISS migration script. |
-| **Cross-Service Security** | Static API Key (`X-API-Key`) | Inter-service authentication relies on a single shared static string, vulnerable to replay and lack of request tampering validation. | **Strict Fail-Closed HMAC-SHA256 with Nonces**: Time-bound signatures with UUID nonces verified against Redis (60s TTL); fails closed on missing secret. |
-| **Singleflight Concurrency** (`outlineCache.ts`) | In-memory only, no crash recovery | If worker crashes during inference, identical concurrent requests can hang indefinitely. | **Redis TTL-Bounded Singleflight Mutex**: `SET lock:key <id> NX PX 45000` with 40s polling timeout and automatic execution fallback. |
-| **Firestore Security Rules** (`firestore.rules`) | Unaudited write constraints | Potential for client write bypasses to server-authoritative collections. | **Emulator Automated Rule Unit Testing**: Assert zero unauthorized client writes across `/courses`, `/modules`, `/usage`, `/progress`, `/weakTopics`. |
+| Component                                                  | Current State                                      | Root Cause & Bottleneck                                                                                                                           | Target Architecture                                                                                                                                                        |
+| ---------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Session Verification** (`auth.ts`)                       | Reads Firestore on every request                   | `verifySessionUser()` calls `adminDb.collection('users').doc(uid).get()` for every single authenticated API request to confirm profile existence. | **Bounded L1 LRU (5k Max) + L2 Redis + Active Ban Invalidation**: LRU cache with explicit size cap & 15m TTL, backed by Redis and instant Pub/Sub ban invalidation.        |
+| **Chat Streaming & Lock Contention** (`chat_assistant.py`) | Space-split SSE + Global `inference_lock`          | Single lock forces all users into a sequential queue; streaming splits finished text with `setTimeout(15ms)`.                                     | **Phase 1 Combined Concurrency & Quantization**: Quantize Flan-T5 & TinyLlama to INT8/GGUF alongside lock removal with a 2-worker pool ceiling (<2.2GB RSS).               |
+| **Concept Taxonomy Resolution** (`taxonomy.ts`)            | Unspecified slug matching & terminal hash fallback | Highlight text misses match canonical list and mint distinct hashes, reopening card duplicate drift.                                              | **5-Stage Dual-Loop Concept Resolver**: Exact $\to$ Token Jaccard $\to$ Canonical Cosine $\to$ **Existing Provisional Cosine** $\to$ Mint new provisional with merge hook. |
+| **Vector Store & RAG** (`rag_pipeline.py`)                 | Single flat FAISS index in memory + JSON disk file | Single `IndexFlatL2` stores all users' vectors together; search fetches $5 \times k$ items and filters by `user_id` via a Python loop in memory.  | **User-Partitioned Clustered Vector Store**: Qdrant 2-node cluster / Firestore Vector Search with native payload filtering and legacy FAISS migration script.              |
+| **Cross-Service Security**                                 | Static API Key (`X-API-Key`)                       | Inter-service authentication relies on a single shared static string, vulnerable to replay and lack of request tampering validation.              | **Strict Fail-Closed HMAC-SHA256 with Nonces**: Time-bound signatures with UUID nonces verified against Redis (60s TTL); fails closed on missing secret.                   |
+| **Singleflight Concurrency** (`outlineCache.ts`)           | In-memory only, no crash recovery                  | If worker crashes during inference, identical concurrent requests can hang indefinitely.                                                          | **Redis TTL-Bounded Singleflight Mutex**: `SET lock:key <id> NX PX 45000` with 40s polling timeout and automatic execution fallback.                                       |
+| **Firestore Security Rules** (`firestore.rules`)           | Unaudited write constraints                        | Potential for client write bypasses to server-authoritative collections.                                                                          | **Emulator Automated Rule Unit Testing**: Assert zero unauthorized client writes across `/courses`, `/modules`, `/usage`, `/progress`, `/weakTopics`.                      |
 
 ---
 
@@ -128,6 +128,7 @@ graph TD
 ```
 
 #### Detailed 5-Stage Specification:
+
 1. **Stage 1 — Exact Normalization & Alias Match**: Match normalized text against canonical module `concepts.term` or `concepts.aliases`.
 2. **Stage 2 — Token Jaccard Similarity**: If $J(A, B) = \frac{|A \cap B|}{|A \cup B|} \ge 0.65$ against any canonical concept, resolve to `concept.id`.
 3. **Stage 3 — Canonical Semantic Cosine Similarity**: Compute embedding cosine similarity against canonical module concepts with `all-MiniLM-L6-v2`. If $\text{sim} > 0.82$, resolve to `concept.id`.
@@ -145,6 +146,7 @@ graph TD
 ### 4.1 Bounded L1 LRU + Redis User Existence Caching with Active Invalidation
 
 To guarantee memory safety, eventual consistency, and instant revocation upon user bans:
+
 1. **Explicit LRU Eviction**: When `L1_USER_CACHE.size >= 5000`, explicitly evict `L1_USER_CACHE.keys().next().value`.
 2. **Active Invalidation Channel**: When an admin bans or deletes a user, the backend executes:
    - `redis.del('user:exists:' + uid)`
@@ -157,8 +159,8 @@ import { adminAuth, adminDb, FieldValue } from './admin';
 import { redisGet, redisSet, isRedisConfigured } from './redis';
 
 interface CacheEntry {
-    exists: boolean;
-    expiresAt: number;
+	exists: boolean;
+	expiresAt: number;
 }
 
 const L1_USER_CACHE = new Map<string, CacheEntry>();
@@ -166,37 +168,38 @@ const L1_TTL_MS = 15 * 60 * 1000; // 15 minutes bounded TTL
 const MAX_L1_ENTRIES = 5000;
 
 function getL1(uid: string): boolean | null {
-    const entry = L1_USER_CACHE.get(uid);
-    if (!entry) return null;
-    if (Date.now() > entry.expiresAt) {
-        L1_USER_CACHE.delete(uid);
-        return null;
-    }
-    // Re-insert key to refresh LRU access order
-    L1_USER_CACHE.delete(uid);
-    L1_USER_CACHE.set(uid, entry);
-    return entry.exists;
+	const entry = L1_USER_CACHE.get(uid);
+	if (!entry) return null;
+	if (Date.now() > entry.expiresAt) {
+		L1_USER_CACHE.delete(uid);
+		return null;
+	}
+	// Re-insert key to refresh LRU access order
+	L1_USER_CACHE.delete(uid);
+	L1_USER_CACHE.set(uid, entry);
+	return entry.exists;
 }
 
 function setL1(uid: string, exists: boolean): void {
-    if (L1_USER_CACHE.has(uid)) {
-        L1_USER_CACHE.delete(uid);
-    } else if (L1_USER_CACHE.size >= MAX_L1_ENTRIES) {
-        // Explicit oldest LRU key eviction
-        const oldestKey = L1_USER_CACHE.keys().next().value;
-        if (oldestKey) L1_USER_CACHE.delete(oldestKey);
-    }
-    L1_USER_CACHE.set(uid, { exists, expiresAt: Date.now() + L1_TTL_MS });
+	if (L1_USER_CACHE.has(uid)) {
+		L1_USER_CACHE.delete(uid);
+	} else if (L1_USER_CACHE.size >= MAX_L1_ENTRIES) {
+		// Explicit oldest LRU key eviction
+		const oldestKey = L1_USER_CACHE.keys().next().value;
+		if (oldestKey) L1_USER_CACHE.delete(oldestKey);
+	}
+	L1_USER_CACHE.set(uid, { exists, expiresAt: Date.now() + L1_TTL_MS });
 }
 
 export function invalidateUserSessionCache(uid: string): void {
-    L1_USER_CACHE.delete(uid);
+	L1_USER_CACHE.delete(uid);
 }
 ```
 
 ### 4.2 Vector Store Topology & Data Migration
 
 #### Production Topology Decision:
+
 - Deploy a **2-Node Replicated Qdrant Cluster** on private VPC networking (or use **Cloud Firestore Vector Search**).
 - Replicas guarantee high availability, sub-5ms vector queries, and zero single-point failure.
 - Migration script `scripts/migrate_faiss_to_vector_store.py` reads existing `docs.json` + `index.faiss` and inserts points with typed metadata (`user_id`, `course_id`, `chunk_text`).
@@ -309,6 +312,7 @@ gantt
 ```
 
 ### Phase 1: Concurrency, Quantization & Streaming (Week 1)
+
 - [ ] Implement bounded L1 LRU (5,000 max with explicit eviction) + L2 Redis user existence caching in [auth.ts](file:///c:/Users/USER/Downloads/Telegram%20Desktop/Study/src/lib/server/auth.ts).
 - [ ] Quantize Flan-T5 & TinyLlama to INT8/GGUF and configure max-2 worker concurrency pools in [model_registry.py](file:///c:/Users/USER/Downloads/Telegram%20Desktop/Study/ml_backend/models/model_registry.py).
 - [ ] Ship live token-by-token SSE streaming in [chat/stream/+server.ts](file:///c:/Users/USER/Downloads/Telegram%20Desktop/Study/src/routes/api/chat/stream/+server.ts) and [chat_assistant.py](file:///c:/Users/USER/Downloads/Telegram%20Desktop/Study/ml_backend/models/chat_assistant.py).
@@ -316,11 +320,13 @@ gantt
 - [ ] **Gate**: Run concurrent load test (3 parallel streams + 2 module generations) verifying container resident memory remains strictly below 2.5GB RSS.
 
 ### Phase 2: Structural Refactoring & Taxonomy (Week 2)
+
 - [ ] Implement the 5-stage dual-loop Canonical Concept Taxonomy resolver (matching both canonical and existing provisional concepts) in `src/lib/server/domain/course/taxonomy.ts`.
 - [ ] Refactor SvelteKit API routes to thin controllers backed by `application/courseService.ts` and `application/chatService.ts` while maintaining `provider.ts` and `fsrs.ts` facades.
 - [ ] Deconstruct `ml_backend/main.py` into modular FastAPI `APIRouter` controllers under `app/api/v1/`.
 
 ### Phase 3: Enterprise Hardening, Vectors & Observability (Week 3)
+
 - [ ] Implement fail-closed HMAC-SHA256 request signing with Redis UUID nonce verification between SvelteKit and the ML backend.
 - [ ] Deploy clustered vector database architecture and run `scripts/migrate_faiss_to_vector_store.py`.
 - [ ] Execute automated Firestore Rules unit tests using `@firebase/rules-unit-testing` in `src/lib/firebase/rules.test.ts`.

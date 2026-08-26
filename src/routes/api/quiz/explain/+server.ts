@@ -39,7 +39,8 @@ Lesson Context: ${lessonContext || 'N/A'}`;
 
 		const aiResponse = await generateAICompletion({
 			prompt,
-			systemInstruction: 'You are an encouraging, precise Socratic tutor explaining quiz mistakes clearly.'
+			systemInstruction:
+				'You are an encouraging, precise Socratic tutor explaining quiz mistakes clearly.'
 		});
 
 		// Enforce AI content moderation guardrail

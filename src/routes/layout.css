@@ -25,13 +25,13 @@
 	--color-danger-soft: var(--danger-soft);
 
 	/* Semantic Mastery States (derived from FSRS data) */
-	--color-mastery-strong: var(--success);        /* ≥80% — mastered */
+	--color-mastery-strong: var(--success); /* ≥80% — mastered */
 	--color-mastery-strong-soft: var(--success-soft);
-	--color-mastery-learning: var(--primary);      /* 40–79% — reviewing */
+	--color-mastery-learning: var(--primary); /* 40–79% — reviewing */
 	--color-mastery-learning-soft: var(--primary-soft);
-	--color-mastery-weak: var(--accent);           /* 1–39% — learning/weak */
+	--color-mastery-weak: var(--accent); /* 1–39% — learning/weak */
 	--color-mastery-weak-soft: var(--accent-soft);
-	--color-mastery-none: var(--text-muted);       /* 0% / not-started — gray */
+	--color-mastery-none: var(--text-muted); /* 0% / not-started — gray */
 	--color-mastery-none-soft: var(--surface-muted);
 	--color-hero-from: var(--hero-from);
 	--color-hero-to: var(--hero-to);

@@ -102,7 +102,9 @@ export async function aggregateSessionEvents(
 
 	// Build recent activity entries
 	const newActivities: RecentActivitySummary[] = events
-		.filter((e) => ['quiz_completed', 'lesson_completed', 'flashcard_reviewed'].includes(e.eventType))
+		.filter((e) =>
+			['quiz_completed', 'lesson_completed', 'flashcard_reviewed'].includes(e.eventType)
+		)
 		.map((e) => ({
 			sessionId: e.sessionId,
 			eventType: e.eventType,

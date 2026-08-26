@@ -2,7 +2,13 @@ import { browser } from '$app/environment';
 
 export interface StudySessionEvent {
 	id: string;
-	type: 'lens_explain' | 'lens_example' | 'lens_quiz' | 'flashcard_created' | 'tts_read' | 'quiz_answered';
+	type:
+		| 'lens_explain'
+		| 'lens_example'
+		| 'lens_quiz'
+		| 'flashcard_created'
+		| 'tts_read'
+		| 'quiz_answered';
 	snippet?: string;
 	summary?: string;
 	conceptId?: string | null;
@@ -25,7 +31,9 @@ class StudySessionStore {
 
 	constructor() {
 		if (browser) {
-			this.sessionId = sessionStorage.getItem('study_session_id') || `sess_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+			this.sessionId =
+				sessionStorage.getItem('study_session_id') ||
+				`sess_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 			sessionStorage.setItem('study_session_id', this.sessionId);
 			this.restoreFromStorage();
 		}

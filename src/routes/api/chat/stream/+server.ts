@@ -200,11 +200,13 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 		} catch (streamErr) {
 			if (streamErr instanceof MLBackendError && streamErr.status === 503) {
-				return json({ error: { code: 'MODEL_WARMING_UP', message: 'Warming up' } }, { status: 503 });
+				return json(
+					{ error: { code: 'MODEL_WARMING_UP', message: 'Warming up' } },
+					{ status: 503 }
+				);
 			}
 			throw streamErr;
 		}
-
 
 		// Construct SSE stream using live token streaming
 		const encoder = new TextEncoder();
@@ -234,8 +236,6 @@ export const POST: RequestHandler = async ({ request }) => {
 				controller.close();
 			}
 		});
-
-
 
 		return new Response(stream, {
 			headers: {

@@ -42,7 +42,6 @@ describe('FlashcardApplicationService', () => {
 		expect(result.sm2?.repetitions).toBe(2);
 	});
 
-
 	it('resolves concept and builds deterministic dedup key', () => {
 		const result = flashcardService.resolveConceptAndDedupKey({
 			courseId: 'cs101',

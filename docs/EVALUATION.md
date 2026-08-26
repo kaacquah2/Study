@@ -7,22 +7,25 @@ This document provides rigorous qualitative and quantitative evaluation framewor
 ## 1. RAG (Retrieval-Augmented Generation) Evaluation
 
 ### Methodology
+
 We evaluate RAG performance across two key dimensions:
+
 1. **Retrieval Relevance:** Does the semantic FAISS index return passages directly pertinent to the query?
 2. **Generation Groundedness & Hallucination Rate:** Is the generated answer factually faithful to the retrieved context chunks without fabricated claims?
 
 ### Evaluation Dataset (30 Representative Test Queries across Computer Networks & Algorithms)
 
-| Query ID | Domain | Test Question | Retrieved Chunks Relevance | Answer Groundedness | Hallucination Detected? |
-|---|---|---|---|---|---|
-| `Q-01` | Networks | "What is the purpose of subnetting an IPv4 network?" | Relevant (Cosine: 0.88) | Grounded | None |
-| `Q-02` | Networks | "Explain the 3-way TCP handshake process." | Relevant (Cosine: 0.91) | Grounded | None |
-| `Q-03` | Networks | "What is the difference between broadcast and multicast addresses?" | Relevant (Cosine: 0.84) | Grounded | None |
-| `Q-04` | Algorithms | "What is the worst-case time complexity of QuickSort?" | Relevant (Cosine: 0.86) | Grounded | None |
-| `Q-05` | Algorithms | "How does Dijkstra's algorithm handle negative weight edges?" | Relevant (Cosine: 0.79) | Grounded (explicitly states limitation) | None |
-| `Q-06` | Networks | "What is the role of ARP in local network communication?" | Relevant (Cosine: 0.89) | Grounded | None |
+| Query ID | Domain     | Test Question                                                       | Retrieved Chunks Relevance | Answer Groundedness                     | Hallucination Detected? |
+| -------- | ---------- | ------------------------------------------------------------------- | -------------------------- | --------------------------------------- | ----------------------- |
+| `Q-01`   | Networks   | "What is the purpose of subnetting an IPv4 network?"                | Relevant (Cosine: 0.88)    | Grounded                                | None                    |
+| `Q-02`   | Networks   | "Explain the 3-way TCP handshake process."                          | Relevant (Cosine: 0.91)    | Grounded                                | None                    |
+| `Q-03`   | Networks   | "What is the difference between broadcast and multicast addresses?" | Relevant (Cosine: 0.84)    | Grounded                                | None                    |
+| `Q-04`   | Algorithms | "What is the worst-case time complexity of QuickSort?"              | Relevant (Cosine: 0.86)    | Grounded                                | None                    |
+| `Q-05`   | Algorithms | "How does Dijkstra's algorithm handle negative weight edges?"       | Relevant (Cosine: 0.79)    | Grounded (explicitly states limitation) | None                    |
+| `Q-06`   | Networks   | "What is the role of ARP in local network communication?"           | Relevant (Cosine: 0.89)    | Grounded                                | None                    |
 
 ### Summary RAG Metrics (30 Sample Benchmark)
+
 - **Retrieval Precision@3:** `93.3%` (28/30 queries retrieved highly relevant context chunks)
 - **Answer Groundedness Rate:** `96.7%` (29/30 answers completely grounded in retrieved text)
 - **Hallucination Rate:** `3.3%` (1/30 queries generated minor unsupported extrapolation, mitigated by source support tagging)
@@ -33,19 +36,20 @@ We evaluate RAG performance across two key dimensions:
 
 Human evaluator rubric (rated 1 to 5, where 5 = Excellent):
 
-| Metric | Definition | Average Rating (n=50 Generated Questions) |
-|---|---|---|
-| **Relevance** | Question directly tests core concept from the module syllabus | `4.82 / 5.0` |
-| **Clarity** | Prompt wording is unambiguous and grammatically sound | `4.74 / 5.0` |
-| **Correctness** | Identified correct answer option is objectively true | `4.90 / 5.0` |
-| **Distractor Plausibility** | Incorrect options represent genuine student misconceptions rather than trivial nonsense | `4.46 / 5.0` |
-| **Difficulty Appropriateness** | Cognitive challenge aligns with module learning objectives | `4.60 / 5.0` |
+| Metric                         | Definition                                                                              | Average Rating (n=50 Generated Questions) |
+| ------------------------------ | --------------------------------------------------------------------------------------- | ----------------------------------------- |
+| **Relevance**                  | Question directly tests core concept from the module syllabus                           | `4.82 / 5.0`                              |
+| **Clarity**                    | Prompt wording is unambiguous and grammatically sound                                   | `4.74 / 5.0`                              |
+| **Correctness**                | Identified correct answer option is objectively true                                    | `4.90 / 5.0`                              |
+| **Distractor Plausibility**    | Incorrect options represent genuine student misconceptions rather than trivial nonsense | `4.46 / 5.0`                              |
+| **Difficulty Appropriateness** | Cognitive challenge aligns with module learning objectives                              | `4.60 / 5.0`                              |
 
 ---
 
 ## 3. Summarization Evaluation
 
 Summaries generated by the fine-tuned FLAN-T5 and Gemini Flash pipelines were evaluated on:
+
 - **Factual Consistency:** Zero contradictory statements compared to source text.
 - **Key Information Coverage:** 92.4% retention of primary concept definitions.
 - **Readability (Flesch Reading Ease):** Score of `68.2` (Plain English, accessible for undergraduate learners).

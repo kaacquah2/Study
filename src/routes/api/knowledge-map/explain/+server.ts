@@ -2,7 +2,10 @@ import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { verifySessionUser } from '$lib/server/auth';
 import { adminDb } from '$lib/server/admin';
-import { computeModuleMastery, type QuizQuestion } from '$lib/server/knowledgeMap/masteryCalculator';
+import {
+	computeModuleMastery,
+	type QuizQuestion
+} from '$lib/server/knowledgeMap/masteryCalculator';
 import { getUserMistakes } from '$lib/server/analytics/mistakeRecords';
 
 export const GET: RequestHandler = async ({ request, url }) => {
@@ -127,7 +130,10 @@ export const GET: RequestHandler = async ({ request, url }) => {
 	} catch (err: unknown) {
 		const errorMessage = err instanceof Error ? err.message : 'Unknown error';
 		if (errorMessage.includes('UNAUTHORIZED') || errorMessage.includes('Session expired')) {
-			return json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } }, { status: 401 });
+			return json(
+				{ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
+				{ status: 401 }
+			);
 		}
 
 		console.error('[knowledge-map/explain] Error:', err);

@@ -247,9 +247,8 @@
 
 	let nextIncompleteModule = $derived.by(() => {
 		return (
-			modules.find(
-				(m) => m.status === 'ready' && !userCompletedModuleIds.includes(m.id || '')
-			) || modules[0]
+			modules.find((m) => m.status === 'ready' && !userCompletedModuleIds.includes(m.id || '')) ||
+			modules[0]
 		);
 	});
 
@@ -500,12 +499,14 @@
 							class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary-soft/30 p-3.5"
 						>
 							<div class="flex items-center gap-3">
-								<span class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-xs font-bold text-white shadow-xs">
+								<span
+									class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-xs font-bold text-white shadow-xs"
+								>
 									→
 								</span>
 								<div>
 									<div class="flex items-center gap-2">
-										<span class="text-[10px] font-black tracking-wider uppercase text-primary">
+										<span class="text-[10px] font-black tracking-wider text-primary uppercase">
 											Up Next
 										</span>
 										{#if nextIncompleteModule.estimatedMinutes}
@@ -660,7 +661,7 @@
 									<a
 										href={`/app/courses/${courseId}/${mod.id}`}
 										class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold shadow-xs transition-all active:scale-95 {isNextUp
-											? 'bg-primary text-white hover:bg-primary-hover ring-2 ring-primary/20'
+											? 'bg-primary text-white ring-2 ring-primary/20 hover:bg-primary-hover'
 											: 'bg-surface-muted text-text hover:bg-surface-muted/80'}"
 									>
 										<span>{isCompleted ? 'Review' : 'Start'}</span>

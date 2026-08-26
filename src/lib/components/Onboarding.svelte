@@ -81,7 +81,7 @@
 	aria-labelledby="onboarding-title"
 >
 	<div
-		class="relative flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-2xl sm:p-8"
+		class="bg-card relative flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border p-6 shadow-2xl sm:p-8"
 	>
 		<!-- Header with Sparkles -->
 		<div class="mb-6 flex items-start justify-between">
@@ -92,10 +92,13 @@
 					<Sparkles class="h-6 w-6 animate-pulse" />
 				</div>
 				<div>
-					<h2 id="onboarding-title" class="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+					<h2
+						id="onboarding-title"
+						class="text-foreground text-xl font-bold tracking-tight sm:text-2xl"
+					>
 						Welcome to Study AI 👋
 					</h2>
-					<p class="text-sm text-muted-foreground">
+					<p class="text-muted-foreground text-sm">
 						Your adaptive AI-powered learning system. How would you like to start?
 					</p>
 				</div>
@@ -103,7 +106,7 @@
 			<button
 				onclick={() => completeOnboarding()}
 				disabled={isDismissing}
-				class="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+				class="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-1.5 transition-colors disabled:opacity-50"
 				aria-label="Close modal"
 			>
 				<X class="h-5 w-5" />
@@ -120,7 +123,7 @@
 					class="group relative flex flex-col items-start gap-2.5 rounded-xl border bg-linear-to-br p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:pointer-events-none disabled:opacity-60 {action.color}"
 				>
 					<div class="flex w-full items-center justify-between">
-						<div class="rounded-lg bg-card/80 p-2 text-foreground shadow-sm">
+						<div class="bg-card/80 text-foreground rounded-lg p-2 shadow-sm">
 							<Icon class="h-5 w-5 transition-transform group-hover:scale-110" />
 						</div>
 						<span
@@ -130,10 +133,10 @@
 						</span>
 					</div>
 					<div>
-						<h3 class="text-sm font-semibold text-foreground group-hover:text-primary">
+						<h3 class="text-foreground text-sm font-semibold group-hover:text-primary">
 							{action.title}
 						</h3>
-						<p class="mt-1 line-clamp-2 text-xs text-muted-foreground">
+						<p class="text-muted-foreground mt-1 line-clamp-2 text-xs">
 							{action.desc}
 						</p>
 					</div>
@@ -147,12 +150,14 @@
 		</div>
 
 		<!-- Footer -->
-		<div class="mt-6 flex items-center justify-between border-t border-border pt-4 text-xs text-muted-foreground">
+		<div
+			class="text-muted-foreground mt-6 flex items-center justify-between border-t border-border pt-4 text-xs"
+		>
 			<span>You can access all tools anytime from the sidebar.</span>
 			<button
 				onclick={() => completeOnboarding()}
 				disabled={isDismissing}
-				class="font-medium text-foreground hover:underline disabled:opacity-50"
+				class="text-foreground font-medium hover:underline disabled:opacity-50"
 			>
 				Skip for now →
 			</button>

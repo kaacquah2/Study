@@ -51,7 +51,12 @@ describe('getRecommendedNext', () => {
 					questionsDue: 3,
 					averageStability: 12,
 					fsrsState: 'mastered',
-					masteryBreakdown: { quizAccuracy: 90, fsrsPerformance: 85, recencyScore: 90, lessonCompletion: 100 },
+					masteryBreakdown: {
+						quizAccuracy: 90,
+						fsrsPerformance: 85,
+						recencyScore: 90,
+						lessonCompletion: 100
+					},
 					evidenceCount: 5,
 					confidenceLevel: 'medium'
 				}
@@ -77,7 +82,12 @@ describe('getRecommendedNext', () => {
 					questionsDue: 0,
 					averageStability: 12,
 					fsrsState: 'mastered',
-					masteryBreakdown: { quizAccuracy: 90, fsrsPerformance: 90, recencyScore: 90, lessonCompletion: 100 },
+					masteryBreakdown: {
+						quizAccuracy: 90,
+						fsrsPerformance: 90,
+						recencyScore: 90,
+						lessonCompletion: 100
+					},
 					evidenceCount: 5,
 					confidenceLevel: 'medium'
 				}
@@ -92,7 +102,12 @@ describe('getRecommendedNext', () => {
 					questionsDue: 0,
 					averageStability: 3,
 					fsrsState: 'reviewing',
-					masteryBreakdown: { quizAccuracy: 40, fsrsPerformance: 40, recencyScore: 40, lessonCompletion: 80 },
+					masteryBreakdown: {
+						quizAccuracy: 40,
+						fsrsPerformance: 40,
+						recencyScore: 40,
+						lessonCompletion: 80
+					},
 					evidenceCount: 3,
 					confidenceLevel: 'low'
 				}
@@ -107,7 +122,12 @@ describe('getRecommendedNext', () => {
 					questionsDue: 0,
 					averageStability: 0,
 					fsrsState: 'not-started',
-					masteryBreakdown: { quizAccuracy: 0, fsrsPerformance: 0, recencyScore: 0, lessonCompletion: 0 },
+					masteryBreakdown: {
+						quizAccuracy: 0,
+						fsrsPerformance: 0,
+						recencyScore: 0,
+						lessonCompletion: 0
+					},
 					evidenceCount: 0,
 					confidenceLevel: 'none'
 				}
@@ -135,7 +155,12 @@ describe('getRecommendedNext', () => {
 					questionsDue: 0,
 					averageStability: 20,
 					fsrsState: 'mastered',
-					masteryBreakdown: { quizAccuracy: 95, fsrsPerformance: 95, recencyScore: 100, lessonCompletion: 100 },
+					masteryBreakdown: {
+						quizAccuracy: 95,
+						fsrsPerformance: 95,
+						recencyScore: 100,
+						lessonCompletion: 100
+					},
 					evidenceCount: 10,
 					confidenceLevel: 'medium'
 				}
@@ -150,7 +175,12 @@ describe('getRecommendedNext', () => {
 					questionsDue: 0,
 					averageStability: 5,
 					fsrsState: 'mastered',
-					masteryBreakdown: { quizAccuracy: 85, fsrsPerformance: 85, recencyScore: 85, lessonCompletion: 100 },
+					masteryBreakdown: {
+						quizAccuracy: 85,
+						fsrsPerformance: 85,
+						recencyScore: 85,
+						lessonCompletion: 100
+					},
 					evidenceCount: 10,
 					confidenceLevel: 'medium'
 				}

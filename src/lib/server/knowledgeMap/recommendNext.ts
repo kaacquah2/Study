@@ -16,11 +16,7 @@ export interface PrerequisiteEdge {
 }
 
 export type RecommendationType =
-	| 'review'
-	| 'review_mistakes'
-	| 'practice_weak'
-	| 'continue_learning'
-	| 'explore';
+	'review' | 'review_mistakes' | 'practice_weak' | 'continue_learning' | 'explore';
 
 export interface LearningRecommendation {
 	type: RecommendationType;
@@ -116,7 +112,10 @@ export function getRecommendedNext(
 			moduleId: rootNode.moduleId,
 			moduleTitle: moduleLabel,
 			reason: `This is the foundational topic in "${moduleLabel}" — start here with no prerequisites required.`,
-			evidence: ['No previous study reviews recorded for this course', 'Root module in knowledge graph'],
+			evidence: [
+				'No previous study reviews recorded for this course',
+				'Root module in knowledge graph'
+			],
 			actionLabel: 'Start First Lesson',
 			actionUrl: courseId ? `/app/courses/${courseId}/modules/${rootNode.moduleId}` : `/app/courses`
 		};
@@ -218,7 +217,10 @@ export function getRecommendedNext(
 				maxScore = score;
 				bestNode = candidate;
 				bestEvidence = prereqsMastered
-					? ['Prerequisite topics are mastered (>= 80%)', `Current module progress: ${m.masteryPercent}%`]
+					? [
+							'Prerequisite topics are mastered (>= 80%)',
+							`Current module progress: ${m.masteryPercent}%`
+						]
 					: [`Active study queue node`, `Current module progress: ${m.masteryPercent}%`];
 			}
 		}
@@ -234,7 +236,9 @@ export function getRecommendedNext(
 				reason: `Ready to progress: Prerequisites for "${title}" are satisfied.`,
 				evidence: bestEvidence,
 				actionLabel: 'Continue Learning',
-				actionUrl: courseId ? `/app/courses/${courseId}/modules/${bestNode.moduleId}` : `/app/courses`
+				actionUrl: courseId
+					? `/app/courses/${courseId}/modules/${bestNode.moduleId}`
+					: `/app/courses`
 			};
 		}
 	}

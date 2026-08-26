@@ -96,4 +96,3 @@ export function invalidateCachedOutline(courseId: string): void {
 		redisDel(`singleflight:cache:outline:${courseId}`).catch(() => {});
 	}
 }
-

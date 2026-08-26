@@ -18,7 +18,12 @@ export interface ConceptResolutionResult {
 	matchedTerm: string;
 	confidence: number;
 	isProvisional: boolean;
-	matchStage: 'exact_alias' | 'token_jaccard' | 'embedding_cosine' | 'provisional_cosine' | 'minted_provisional';
+	matchStage:
+		| 'exact_alias'
+		| 'token_jaccard'
+		| 'embedding_cosine'
+		| 'provisional_cosine'
+		| 'minted_provisional';
 }
 
 function normalizeString(text: string): string {
@@ -57,7 +62,6 @@ export function computeTokenJaccard(a: string, b: string): number {
 	return Math.max(jaccard, containmentBonus);
 }
 
-
 /**
  * Calculates cosine similarity between two float vector embeddings.
  */
@@ -81,7 +85,11 @@ export function computeCosineSimilarity(vecA: number[], vecB: number[]): number 
 /**
  * Generates a deterministic flashcard deduplication key.
  */
-export function generateCardDedupKey(courseId: string, moduleId: string, conceptId: string): string {
+export function generateCardDedupKey(
+	courseId: string,
+	moduleId: string,
+	conceptId: string
+): string {
 	return `${courseId}:${moduleId}:${conceptId}`;
 }
 

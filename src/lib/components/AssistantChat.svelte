@@ -17,6 +17,15 @@
 		sourceType?: 'uploaded_document' | 'generated_lesson' | 'web_content';
 	}
 
+	interface RawSourcePayload {
+		pageTitle?: string;
+		sourceTitle?: string;
+		pageNumber?: number;
+		chapter?: string;
+		section?: string;
+		sourceType?: 'uploaded_document' | 'generated_lesson' | 'web_content';
+	}
+
 	interface Message {
 		role: 'user' | 'assistant';
 		content: string;
@@ -119,7 +128,8 @@
 			icon: '❓',
 			title: 'Quiz Me',
 			desc: 'Interactive check question with reasoning',
-			prompt: 'Can you give me a focused multiple-choice practice question to test my understanding?'
+			prompt:
+				'Can you give me a focused multiple-choice practice question to test my understanding?'
 		},
 		{
 			icon: '🧪',
@@ -149,10 +159,22 @@
 
 	// Quick-Action Prompt Chips
 	const promptChips = [
-		{ label: '💡 Analogy', prompt: 'Can you explain this concept using a simple real-world analogy?' },
-		{ label: '🧪 Example', prompt: 'Can you give me a concrete, practical code or real-world example?' },
-		{ label: '❓ Quiz Me', prompt: 'Can you give me a quick 1-question check to test my understanding?' },
-		{ label: '📝 Takeaways', prompt: 'What are the 3 most important key takeaways from this topic?' }
+		{
+			label: '💡 Analogy',
+			prompt: 'Can you explain this concept using a simple real-world analogy?'
+		},
+		{
+			label: '🧪 Example',
+			prompt: 'Can you give me a concrete, practical code or real-world example?'
+		},
+		{
+			label: '❓ Quiz Me',
+			prompt: 'Can you give me a quick 1-question check to test my understanding?'
+		},
+		{
+			label: '📝 Takeaways',
+			prompt: 'What are the 3 most important key takeaways from this topic?'
+		}
 	];
 
 	const handleChipClick = (prompt: string) => {
@@ -291,12 +313,16 @@
 								} else if (payload.type === 'done') {
 									const rawSources = payload.sources || [];
 									const sourceSupport =
-										rawSources.length >= 2 ? 'strong' : rawSources.length === 1 ? 'limited' : 'none';
+										rawSources.length >= 2
+											? 'strong'
+											: rawSources.length === 1
+												? 'limited'
+												: 'none';
 									messages = messages.map((m, idx) =>
 										idx === assistantMessageIndex
 											? {
 													...m,
-													sources: rawSources.map((s: any) => ({
+													sources: rawSources.map((s: RawSourcePayload) => ({
 														sourceTitle: s.pageTitle || s.sourceTitle || 'Study Document',
 														pageNumber: s.pageNumber,
 														chapter: s.chapter,
@@ -460,7 +486,9 @@
 						type="button"
 						onclick={toggleDock}
 						class="hidden cursor-pointer rounded-lg p-1.5 text-text-muted hover:bg-surface-muted hover:text-text lg:inline-flex"
-						title={chatStore.isDocked ? 'Switch to floating window' : 'Dock side-by-side with lesson'}
+						title={chatStore.isDocked
+							? 'Switch to floating window'
+							: 'Dock side-by-side with lesson'}
 						aria-label={chatStore.isDocked ? 'Undock companion' : 'Dock companion'}
 					>
 						{#if chatStore.isDocked}
@@ -522,7 +550,9 @@
 
 			<!-- Active Study Context Banner -->
 			{#if activeContextLabel}
-				<div class="flex items-center justify-between border-b border-primary/20 bg-primary-soft/40 px-3.5 py-1.5 text-[11px] font-semibold text-primary">
+				<div
+					class="flex items-center justify-between border-b border-primary/20 bg-primary-soft/40 px-3.5 py-1.5 text-[11px] font-semibold text-primary"
+				>
 					<div class="flex items-center gap-1.5 truncate">
 						<span>📍 Context:</span>
 						<span class="truncate font-bold text-text">{activeContextLabel}</span>
@@ -564,7 +594,7 @@
 				{#if messages.length <= 1}
 					<div class="rounded-2xl border border-border/80 bg-surface-muted/50 p-4">
 						<div class="mb-3 flex items-center justify-between">
-							<span class="text-[10px] font-bold tracking-wider uppercase text-text-muted">
+							<span class="text-[10px] font-bold tracking-wider text-text-muted uppercase">
 								Choose a learning mode:
 							</span>
 							<span class="text-[10px] font-semibold text-primary">
@@ -580,7 +610,7 @@
 									disabled={loading}
 									class="flex cursor-pointer flex-col items-start rounded-xl border border-border bg-surface p-2.5 text-left transition-all hover:border-primary/50 hover:bg-primary-soft/20 hover:shadow-xs active:scale-98 disabled:opacity-50"
 								>
-									<div class="flex items-center gap-1.5 font-bold text-text text-xs">
+									<div class="flex items-center gap-1.5 text-xs font-bold text-text">
 										<span>{mode.icon}</span>
 										<span>{mode.title}</span>
 									</div>
@@ -622,19 +652,23 @@
 
 							{#if msg.sources && msg.sources.length > 0}
 								<div class="mt-2.5 border-t border-border/40 pt-2 text-[11px]">
-									<div class="flex items-center gap-1.5 font-bold mb-1">
+									<div class="mb-1 flex items-center gap-1.5 font-bold">
 										{#if msg.sourceSupport === 'strong'}
-											<span class="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-600 dark:text-emerald-400">
+											<span
+												class="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-600 dark:text-emerald-400"
+											>
 												📘 Strong source support
 											</span>
 										{:else}
-											<span class="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-600 dark:text-blue-400">
+											<span
+												class="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-600 dark:text-blue-400"
+											>
 												📘 Limited source support
 											</span>
 										{/if}
 									</div>
-									<div class="flex flex-col gap-0.5 text-muted-foreground text-[10px]">
-										{#each msg.sources as src}
+									<div class="text-muted-foreground flex flex-col gap-0.5 text-[10px]">
+										{#each msg.sources as src, srcIdx (src.chunkId || `${src.sourceTitle}-${srcIdx}`)}
 											<div>
 												• <strong>{src.sourceTitle}</strong>
 												{#if src.pageNumber}
@@ -648,7 +682,9 @@
 									</div>
 								</div>
 							{:else if msg.role === 'assistant' && msg.sourceSupport === 'none' && !msg.isError}
-								<div class="mt-2 border-t border-border/40 pt-1 text-[10px] text-muted-foreground flex items-center gap-1">
+								<div
+									class="text-muted-foreground mt-2 flex items-center gap-1 border-t border-border/40 pt-1 text-[10px]"
+								>
 									<span>🌐 General knowledge explanation</span>
 								</div>
 							{/if}
@@ -657,13 +693,13 @@
 								<div class="mt-3 flex flex-wrap items-center gap-2 border-t border-border/50 pt-2">
 									<a
 										href="/app/review"
-										class="rounded-lg border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-muted"
+										class="bg-card text-foreground hover:bg-muted rounded-lg border border-border px-2.5 py-1 text-[11px] font-semibold"
 									>
 										🧠 Review Flashcards
 									</a>
 									<a
 										href="/app/courses"
-										class="rounded-lg border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-muted"
+										class="bg-card text-foreground hover:bg-muted rounded-lg border border-border px-2.5 py-1 text-[11px] font-semibold"
 									>
 										📖 Continue Lesson
 									</a>
@@ -709,7 +745,9 @@
 						type="text"
 						bind:value={inputMessage}
 						onkeydown={handleKeyDown}
-						placeholder={activeContextLabel ? `Ask about "${activeContextLabel}"...` : "Ask a study question..."}
+						placeholder={activeContextLabel
+							? `Ask about "${activeContextLabel}"...`
+							: 'Ask a study question...'}
 						aria-label="Ask a question"
 						class="grow rounded-xl border border-border bg-surface-muted px-3.5 py-2.5 text-xs transition-colors duration-180 hover:border-text-muted focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 						disabled={loading}
