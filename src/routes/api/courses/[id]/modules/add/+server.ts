@@ -67,7 +67,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 				error: null,
 				pages: null,
 				questions: null,
-				model: 'flan-t5-large',
+				model: 'pending',
 				generatedAt: null
 			});
 

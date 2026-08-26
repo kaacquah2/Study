@@ -70,6 +70,13 @@ export interface ModuleDoc {
 		nextReviewDate?: string;
 		intervalDays?: number;
 	}> | null;
+	concepts?: Array<{
+		id: string;
+		term: string;
+		aliases: string[];
+		summary?: string;
+	}> | null;
+	completed?: boolean;
 	model?: string;
 	generatedAt?: unknown;
 }

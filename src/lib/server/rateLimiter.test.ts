@@ -9,6 +9,11 @@ vi.mock('./admin', () => ({
 	}
 }));
 
+vi.mock('./redis', () => ({
+	isRedisConfigured: vi.fn().mockReturnValue(false),
+	redisIncr: vi.fn().mockResolvedValue(null)
+}));
+
 describe('rateLimiter Unit Tests', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();

@@ -1,5 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { moderateInput } from './moderation';
+
+vi.mock('$lib/server/admin', () => ({
+	adminDb: {
+		collection: vi.fn().mockReturnValue({
+			add: vi.fn().mockResolvedValue({ id: 'mock-flag-id' })
+		})
+	},
+	FieldValue: {
+		serverTimestamp: vi.fn().mockReturnValue('mock-timestamp')
+	}
+}));
 
 describe('Pre-Generation Moderation Scanner', () => {
 	it('should allow benign educational topics', () => {

@@ -1,16 +1,24 @@
 <script lang="ts">
-	interface QuizReviewItem {
+	import { auth } from '$lib/firebase/client';
+	import { toastStore } from '$lib/stores/toast.svelte';
+	import { studySessionStore } from '$lib/stores/studySession.svelte';
+	import { goto } from '$app/navigation';
+
+	export interface QuizReviewItem {
 		order: number;
 		prompt: string;
 		options: string[];
 		correctIndex: number;
 		selectedIndex: number | null;
 		explanation: string;
+		conceptId?: string;
 	}
 
 	interface Props {
 		title?: string;
 		subtitle?: string;
+		courseId?: string;
+		moduleId?: string;
 		streakCount?: number;
 		earnedBadges?: string[];
 		certificate?: {
@@ -31,6 +39,8 @@
 	let {
 		title = 'Module Completed!',
 		subtitle = 'Great work! You have successfully mastered this material.',
+		courseId = '',
+		moduleId = '',
 		streakCount,
 		earnedBadges = [],
 		certificate,
@@ -42,11 +52,14 @@
 		onShareCertificate
 	}: Props = $props();
 
-	import { auth } from '$lib/firebase/client';
-
 	let showQuizReview = $state(false);
 	let explanations = $state<Record<number, string>>({});
 	let explainingIndex = $state<number | null>(null);
+	let isSyncingMissedCards = $state(false);
+
+	let missedItems = $derived(
+		quizReviewItems.filter((item) => item.selectedIndex !== item.correctIndex)
+	);
 
 	async function fetchExplanation(idx: number, item: QuizReviewItem) {
 		explainingIndex = idx;
@@ -73,6 +86,51 @@
 			console.error('Failed to get AI quiz explanation:', err);
 		} finally {
 			explainingIndex = null;
+		}
+	}
+
+	// 1-Click Action: Drill Missed Concepts in FSRS (Zero-AI, Concept-Deduplicated)
+	async function handleDrillMissedConcepts() {
+		if (isSyncingMissedCards || missedItems.length === 0) return;
+		isSyncingMissedCards = true;
+
+		try {
+			const idToken = await auth.currentUser?.getIdToken();
+			const cardsPayload = missedItems.map((item) => ({
+				front: item.prompt,
+				back: `${item.options[item.correctIndex]}${item.explanation ? `\n\n💡 ${item.explanation}` : ''}`,
+				courseId,
+				moduleId,
+				conceptId: item.conceptId,
+				sourceType: 'quiz_miss'
+			}));
+
+			const res = await fetch('/api/spaced-repetition', {
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${idToken}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ cards: cardsPayload })
+			});
+
+			if (res.ok) {
+				studySessionStore.recordEvent({
+					type: 'flashcard_created',
+					summary: `Created ${missedItems.length} FSRS cards from missed quiz questions`
+				});
+				toastStore.success(`Saved ${missedItems.length} concept(s) to FSRS! Launching review...`);
+				setTimeout(() => {
+					goto(`/app/review?courseId=${courseId}&moduleId=${moduleId}`);
+				}, 600);
+			} else {
+				throw new Error('Failed to sync cards');
+			}
+		} catch (err) {
+			console.error('Drill missed concepts error:', err);
+			toastStore.error('Could not save missed concepts to review deck.');
+		} finally {
+			isSyncingMissedCards = false;
 		}
 	}
 </script>
@@ -106,6 +164,7 @@
 	<h2 class="mb-2 font-display text-2xl font-bold text-text sm:text-3xl">{title}</h2>
 	<p class="mb-6 max-w-md text-xs text-text-muted sm:text-sm">{subtitle}</p>
 
+	<!-- Streak Badge -->
 	{#if streakCount !== undefined && streakCount > 0}
 		<div
 			class="mb-6 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-500 shadow-sm"
@@ -114,6 +173,7 @@
 		</div>
 	{/if}
 
+	<!-- Earned Badges Strip -->
 	{#if earnedBadges.length > 0}
 		<div class="mb-6 flex flex-col items-center">
 			<span class="mb-2 text-[11px] font-bold tracking-wider text-text-muted uppercase"
@@ -132,7 +192,33 @@
 		</div>
 	{/if}
 
-	<!-- Quiz End-of-Quiz "Review Your Answers" Breakdown (Item #10) -->
+	<!-- 1-Click Missed Concepts FSRS Drill CTA -->
+	{#if missedItems.length > 0}
+		<div
+			class="my-3 flex w-full max-w-xl items-center justify-between gap-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-left shadow-xs"
+		>
+			<div class="flex items-center gap-3">
+				<span class="text-2xl">🧠</span>
+				<div>
+					<h4 class="font-display text-xs font-bold text-text">Reinforce Missed Concepts</h4>
+					<p class="text-[11px] text-text-muted">
+						You missed <strong>{missedItems.length} question{missedItems.length > 1 ? 's' : ''}</strong>. Add them directly to your FSRS review deck.
+					</p>
+				</div>
+			</div>
+
+			<button
+				type="button"
+				onclick={handleDrillMissedConcepts}
+				disabled={isSyncingMissedCards}
+				class="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-xs hover:bg-amber-400 active:scale-95 disabled:opacity-50"
+			>
+				<span>{isSyncingMissedCards ? 'Syncing...' : '🧠 Drill in FSRS &rarr;'}</span>
+			</button>
+		</div>
+	{/if}
+
+	<!-- Quiz End-of-Quiz "Review Your Answers" Breakdown -->
 	{#if quizReviewItems.length > 0}
 		<div class="my-4 w-full max-w-xl text-left">
 			<button
@@ -244,7 +330,7 @@
 			</button>
 		{/if}
 
-		<!-- Direct 1-Tap CTA for Next Module (Item #13) -->
+		<!-- Direct 1-Tap CTA for Next Module -->
 		{#if nextModuleId && onNextModule}
 			<button
 				type="button"

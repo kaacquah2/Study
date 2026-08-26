@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { verifySessionUser } from '$lib/server/auth';
-import { chat } from '$lib/server/ai/provider';
+import { chat, streamChat } from '$lib/server/ai/provider';
 import { z } from 'zod';
 import { adminDb } from '$lib/server/admin';
 import { enforceRateLimit } from '$lib/server/rateLimiter';
@@ -22,8 +22,28 @@ const ChatBodySchema = z.object({
 	courseId: z.string().optional(),
 	moduleId: z.string().optional(),
 	courseContext: z.string().max(1_000).optional(),
-	socraticMode: z.boolean().optional()
+	socraticMode: z.boolean().optional(),
+	sessionEvents: z
+		.array(
+			z.object({
+				type: z.string(),
+				snippet: z.string().optional(),
+				summary: z.string().optional(),
+				conceptId: z.string().optional(),
+				timestamp: z.number()
+			})
+		)
+		.optional()
 });
+
+function sanitizeContextText(text: string): string {
+	if (!text) return '';
+	return text
+		.replace(/<[^>]*>/g, '')
+		.replace(/[\r\n]{3,}/g, '\n\n')
+		.trim()
+		.slice(0, 1_000);
+}
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
@@ -70,7 +90,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			courseId,
 			moduleId,
 			courseContext: rawClientContext,
-			socraticMode
+			socraticMode,
+			sessionEvents
 		} = parsed.data;
 
 		// Input Safety Moderation Check
@@ -119,7 +140,35 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		if (!contextToUse && rawClientContext) {
-			contextToUse = rawClientContext.slice(0, 1_000);
+			contextToUse = sanitizeContextText(rawClientContext);
+		}
+
+		// Inject recent student actions/events from studySessionStore
+		if (sessionEvents && sessionEvents.length > 0) {
+			const recentFormatted = sessionEvents
+				.slice(0, 6)
+				.map((e) => {
+					const label =
+						e.type === 'lens_explain'
+							? 'Requested Explanation'
+							: e.type === 'lens_example'
+								? 'Requested Real-World Example'
+								: e.type === 'lens_quiz'
+									? 'Took Instant Quiz'
+									: e.type === 'flashcard_created'
+										? 'Created Flashcard'
+										: e.type === 'tts_read'
+											? 'Listened to Audio'
+											: e.type === 'quiz_answered'
+												? 'Answered Quiz Question'
+												: e.type;
+					const snippetPart = e.snippet ? ` on text: "${e.snippet.slice(0, 120)}..."` : '';
+					const summaryPart = e.summary ? ` (${e.summary})` : '';
+					return `- ${label}${snippetPart}${summaryPart}`;
+				})
+				.join('\n');
+			const eventsBlock = `\n[Recent Student Actions in Current Lesson Session]:\n${recentFormatted}\n`;
+			contextToUse = contextToUse ? contextToUse + eventsBlock : eventsBlock;
 		}
 
 		if (socraticMode !== false) {
@@ -128,32 +177,65 @@ export const POST: RequestHandler = async ({ request }) => {
 			contextToUse = contextToUse ? contextToUse + socraticInstruction : socraticInstruction;
 		}
 
-		// Execute chat inference
-		const { result: chatResult, provider } = await chat(messages, contextToUse, user.uid);
+		// Prepare live token stream generator
+		const generator = (async function* () {
+			if (typeof streamChat === 'function') {
+				const streamResult = streamChat(messages, contextToUse, user.uid);
+				if (streamResult && typeof streamResult[Symbol.asyncIterator] === 'function') {
+					for await (const chunk of streamResult) {
+						yield chunk;
+					}
+					return;
+				}
+			}
+			const res = await chat(messages, contextToUse, user.uid);
+			yield { token: res.result.reply, provider: res.provider };
+		})();
 
-		// Construct SSE stream using ReadableStream
+		let firstChunk: { token: string; provider: string } | null = null;
+		try {
+			const iter = await generator.next();
+			if (!iter.done && iter.value) {
+				firstChunk = iter.value;
+			}
+		} catch (streamErr) {
+			if (streamErr instanceof MLBackendError && streamErr.status === 503) {
+				return json({ error: { code: 'MODEL_WARMING_UP', message: 'Warming up' } }, { status: 503 });
+			}
+			throw streamErr;
+		}
+
+
+		// Construct SSE stream using live token streaming
 		const encoder = new TextEncoder();
 		const stream = new ReadableStream({
 			async start(controller) {
-				const fullText = chatResult.reply || '';
-				const sources = chatResult.sources || [];
-
-				// Stream text in words / chunks for micro-animations
-				const words = fullText.split(' ');
-				for (let i = 0; i < words.length; i++) {
-					const wordChunk = (i === 0 ? '' : ' ') + words[i];
-					const eventData = `data: ${JSON.stringify({ type: 'delta', content: wordChunk })}\n\n`;
+				let detectedProvider = firstChunk?.provider || 'gemini';
+				if (firstChunk?.token) {
+					const eventData = `data: ${JSON.stringify({ type: 'delta', content: firstChunk.token })}\n\n`;
 					controller.enqueue(encoder.encode(eventData));
-					// Short delay to simulate real-time token streaming
-					await new Promise((resolve) => setTimeout(resolve, 15));
+				}
+
+				try {
+					for await (const chunk of generator) {
+						detectedProvider = chunk.provider;
+						if (chunk.token) {
+							const eventData = `data: ${JSON.stringify({ type: 'delta', content: chunk.token })}\n\n`;
+							controller.enqueue(encoder.encode(eventData));
+						}
+					}
+				} catch (streamErr) {
+					console.error('Error during token streaming:', streamErr);
 				}
 
 				// Final metadata event
-				const finalEvent = `data: ${JSON.stringify({ type: 'done', sources, provider })}\n\n`;
+				const finalEvent = `data: ${JSON.stringify({ type: 'done', sources: [], provider: detectedProvider })}\n\n`;
 				controller.enqueue(encoder.encode(finalEvent));
 				controller.close();
 			}
 		});
+
+
 
 		return new Response(stream, {
 			headers: {

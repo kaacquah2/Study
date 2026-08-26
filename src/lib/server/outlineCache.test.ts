@@ -1,6 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { getCachedOutline } from './outlineCache';
 
+vi.mock('./redis', () => ({
+	isRedisConfigured: vi.fn().mockReturnValue(false),
+	redisGet: vi.fn().mockResolvedValue(null),
+	redisSet: vi.fn().mockResolvedValue(true)
+}));
+
 describe('outlineCache Unit Tests', () => {
 	it('deduplicates concurrent fetches for the same courseId', async () => {
 		const fetchFn = vi.fn().mockImplementation(async () => {

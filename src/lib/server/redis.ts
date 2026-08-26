@@ -3,11 +3,18 @@
  * Smoothly falls back to in-memory/Firestore operations when environment variables are not provided.
  */
 
-const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.REDIS_URL || '';
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.REDIS_TOKEN || '';
+import { env } from '$env/dynamic/private';
+
+function getRedisUrl(): string {
+	return env.UPSTASH_REDIS_REST_URL || env.REDIS_URL || '';
+}
+
+function getRedisToken(): string {
+	return env.UPSTASH_REDIS_REST_TOKEN || env.REDIS_TOKEN || '';
+}
 
 export function isRedisConfigured(): boolean {
-	return Boolean(REDIS_URL && REDIS_TOKEN);
+	return Boolean(getRedisUrl() && getRedisToken());
 }
 
 /**
@@ -17,10 +24,10 @@ async function redisCommand<T = unknown>(command: string[]): Promise<T | null> {
 	if (!isRedisConfigured()) return null;
 
 	try {
-		const res = await fetch(REDIS_URL, {
+		const res = await fetch(getRedisUrl(), {
 			method: 'POST',
 			headers: {
-				Authorization: `Bearer ${REDIS_TOKEN}`,
+				Authorization: `Bearer ${getRedisToken()}`,
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(command)
@@ -65,14 +72,15 @@ export async function redisPipeline<T = unknown[]>(commands: string[][]): Promis
 	if (!isRedisConfigured()) return null;
 
 	try {
-		const pipelineUrl = REDIS_URL.endsWith('/pipeline')
-			? REDIS_URL
-			: `${REDIS_URL.replace(/\/$/, '')}/pipeline`;
+		const redisUrl = getRedisUrl();
+		const pipelineUrl = redisUrl.endsWith('/pipeline')
+			? redisUrl
+			: `${redisUrl.replace(/\/$/, '')}/pipeline`;
 
 		const res = await fetch(pipelineUrl, {
 			method: 'POST',
 			headers: {
-				Authorization: `Bearer ${REDIS_TOKEN}`,
+				Authorization: `Bearer ${getRedisToken()}`,
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(commands)
@@ -103,4 +111,13 @@ export async function redisIncr(key: string, ttlSeconds?: number): Promise<numbe
 	}
 
 	return await redisCommand<number>(['INCR', key]);
+}
+
+export async function redisDel(key: string): Promise<boolean> {
+	const res = await redisCommand<number>(['DEL', key]);
+	return (res ?? 0) > 0;
+}
+
+export async function redisPublish(channel: string, message: string): Promise<number | null> {
+	return await redisCommand<number>(['PUBLISH', channel, message]);
 }

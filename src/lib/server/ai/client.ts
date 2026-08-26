@@ -5,6 +5,7 @@
  * Centralises error handling, timeouts, circuit breaker, and the API key header.
  */
 
+import crypto from 'node:crypto';
 import { env } from '$env/dynamic/private';
 
 /** Get ML Backend URL with fallbacks */
@@ -16,6 +17,12 @@ function getMLBackendUrl(): string {
 function getMLBackendApiKey(): string {
 	return env.ML_BACKEND_API_KEY || process.env.ML_BACKEND_API_KEY || '';
 }
+
+/** Get ML Backend Secret for HMAC-SHA256 signing (fail-closed, no fallback literal) */
+export function getMLBackendSecret(): string | null {
+	return env.ML_BACKEND_SECRET || process.env.ML_BACKEND_SECRET || null;
+}
+
 
 /** Default timeout: 120 seconds (model inference can be slow on CPU) */
 const DEFAULT_TIMEOUT_MS = 120_000;
@@ -112,14 +119,31 @@ export async function callML<T>(
 		headers['X-User-ID'] = userId;
 	}
 
+	const secret = getMLBackendSecret();
+	const bodyString = JSON.stringify(body);
+
+	if (secret) {
+		const timestamp = Math.floor(Date.now() / 1000).toString();
+		const nonce = crypto.randomUUID();
+		const signature = crypto
+			.createHmac('sha256', secret)
+			.update(`${timestamp}.${nonce}.${bodyString}`)
+			.digest('hex');
+
+		headers['X-Signature'] = signature;
+		headers['X-Timestamp'] = timestamp;
+		headers['X-Nonce'] = nonce;
+	}
+
 	let res: Response;
 	try {
 		res = await fetch(url, {
 			method: 'POST',
 			headers,
-			body: JSON.stringify(body),
+			body: bodyString,
 			signal: AbortSignal.timeout(timeoutMs)
 		});
+
 	} catch (err) {
 		recordFailure();
 		const message = err instanceof Error ? err.message : 'Unknown network error';

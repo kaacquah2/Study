@@ -61,7 +61,34 @@ import models.chat_assistant as chat_model
 from models.model_registry import inference_lock, is_any_inference_busy, get_device_diagnostics
 from models.rag_pipeline import rag
 
-logging.basicConfig(level=logging.INFO)
+# ── Structured JSON Logging ────────────────────────────────────────────────────
+_LOG_FORMAT = os.getenv("LOG_FORMAT", "text")  # "json" for structured, "text" for human-readable
+
+if _LOG_FORMAT == "json" or os.getenv("APP_ENV") == "production":
+    class _JsonFormatter(logging.Formatter):
+        """Structured JSON log formatter for production log aggregation."""
+        def format(self, record: logging.LogRecord) -> str:
+            import json as _json
+            log_entry = {
+                "timestamp": self.formatTime(record, self.datefmt),
+                "level": record.levelname,
+                "logger": record.name,
+                "message": record.getMessage(),
+                "module": record.module,
+                "function": record.funcName,
+                "line": record.lineno,
+            }
+            if record.exc_info and record.exc_info[1]:
+                log_entry["exception"] = self.formatException(record.exc_info)
+            return _json.dumps(log_entry)
+
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(_JsonFormatter())
+    logging.root.handlers = [_handler]
+    logging.root.setLevel(logging.INFO)
+else:
+    logging.basicConfig(level=logging.INFO)
+
 logger = logging.getLogger(__name__)
 
 _API_KEY = os.getenv("ML_BACKEND_API_KEY", "")
@@ -213,15 +240,65 @@ app.add_middleware(
 
 # ── Auth dependency ────────────────────────────────────────────────────────────
 
-def verify_api_key(request: Request) -> None:
-    """API key check. Enforced strictly when set, or required in production."""
+_ML_SECRET = os.getenv("ML_BACKEND_SECRET", "")
+import threading
+
+# In-memory nonce store with timestamp expiration to prevent replay attacks
+_SEEN_NONCES: dict[str, float] = {}
+_NONCE_LOCK = threading.Lock()
+_NONCE_TTL = 300.0  # 5 minutes window
+
+def _is_nonce_valid(nonce: str, now: float) -> bool:
+    with _NONCE_LOCK:
+        expired = [k for k, exp in _SEEN_NONCES.items() if exp < now]
+        for k in expired:
+            del _SEEN_NONCES[k]
+
+        if nonce in _SEEN_NONCES:
+            return False
+        _SEEN_NONCES[nonce] = now + _NONCE_TTL
+        return True
+
+async def verify_api_key(request: Request) -> None:
+    """Dual-layer authentication: API key check and HMAC-SHA256 nonced request signature verification."""
     if not _API_KEY:
         if _APP_ENV.lower() == "production":
             raise HTTPException(status_code=401, detail="Invalid API key.")
-        return
-    key = request.headers.get("X-API-Key", "")
-    if not secrets.compare_digest(key, _API_KEY):
-        raise HTTPException(status_code=401, detail="Invalid API key.")
+    else:
+        key = request.headers.get("X-API-Key", "")
+        if not secrets.compare_digest(key, _API_KEY):
+            raise HTTPException(status_code=401, detail="Invalid API key.")
+
+    if _ML_SECRET:
+        sig = request.headers.get("X-Signature", "")
+        ts_str = request.headers.get("X-Timestamp", "")
+        nonce = request.headers.get("X-Nonce", "")
+
+        if not sig or not ts_str or not nonce:
+            raise HTTPException(status_code=401, detail="Missing required HMAC authentication headers.")
+
+        try:
+            ts = float(ts_str)
+        except ValueError:
+            raise HTTPException(status_code=401, detail="Invalid HMAC timestamp.")
+
+        import time
+        now = time.time()
+        if abs(now - ts) > _NONCE_TTL:
+            raise HTTPException(status_code=401, detail="HMAC request signature timestamp expired.")
+
+        if not _is_nonce_valid(nonce, now):
+            raise HTTPException(status_code=401, detail="HMAC nonce already used (replay attack detected).")
+
+        body_bytes = await request.body()
+        body_str = body_bytes.decode("utf-8") if body_bytes else "{}"
+        message = f"{ts_str}.{nonce}.{body_str}"
+        import hmac, hashlib
+        expected_sig = hmac.new(_ML_SECRET.encode("utf-8"), message.encode("utf-8"), hashlib.sha256).hexdigest()
+
+        if not hmac.compare_digest(sig, expected_sig):
+            raise HTTPException(status_code=401, detail="Invalid HMAC request signature.")
+
 
 
 # ── Helper for lazy loading models thread-safely ──────────────────────────────

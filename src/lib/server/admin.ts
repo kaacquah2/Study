@@ -33,6 +33,11 @@ function initAdmin(): App {
 	const serviceAccountJson = env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT;
 
 	if (!serviceAccountJson) {
+		if (process.env.NODE_ENV === 'production') {
+			throw new Error(
+				'[FATAL SECURITY CONFIG] FIREBASE_SERVICE_ACCOUNT is required in production environment.'
+			);
+		}
 		console.warn('[admin.ts] No FIREBASE_SERVICE_ACCOUNT found — initializing without credentials');
 		return initializeApp({ projectId });
 	}
@@ -48,6 +53,11 @@ function initAdmin(): App {
 		});
 		return app;
 	} catch (e) {
+		if (process.env.NODE_ENV === 'production') {
+			throw new Error(`[FATAL SECURITY CONFIG] Failed to parse FIREBASE_SERVICE_ACCOUNT: ${e}`, {
+				cause: e
+			});
+		}
 		console.error('[admin.ts] Failed to parse FIREBASE_SERVICE_ACCOUNT:', e);
 		return initializeApp({ projectId });
 	}

@@ -110,20 +110,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 
 		if (checkOriginHost !== host) {
-			const isLocal =
-				(host.startsWith('localhost:') || host.startsWith('127.0.0.1:')) &&
-				(checkOriginHost.startsWith('localhost:') || checkOriginHost.startsWith('127.0.0.1:'));
-			if (!isLocal) {
-				return json(
-					{
-						error: {
-							code: 'FORBIDDEN_CSRF',
-							message: 'Cross-site request forgery protection triggered.'
-						}
-					},
-					{ status: 403 }
-				);
-			}
+			return json(
+				{
+					error: {
+						code: 'FORBIDDEN_CSRF',
+						message: 'Cross-site request forgery protection triggered.'
+					}
+				},
+				{ status: 403 }
+			);
 		}
 	}
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateFSRS, qualityToRating, optimizeFSRSWeights } from './fsrs';
+import { calculateFSRS, qualityToRating, optimizeFSRSWeights, convertSM2ToFSRS } from './fsrs';
 
 describe('FSRS-4.5 Spaced Repetition Engine', () => {
 	it('maps quality ratings 0-5 correctly to 1-4 scale', () => {
@@ -57,5 +57,21 @@ describe('FSRS-4.5 Spaced Repetition Engine', () => {
 		expect(result.isCalibrated).toBe(true);
 		expect(result.averageRetention).toBe(0.5);
 		expect(result.recommendedStabilityFactor).toBeLessThan(1.0);
+	});
+
+	it('converts legacy SM-2 card state to FSRS parameters accurately', () => {
+		const converted = convertSM2ToFSRS({
+			easeFactor: 2.5,
+			intervalDays: 6,
+			repetitions: 3,
+			lapses: 0
+		});
+
+		expect(converted.stability).toBeGreaterThanOrEqual(1);
+		expect(converted.difficulty).toBeGreaterThanOrEqual(1);
+		expect(converted.difficulty).toBeLessThanOrEqual(10);
+		expect(converted.reps).toBe(3);
+		expect(converted.lapses).toBe(0);
+		expect(converted.state).toBe('Review');
 	});
 });

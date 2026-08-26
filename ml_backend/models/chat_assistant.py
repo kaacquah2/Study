@@ -14,7 +14,7 @@ import os
 import re
 import logging
 import torch
-from typing import Optional
+from typing import Optional, Any
 from transformers import pipeline, Pipeline, AutoConfig
 
 from models.model_registry import get_pipeline, is_pipeline_loaded, get_inference_lock
@@ -207,6 +207,8 @@ def chat(
 
 
 import json
+from threading import Thread
+from transformers import TextIteratorStreamer
 
 def chat_stream(
     messages: list[dict],
@@ -214,14 +216,114 @@ def chat_stream(
     user_id: str = "default_user",
 ):
     """
-    Generator yielding SSE formatted strings for streaming chat output.
+    Generator yielding live SSE tokens via HuggingFace TextIteratorStreamer.
     """
-    reply, sources = chat(messages=messages, course_context=course_context, user_id=user_id)
-    words = reply.split(" ")
-    for i, word in enumerate(words):
-        chunk = word if i == 0 else " " + word
-        payload = json.dumps({"token": chunk, "done": False, "sources": sources if i == len(words) - 1 else []})
-        yield f"data: {payload}\n\n"
+    if not is_loaded():
+        yield f"data: {json.dumps({'error': 'Model is loading', 'done': True})}\n\n"
+        return
+
+    user_message = next(
+        (m["content"] for m in reversed(messages) if m["role"] == "user"),
+        "",
+    )
+
+    if not _is_safe(user_message):
+        safety_payload = json.dumps({
+            "token": "I'm sorry, but I cannot assist with that request as it does not comply with our e-learning safety guidelines.",
+            "done": True,
+            "sources": []
+        })
+        yield f"data: {safety_payload}\n\n"
+        return
+
+
+    model_pipeline = load_model()
+    model_lock = get_inference_lock(_MODEL_ID)
+
+    rag_context = ""
+    sources = []
+
+    if rag.has_documents(user_id=user_id):
+        raw_rag = rag.retrieve(user_message, user_id=user_id, top_k=2)
+        rag_context = raw_rag[:_MAX_CONTEXT_CHARS]
+        doc_matches = re.findall(r'---\s*Document:\s*(.+?)\s*---', raw_rag)
+        if doc_matches:
+            unique_docs = list(dict.fromkeys(doc_matches))
+            for doc_name in unique_docs:
+                sources.append({"moduleId": "rag_docs", "pageTitle": doc_name.strip(), "documentName": doc_name.strip()})
+        else:
+            sources.append({"moduleId": "rag_docs", "pageTitle": "Retrieved Course Material"})
+    elif course_context:
+        rag_context = course_context[:_MAX_CONTEXT_CHARS]
+        first_line = course_context.strip().split("\n")[0]
+        title = first_line.replace("Active Course:", "").replace("#", "").strip() if first_line else "Active Course"
+        sources.append({"moduleId": "active_course", "pageTitle": title})
+
+    tokenizer: Any = model_pipeline.tokenizer
+    model: Any = model_pipeline.model
+
+    if tokenizer is None or model is None:
+        yield f"data: {json.dumps({'error': 'Model components unavailable', 'done': True})}\n\n"
+        return
+
+    if _is_seq2seq():
+        prompt = f"Answer the student's question as a helpful AI study assistant.\n"
+        if rag_context:
+            clean_context = rag_context.replace("\n", " ").strip()
+            prompt += f"Reference material: {clean_context}\n"
+        prompt += f"Question: {user_message}\nAnswer:"
+    else:
+        system_content = _SYSTEM_PROMPT
+        if rag_context:
+            clean_context = re.sub(r'</?reference_material.*?>', '', rag_context, flags=re.IGNORECASE)
+            system_content += f"\n\n<reference_material>\n{clean_context}\n</reference_material>"
+
+        prompt = f"<|system|>\n{system_content}\n"
+        max_messages_chars = 4000
+        allowed_messages = []
+        current_chars = 0
+        for msg in reversed(messages):
+            content_len = len(msg["content"])
+            if current_chars + content_len > max_messages_chars:
+                break
+            allowed_messages.insert(0, msg)
+            current_chars += content_len
+        allowed_messages = allowed_messages[-8:]
+
+        for msg in allowed_messages:
+            role_tag = "<|user|>" if msg["role"] == "user" else "<|assistant|>"
+            prompt += f"{role_tag}\n{msg['content']}\n"
+        prompt += "<|assistant|>\n"
+
+    streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)  # type: ignore
+    device = next(model.parameters()).device
+    inputs = tokenizer(prompt, return_tensors="pt").to(device)
+
+    generation_kwargs = dict(
+        inputs,
+        streamer=streamer,
+        max_new_tokens=_MAX_NEW_TOKENS,
+        do_sample=True,
+        temperature=0.7,
+        top_p=0.9,
+        repetition_penalty=1.2,
+    )
+
+    def _threaded_generate():
+        with model_lock, torch.inference_mode():
+            model.generate(**generation_kwargs)  # type: ignore
+
+    t = Thread(target=_threaded_generate)
+    t.start()
+
+
+    for token in streamer:
+        if token:
+            payload = json.dumps({"token": token, "done": False, "sources": []})
+            yield f"data: {payload}\n\n"
+
+    t.join()
     payload_done = json.dumps({"token": "", "done": True, "sources": sources})
     yield f"data: {payload_done}\n\n"
+
 

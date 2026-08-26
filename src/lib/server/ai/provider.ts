@@ -17,6 +17,7 @@ import {
 	generateLessonWithBlocksViaGemini,
 	generateQuizViaGemini,
 	chatViaGemini,
+	streamChatViaGemini,
 	summarizeViaGemini,
 	paraphraseViaGemini,
 	enhanceTopicViaGemini,
@@ -36,9 +37,17 @@ import { classifyTopicDomain, logTopicGap } from './domainClassifier';
 
 export type { AIProvider };
 
+export interface AIProvenanceMetadata {
+	provider: AIProvider;
+	degradedTier: boolean;
+	generatedAt: string;
+	retryCount?: number;
+}
+
 export interface AIResult<T> {
 	result: T;
 	provider: AIProvider;
+	provenance?: AIProvenanceMetadata;
 	domainConfidenceScore?: number;
 }
 
@@ -699,21 +708,76 @@ export async function chat(
 	);
 }
 
+/**
+ * Stream live chat tokens from AI providers with automatic fallback.
+ */
+export async function* streamChat(
+	messages: ChatMessage[],
+	courseContext?: string,
+	userId?: string
+): AsyncGenerator<{ token: string; provider: AIProvider }, void, unknown> {
+	if (await isGeminiQuotaAvailable()) {
+		try {
+			for await (const token of streamChatViaGemini(messages, courseContext)) {
+				yield { token, provider: 'gemini' };
+			}
+			recordProviderUsage('gemini', 0, 0);
+			return;
+		} catch (err) {
+			console.warn('[streamChat] Gemini streaming error, falling back:', err);
+		}
+	}
+
+
+	// Fallback: standard chat call
+	const fallbackRes = await chat(messages, courseContext, userId);
+	yield { token: fallbackRes.result.reply, provider: fallbackRes.provider };
+}
+
 // ── Enhance Topic ─────────────────────────────────────────────────────────────
+
 
 export async function enhanceTopic(
 	topic: string
 ): Promise<AIResult<{ enhancedTopic: string; suggestions: string[] }>> {
 	return executeAI(
 		async () => {
-			const response = await enhanceTopicViaGemini(topic);
-			return response;
+			const res = await callML<{ text?: string; reply?: string }>(
+				'/completion',
+				{
+					prompt: `Expand the following vague topic into a specific, high-quality, targeted course subject. Provide a JSON object with "enhancedTopic" (string) and "suggestions" (array of 3 alternative strings).\n\nRaw Topic: "${topic}"`,
+					system_instruction:
+						'You are an expert curriculum consultant. Return valid JSON only.'
+				},
+				20_000
+			);
+			const text = res.text || res.reply || '';
+			const parsed = JSON.parse(text);
+			return {
+				enhancedTopic: parsed.enhancedTopic || topic,
+				suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : []
+			};
 		},
 		async () => {
 			const response = await enhanceTopicViaGemini(topic);
 			return response;
 		},
-		undefined,
+		async () => {
+			const res = await chatViaOllama(
+				[
+					{
+						role: 'user',
+						content: `Expand the following vague topic into a specific, high-quality, targeted course subject. Return valid JSON with "enhancedTopic" (string) and "suggestions" (array of 3 alternative strings).\n\nRaw Topic: "${topic}"`
+					}
+				],
+				'You are an expert curriculum consultant. Return valid JSON only.'
+			);
+			const parsed = JSON.parse(res.reply);
+			return {
+				enhancedTopic: parsed.enhancedTopic || topic,
+				suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : []
+			};
+		},
 		'reasoning'
 	);
 }
@@ -782,16 +846,39 @@ export async function generateKnowledgeGraph(
 		}>;
 	}>
 > {
+	const modulesSummary = modules
+		.map(
+			(m, i) =>
+				`${i + 1}. ID: "${m.id}" | Title: "${m.title}" | Summary: ${m.summary} | Key Points: ${(m.keyPoints || []).join(', ')}`
+		)
+		.join('\n');
+	const kgPrompt = `Course: "${courseTitle}"\nModules:\n${modulesSummary}\n\nExtract 2-4 key concept nodes per module and establish prerequisite edges. Return JSON with "nodes" (id, label, moduleId, importance 1-10) and "edges" (source, target, relationship: prerequisite|related, confidence 0.0-1.0). Only edges with confidence >= 0.6.`;
+
 	return executeAI(
 		async () => {
-			const result = await generateKnowledgeGraphViaGemini(courseTitle, modules);
-			return result;
+			const res = await callML<{ text?: string; reply?: string }>(
+				'/completion',
+				{
+					prompt: kgPrompt,
+					system_instruction:
+						'You are an expert educational cognitive architect. Return valid JSON only.'
+				},
+				60_000
+			);
+			const text = res.text || res.reply || '';
+			return JSON.parse(text);
 		},
 		async () => {
 			const result = await generateKnowledgeGraphViaGemini(courseTitle, modules);
 			return result;
 		},
-		undefined,
+		async () => {
+			const res = await chatViaOllama(
+				[{ role: 'user', content: kgPrompt }],
+				'You are an expert educational cognitive architect. Return valid JSON only.'
+			);
+			return JSON.parse(res.reply);
+		},
 		'reasoning',
 		courseTitle
 	);

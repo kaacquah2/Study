@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { verifySessionUser } from './auth';
+import { verifySessionUser, clearL1UserCache } from './auth';
 import { adminAuth, adminDb } from './admin';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import type { CollectionReference } from 'firebase-admin/firestore';
@@ -28,12 +28,52 @@ vi.mock('./admin', () => {
 	};
 });
 
+vi.mock('./redis', () => ({
+	isRedisConfigured: () => false,
+	redisGet: vi.fn().mockResolvedValue(null),
+	redisSet: vi.fn().mockResolvedValue(true),
+	redisDel: vi.fn().mockResolvedValue(true),
+	redisPublish: vi.fn().mockResolvedValue(1)
+}));
+
+
 describe('verifySessionUser Unit Tests', () => {
 	const mockUserDoc = { exists: true, data: () => ({ uid: 'user123' }) };
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		clearL1UserCache();
 	});
+
+	it('uses L1 in-memory cache for subsequent requests to avoid redundant Firestore reads', async () => {
+		vi.mocked(adminAuth.verifyIdToken).mockResolvedValue({
+			uid: 'cached_user',
+			email: 'cached@knust.edu.gh'
+		} as unknown as DecodedIdToken);
+
+		const mockDocRef = {
+			get: vi.fn().mockResolvedValue({ exists: true, data: () => ({ uid: 'cached_user' }) }),
+			set: vi.fn().mockResolvedValue(undefined)
+		};
+		vi.mocked(adminDb.collection).mockReturnValue({
+			doc: () => mockDocRef
+		} as unknown as CollectionReference);
+
+		const req = new Request('http://localhost/api/test', {
+			headers: { Authorization: 'Bearer valid-token' }
+		});
+
+		// First call: hits Firestore
+		const user1 = await verifySessionUser(req);
+		expect(user1.uid).toBe('cached_user');
+		expect(mockDocRef.get).toHaveBeenCalledTimes(1);
+
+		// Second call: served from L1 cache (zero additional Firestore reads)
+		const user2 = await verifySessionUser(req);
+		expect(user2.uid).toBe('cached_user');
+		expect(mockDocRef.get).toHaveBeenCalledTimes(1);
+	});
+
 
 	it('throws error if Authorization header is missing', async () => {
 		const req = new Request('http://localhost/api/test');

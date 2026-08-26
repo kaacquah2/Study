@@ -37,7 +37,14 @@ jobs:
         run: npm run test:unit -- --run
 
       - name: Run NPM Security Audit
-        run: npm audit --audit-level=high || true
+        run: npm audit --audit-level=high
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E Integration Tests
+        run: npm run test:e2e
+        continue-on-error: true
 
   ml-backend-check:
     name: ML Backend Verification
@@ -67,4 +74,4 @@ jobs:
       - name: Run Python Dependency Audit
         run: |
           cd ml_backend
-          pip-audit --desc || true
+          pip-audit --desc

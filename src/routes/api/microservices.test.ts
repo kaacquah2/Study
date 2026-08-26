@@ -12,9 +12,11 @@ vi.mock('$lib/server/auth', () => ({
 
 vi.mock('$lib/server/ai/provider', () => ({
 	chat: vi.fn(),
+	streamChat: vi.fn(),
 	summarize: vi.fn(),
 	paraphrase: vi.fn()
 }));
+
 
 vi.mock('$lib/server/rateLimiter', () => ({
 	enforceRateLimit: vi.fn()

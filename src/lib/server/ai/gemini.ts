@@ -402,6 +402,87 @@ export async function chatViaGemini(
 	};
 }
 
+/**
+ * Stream live chat tokens directly from Gemini streaming REST SSE endpoint.
+ */
+export async function* streamChatViaGemini(
+	messages: Array<{ role: string; content: string }>,
+	courseContext?: string
+): AsyncGenerator<string, void, unknown> {
+	const apiKey = getGeminiApiKey();
+	if (!apiKey) {
+		throw new Error('GEMINI_API_KEY is not configured on the server.');
+	}
+
+	const model = getGeminiModel();
+	const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`;
+
+	let systemInstruction =
+		'You are an encouraging AI Study Assistant helping students master course materials. Answer concisely, clearly, and with high technical precision. When comparing concepts, algorithms, or data structures, use Markdown comparison tables to highlight key trade-offs.';
+	if (courseContext) {
+		systemInstruction += `\n\nCourse Context:\n${courseContext}`;
+	}
+
+	const contents = messages.map((m) => ({
+		role: m.role === 'assistant' ? 'model' : 'user',
+		parts: [{ text: m.content }]
+	}));
+
+	const body: Record<string, unknown> = {
+		contents,
+		systemInstruction: {
+			parts: [{ text: systemInstruction }]
+		}
+	};
+
+	const res = await fetch(url, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'x-goog-api-key': apiKey
+		},
+		body: JSON.stringify(body),
+		signal: AbortSignal.timeout(45_000)
+	});
+
+	if (!res.ok || !res.body) {
+		const errText = await res.text().catch(() => '');
+		throw new Error(`Gemini streaming error ${res.status}: ${errText}`);
+	}
+
+	const reader = res.body.getReader();
+	const decoder = new TextDecoder();
+	let buffer = '';
+
+	while (true) {
+		const { done, value } = await reader.read();
+		if (done) break;
+
+		buffer += decoder.decode(value, { stream: true });
+		const lines = buffer.split('\n');
+		buffer = lines.pop() || '';
+
+		for (const line of lines) {
+			const trimmed = line.trim();
+			if (trimmed.startsWith('data: ')) {
+				const jsonStr = trimmed.slice(6).trim();
+				if (jsonStr && jsonStr !== '[DONE]') {
+					try {
+						const parsed = JSON.parse(jsonStr);
+						const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+						if (text) {
+							yield text;
+						}
+					} catch {
+						// Incomplete or non-JSON chunk
+					}
+				}
+			}
+		}
+	}
+}
+
+
 // ── Enhance Topic via Gemini ───────────────────────────────────────────────────
 
 const ENHANCE_TOPIC_RESPONSE_SCHEMA = {

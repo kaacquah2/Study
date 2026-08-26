@@ -9,6 +9,7 @@
 	import AssistantChat from '$lib/components/AssistantChat.svelte';
 	import DesktopSidebar from '$lib/components/DesktopSidebar.svelte';
 	import MobileNav from '$lib/components/MobileNav.svelte';
+	import { chatStore } from '$lib/stores/chat.svelte';
 
 	// View Transitions API — smooth cross-page animations
 	onNavigate((navigation) => {
@@ -306,11 +307,18 @@
 		/>
 
 		<!-- Body View Render -->
-		<main class="mx-auto flex w-full max-w-7xl grow flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-			{@render children()}
-		</main>
+		<div class="flex min-h-0 grow overflow-hidden">
+			<main class="mx-auto flex w-full max-w-7xl grow flex-col overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+				{@render children()}
+			</main>
+			{#if chatStore.isDocked && chatStore.isOpen}
+				<AssistantChat />
+			{/if}
+		</div>
 	</div>
 
 	<Toast />
-	<AssistantChat />
+	{#if !chatStore.isDocked || !chatStore.isOpen}
+		<AssistantChat />
+	{/if}
 </div>

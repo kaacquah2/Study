@@ -1,29 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { db, auth } from '$lib/firebase/client';
-	import {
-		doc,
-		collection,
-		onSnapshot,
-		query,
-		orderBy,
-		type DocumentSnapshot
-	} from 'firebase/firestore';
+	import { doc, onSnapshot, collection, query, orderBy } from 'firebase/firestore';
 	import { goto } from '$app/navigation';
-	import { marked } from 'marked';
-	import DOMPurify from 'isomorphic-dompurify';
-	import PageIndicator from '$lib/components/PageIndicator.svelte';
-	import CompletionScreen from '$lib/components/CompletionScreen.svelte';
-	import LessonAudioPlayer from '$lib/components/LessonAudioPlayer.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
-	import MermaidDiagram from '$lib/components/MermaidDiagram.svelte';
-	import LessonBlockRenderer from '$lib/components/lesson-blocks/LessonBlockRenderer.svelte';
-	import {
-		interceptMermaidBlocks,
-		type InterceptedMermaidResult
-	} from '$lib/components/MermaidInterceptor';
-	import { chatStore } from '$lib/stores/chat.svelte';
+	import LessonReader from '$lib/components/LessonReader.svelte';
+	import QuizRunner, { type QuizReviewRecord } from '$lib/components/QuizRunner.svelte';
+	import CompletionScreen from '$lib/components/CompletionScreen.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
+	import { studySessionStore } from '$lib/stores/studySession.svelte';
 	import type { ModuleDoc, CourseDoc } from '$lib/firebase/converters';
 
 	const courseId = $derived(page.params.id);
@@ -35,103 +20,29 @@
 	let loading = $state(true);
 	let loadError = $state('');
 
-	// Item #9: TOC Sidebar state
-	let showTocSidebar = $state(false);
-
-	// Item #12: Time-on-page tracking
+	// Time tracking
 	let pageStartTime = $state(Date.now());
 	let totalTimeSpentSeconds = $state(0);
 
 	// Lesson state
 	let currentPageIndex = $state(0);
 
-	// ── Interactive enhancements ──────────────────────────────────────────────
-	// Content key — changes on page switch to re-trigger entrance animations
-	let contentKey = $state(0);
-
-	// Typewriter heading state
-	let typewriterText = $state('');
-	let typewriterDone = $state(false);
-	let typewriterTimer: ReturnType<typeof setTimeout> | null = null;
-
-	const startTypewriter = (fullText: string) => {
-		if (typewriterTimer) clearTimeout(typewriterTimer);
-		typewriterText = '';
-		typewriterDone = false;
-		let i = 0;
-		const step = () => {
-			if (i <= fullText.length) {
-				typewriterText = fullText.slice(0, i);
-				i++;
-				typewriterTimer = setTimeout(step, i < 4 ? 0 : 22);
-			} else {
-				typewriterDone = true;
-			}
-		};
-		step();
-	};
-
-	// Comprehension pulse banner
-	let showComprehensionBanner = $state(false);
-	let comprehensionTimer: ReturnType<typeof setTimeout> | null = null;
-
-	const startComprehensionTimer = () => {
-		if (comprehensionTimer) clearTimeout(comprehensionTimer);
-		showComprehensionBanner = false;
-		// Show after 22 seconds of reading
-		comprehensionTimer = setTimeout(() => {
-			if (!isCompleted) showComprehensionBanner = true;
-		}, 22000);
-	};
-
-	const handleComprehension = (response: 'got-it' | 'confused' | 'reread') => {
-		showComprehensionBanner = false;
-		if (response === 'confused') {
-			chatStore.openWithSeed(
-				`I'm confused about "${activeLessonPage?.heading || moduleData?.title || 'this section'}". Can you explain it differently using a simple analogy?`
-			);
-		} else if (response === 'reread') {
-			// Scroll the lesson card to top
-			document.querySelector('.lesson-scroll-container')?.scrollTo({ top: 0, behavior: 'smooth' });
-			startComprehensionTimer();
-		}
-	};
-
-	// Quiz score animation
-	let displayedScore = $state(0);
-	let scoreAnimKey = $state(0);
-
-	// Quiz question animation key
-	let questionAnimKey = $state(0);
-
-	// Quiz sparkle effect
-	let showSparkle = $state(false);
-	const triggerSparkle = () => {
-		showSparkle = true;
-		setTimeout(() => (showSparkle = false), 800);
-	};
-
 	// Quiz state
-	let currentQuestionIndex = $state(0);
-	let selectedOptionIndex = $state<number | null>(null);
-	let isAnswerLocked = $state(false);
-	let score = $state(0);
+	let quizReviewRecords = $state<QuizReviewRecord[]>([]);
 
-	// Item #10: Quiz End-of-Quiz Review state
-	interface QuizReviewRecord {
-		order: number;
-		prompt: string;
-		options: string[];
-		correctIndex: number;
-		selectedIndex: number | null;
-		explanation: string;
-	}
-	let quizReviewItems = $state<QuizReviewRecord[]>([]);
+	// Completion state
+	let isCompleted = $state(false);
+	let completionStreak = $state<number | undefined>(undefined);
 
-	// Item #18: Single Item Regeneration state
+	// Granular AI regeneration
 	let isRegeneratingItem = $state(false);
 
-	// Educational Video Recommendations state
+	// Flag modal state
+	let showFlagModal = $state(false);
+	let flagReason = $state('');
+	let isSubmittingFlag = $state(false);
+
+	// Video recommendations
 	interface ModuleVideo {
 		videoId: string;
 		title: string;
@@ -141,6 +52,87 @@
 	let moduleVideos = $state<ModuleVideo[]>([]);
 	let loadingVideos = $state(false);
 	let activeVideoId = $state<string | null>(null);
+
+	// Derived module sequence navigation
+	let sortedModules = $derived(
+		[...allModules].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+	);
+	let currentModuleIndex = $derived(
+		sortedModules.findIndex((m) => m.id === moduleId)
+	);
+	let nextModule = $derived(
+		currentModuleIndex >= 0 && currentModuleIndex < sortedModules.length - 1
+			? sortedModules[currentModuleIndex + 1]
+			: null
+	);
+
+	// Single snapshot listener subscription
+	$effect(() => {
+		if (!courseId || !moduleId) return;
+
+		loading = true;
+		loadError = '';
+
+		// 1. Listen to Course Document
+		const courseRef = doc(db, 'courses', courseId);
+		const unsubCourse = onSnapshot(
+			courseRef,
+			(snap) => {
+				if (snap.exists()) {
+					course = { id: snap.id, ...snap.data() } as CourseDoc;
+				} else {
+					loadError = 'Course not found.';
+				}
+			},
+			(err) => {
+				console.error('Course listener error:', err);
+				loadError = 'Failed to load course details.';
+			}
+		);
+
+		// 2. Listen to Active Module Document
+		const modRef = doc(db, 'courses', courseId, 'modules', moduleId);
+		const unsubModule = onSnapshot(
+			modRef,
+			(snap) => {
+				if (snap.exists()) {
+					moduleData = { id: snap.id, ...snap.data() } as ModuleDoc;
+					studySessionStore.setModule(moduleId, moduleData.title);
+					isCompleted = !!moduleData.completed;
+				} else {
+					loadError = 'Lesson module not found.';
+				}
+				loading = false;
+			},
+			(err) => {
+				console.error('Module listener error:', err);
+				loadError = 'Failed to load lesson content.';
+				loading = false;
+			}
+		);
+
+		// 3. Listen to all modules for progression ordering
+		const modulesColRef = collection(db, 'courses', courseId, 'modules');
+		const q = query(modulesColRef, orderBy('order', 'asc'));
+		const unsubAllModules = onSnapshot(
+			q,
+			(snap) => {
+				allModules = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as ModuleDoc);
+			},
+			(err) => {
+				console.warn('All modules listener error:', err);
+			}
+		);
+
+		// Fetch relevant YouTube video recommendations
+		fetchVideos();
+
+		return () => {
+			unsubCourse();
+			unsubModule();
+			unsubAllModules();
+		};
+	});
 
 	const fetchVideos = async (refresh = false) => {
 		if (!courseId || !moduleId) return;
@@ -162,261 +154,16 @@
 		}
 	};
 
-	// Restore mid-lesson page state from URL & localStorage
-	$effect(() => {
-		if (moduleId && moduleData?.type === 'lesson') {
-			const storageKey = `lesson_page_${moduleId}`;
-			const urlParams = new URLSearchParams(window.location.search);
-			const pageParam = urlParams.get('page');
-			if (pageParam && !isNaN(Number(pageParam))) {
-				currentPageIndex = Math.max(0, Number(pageParam) - 1);
-			} else {
-				const savedPage = localStorage.getItem(storageKey);
-				if (savedPage) {
-					currentPageIndex = Math.max(0, Number(savedPage));
-				}
-			}
-		}
-	});
-
-	$effect(() => {
-		if (moduleId && moduleData?.type === 'lesson') {
-			localStorage.setItem(`lesson_page_${moduleId}`, currentPageIndex.toString());
-		}
-	});
-
-	// Restore mid-quiz state from localStorage & Firestore
-	$effect(() => {
-		if (moduleId && courseId && moduleData?.type === 'quiz') {
-			const storageKey = `quiz_progress_${moduleId}`;
-			const saved = localStorage.getItem(storageKey);
-			if (saved) {
-				try {
-					const data = JSON.parse(saved);
-					if (typeof data.currentQuestionIndex === 'number') {
-						currentQuestionIndex = data.currentQuestionIndex;
-						score = data.score || 0;
-						if (data.quizReviewItems) quizReviewItems = data.quizReviewItems;
-					}
-				} catch (e) {
-					console.warn('Failed to restore quiz state from local cache:', e);
-				}
-			}
-
-			// Fetch cross-device Firestore state
-			(async () => {
-				try {
-					const idToken = await auth.currentUser?.getIdToken();
-					if (!idToken) return;
-					const res = await fetch(`/api/modules/${moduleId}/quiz-state?courseId=${courseId}`, {
-						headers: { Authorization: `Bearer ${idToken}` }
-					});
-					if (res.ok) {
-						const { state } = await res.json();
-						if (state && typeof state.currentQuestionIndex === 'number') {
-							currentQuestionIndex = state.currentQuestionIndex;
-							score = state.score || 0;
-						}
-					}
-				} catch (err) {
-					console.warn('Failed to fetch cross-device quiz state:', err);
-				}
-			})();
-		}
-	});
-
-	// Save quiz progress locally & sync to Firestore on change
-	$effect(() => {
-		if (moduleId && courseId && moduleData?.type === 'quiz' && !isCompleted) {
-			const storageKey = `quiz_progress_${moduleId}`;
-			localStorage.setItem(
-				storageKey,
-				JSON.stringify({ currentQuestionIndex, score, quizReviewItems })
-			);
-
-			// Debounced sync to Firestore
-			const timer = setTimeout(async () => {
-				try {
-					const idToken = await auth.currentUser?.getIdToken();
-					if (!idToken) return;
-					await fetch(`/api/modules/${moduleId}/quiz-state`, {
-						method: 'POST',
-						headers: {
-							Authorization: `Bearer ${idToken}`,
-							'Content-Type': 'application/json'
-						},
-						body: JSON.stringify({
-							courseId,
-							currentQuestionIndex,
-							score
-						})
-					});
-				} catch (err) {
-					console.warn('Failed to sync quiz state to backend:', err);
-				}
-			}, 1000);
-
-			return () => clearTimeout(timer);
-		}
-	});
-
-	// Completion Celebration state
-	let isCompleted = $state(false);
-	let completionStreak = $state<number | undefined>(undefined);
-	let earnedBadges = $state<string[]>([]);
-
-	$effect(() => {
-		if (courseId && moduleId) {
-			loading = true;
-			loadError = '';
-
-			const courseRef = doc(db, 'courses', courseId);
-			const unsubCourse = onSnapshot(
-				courseRef,
-				(snap: DocumentSnapshot) => {
-					if (snap.exists()) {
-						course = snap.data() as CourseDoc;
-					}
-				},
-				(err: Error) => console.error('Course listener error:', err)
-			);
-
-			const modRef = doc(db, `courses/${courseId}/modules/${moduleId}`);
-			const unsubMod = onSnapshot(
-				modRef,
-				(snap: DocumentSnapshot) => {
-					if (snap.exists()) {
-						moduleData = snap.data() as ModuleDoc;
-					} else {
-						loadError = 'Module not found.';
-					}
-					loading = false;
-				},
-				(err: Error) => {
-					console.error('Module listener error:', err);
-					loadError = 'Failed to load module content.';
-					loading = false;
-				}
-			);
-
-			// Fetch all modules for Next Module CTA calculation (Item #13)
-			const modulesRef = collection(db, 'courses', courseId, 'modules');
-			const q = query(modulesRef, orderBy('order', 'asc'));
-			const unsubModules = onSnapshot(q, (snap) => {
-				const mods = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as ModuleDoc[];
-				mods.sort((a, b) => (a.order || 0) - (b.order || 0));
-				allModules = mods;
-			});
-
-			return () => {
-				unsubCourse();
-				unsubMod();
-				unsubModules();
-			};
-		}
-	});
-
-	$effect(() => {
-		if (courseId && moduleId && moduleData?.type === 'lesson') {
-			fetchVideos();
-		}
-	});
-
-	// Item #13: Calculate Next Module Details
-	let nextModule = $derived.by(() => {
-		if (!allModules.length || !moduleId) return null;
-		const currentIndex = allModules.findIndex((m) => m.id === moduleId);
-		if (currentIndex !== -1 && currentIndex < allModules.length - 1) {
-			return allModules[currentIndex + 1];
-		}
-		return null;
-	});
-
-	// Lesson derivations
-	let lessonPages = $derived(moduleData?.pages || []);
-	let activeLessonPage = $derived(lessonPages[currentPageIndex] || null);
-	let interceptedBody = $derived.by<InterceptedMermaidResult>(() => {
-		if (activeLessonPage?.body) {
-			return interceptMermaidBlocks(activeLessonPage.body);
-		}
-		return { sections: [] };
-	});
-	let renderedBody = $derived.by(() => {
-		if (activeLessonPage?.body) {
-			return DOMPurify.sanitize(marked.parse(activeLessonPage.body) as string);
-		}
-		return '';
-	});
-
-	// Selection Popover & Progress Bar State
-	let scrollProgress = $state(0);
-	let selectedText = $state('');
-	let selectionCoords = $state<{ top: number; left: number } | null>(null);
-
-	const handleScroll = (e: Event) => {
-		const target = e.currentTarget as HTMLDivElement;
-		if (target) {
-			const total = target.scrollHeight - target.clientHeight;
-			scrollProgress = total > 0 ? Math.min(100, Math.max(0, (target.scrollTop / total) * 100)) : 0;
-		}
-	};
-
-	const handleTextSelection = () => {
-		if (typeof window === 'undefined') return;
-		const sel = window.getSelection();
-		if (!sel || sel.isCollapsed || !sel.toString().trim()) {
-			selectionCoords = null;
-			selectedText = '';
-			return;
-		}
-		const text = sel.toString().trim();
-		if (text.length < 3) return;
-
-		const range = sel.getRangeAt(0);
-		const rect = range.getBoundingClientRect();
-		selectedText = text;
-		selectionCoords = {
-			top: rect.top + window.scrollY - 44,
-			left: Math.max(10, rect.left + window.scrollX + rect.width / 2 - 70)
-		};
-	};
-
-	const handleAskAIAboutSelection = () => {
-		if (!selectedText) return;
-		chatStore.openWithSeed(
-			`Explain this concept from "${moduleData?.title || 'the lesson'}": "${selectedText}"`
-		);
-		selectionCoords = null;
-		selectedText = '';
-		window.getSelection()?.removeAllRanges();
-	};
-
-	// Quiz derivations
-	interface QuizQuestionItem {
-		order?: number;
-		prompt?: string;
-		question?: string;
-		options: string[];
-		answerIndex?: number;
-		correctIndex?: number;
-		explanation?: string;
-	}
-
-	let quizQuestions = $derived(moduleData?.questions || []);
-	let activeQuizQuestion = $derived<QuizQuestionItem | null>(
-		(quizQuestions[currentQuestionIndex] as unknown as QuizQuestionItem) || null
-	);
-
-	// Submit module completion to backend
-	const finishModule = async () => {
+	// Complete module and save progress
+	const handleFinishModule = async (finalScore?: number, reviewItems?: QuizReviewRecord[]) => {
 		try {
-			// Record elapsed time spent
 			const elapsedSeconds = Math.round((Date.now() - pageStartTime) / 1000);
 			totalTimeSpentSeconds += elapsedSeconds;
 
-			if (moduleId) {
-				localStorage.removeItem(`quiz_progress_${moduleId}`);
+			if (reviewItems) {
+				quizReviewRecords = reviewItems;
 			}
+
 			const idToken = await auth.currentUser?.getIdToken();
 			const res = await fetch(`/api/modules/${moduleId}/complete`, {
 				method: 'POST',
@@ -429,7 +176,7 @@
 					timeSpentSeconds: totalTimeSpentSeconds,
 					timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 					...(moduleData?.type === 'quiz'
-						? { quizScore: score, quizTotal: quizQuestions.length }
+						? { quizScore: finalScore ?? 0, quizTotal: (moduleData.questions || []).length }
 						: {})
 				})
 			});
@@ -443,156 +190,19 @@
 			}
 		} catch (err) {
 			console.error('Error completing module:', err);
-			toastStore.error('Could not save progress');
+			toastStore.error('Could not save progress.');
 			isCompleted = true;
 		}
 	};
 
-	const handleLessonNext = () => {
-		const elapsedSeconds = Math.round((Date.now() - pageStartTime) / 1000);
-		totalTimeSpentSeconds += elapsedSeconds;
-		pageStartTime = Date.now();
-
-		if (currentPageIndex < lessonPages.length - 1) {
-			currentPageIndex += 1;
-			contentKey += 1; // re-trigger entrance animations
-			// Typewriter on new heading
-			const nextHeading = lessonPages[currentPageIndex]?.heading || '';
-			if (nextHeading) startTypewriter(nextHeading);
-			startComprehensionTimer();
-			// Scroll to top of lesson
-			setTimeout(
-				() =>
-					document
-						.querySelector('.lesson-scroll-container')
-						?.scrollTo({ top: 0, behavior: 'smooth' }),
-				50
-			);
-		} else {
-			finishModule();
-		}
-	};
-
-	const handleLessonPrev = () => {
-		if (currentPageIndex > 0) {
-			currentPageIndex -= 1;
-			pageStartTime = Date.now();
-			contentKey += 1;
-			const prevHeading = lessonPages[currentPageIndex]?.heading || '';
-			if (prevHeading) startTypewriter(prevHeading);
-			startComprehensionTimer();
-			setTimeout(
-				() =>
-					document
-						.querySelector('.lesson-scroll-container')
-						?.scrollTo({ top: 0, behavior: 'smooth' }),
-				50
-			);
-		}
-	};
-
-	// Item #11: Tap option to select option, then click Confirm Answer button to lock!
-	const handleSelectOption = (idx: number) => {
-		if (isAnswerLocked || !activeQuizQuestion) return;
-		selectedOptionIndex = idx;
-	};
-
-	const handleConfirmAnswer = () => {
-		if (isAnswerLocked || selectedOptionIndex === null || !activeQuizQuestion) return;
-		isAnswerLocked = true;
-
-		const correctIdx = activeQuizQuestion.answerIndex ?? activeQuizQuestion.correctIndex ?? 0;
-
-		if (selectedOptionIndex === correctIdx) {
-			score += 1;
-			// Animate score
-			scoreAnimKey += 1;
-			displayedScore = score;
-			triggerSparkle();
-		}
-
-		// Item #10: Store record for end-of-quiz comprehensive review
-		quizReviewItems = [
-			...quizReviewItems,
-			{
-				order: currentQuestionIndex + 1,
-				prompt: activeQuizQuestion.prompt || activeQuizQuestion.question || '',
-				options: activeQuizQuestion.options,
-				correctIndex: correctIdx,
-				selectedIndex: selectedOptionIndex,
-				explanation: activeQuizQuestion.explanation || ''
-			}
-		];
-	};
-
-	const handleQuizNext = () => {
-		if (currentQuestionIndex < quizQuestions.length - 1) {
-			currentQuestionIndex += 1;
-			selectedOptionIndex = null;
-			isAnswerLocked = false;
-			questionAnimKey += 1; // re-trigger slide-in animation
-		} else {
-			finishModule();
-		}
-	};
-
-	// Upgraded multi-option selection toolbar actions
-	const handleDefineSelection = () => {
-		if (!selectedText) return;
-		chatStore.openWithSeed(
-			`Define the term "${selectedText}" in the context of "${moduleData?.title || 'the lesson'}" with a clear, simple explanation and an example.`
-		);
-		selectionCoords = null;
-		selectedText = '';
-		window.getSelection()?.removeAllRanges();
-	};
-
-	const handleCopySelection = () => {
-		if (!selectedText) return;
-		navigator.clipboard?.writeText(selectedText);
-		toastStore.success('Copied to clipboard!');
-		selectionCoords = null;
-		selectedText = '';
-		window.getSelection()?.removeAllRanges();
-	};
-
-	const handleSaveSelectionAsFlashcard = async () => {
-		if (!selectedText) return;
-		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			if (!idToken) {
-				toastStore.warning('Sign in to save flashcards');
-				return;
-			}
-			const res = await fetch('/api/spaced-repetition', {
-				method: 'POST',
-				headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					front: selectedText,
-					back: `From: ${moduleData?.title || 'lesson'}`,
-					courseId,
-					moduleId,
-					type: 'flashcard'
-				})
-			});
-			if (res.ok) toastStore.success('Saved to flashcard review queue!');
-			else toastStore.error('Could not save flashcard.');
-		} catch {
-			toastStore.error('Failed to save flashcard');
-		}
-		selectionCoords = null;
-		selectedText = '';
-		window.getSelection()?.removeAllRanges();
-	};
-
-	// Item #18: Granular Question or Page AI Regeneration
+	// Granular Single Item Regeneration
 	const handleRegenerateItem = async () => {
 		if (isRegeneratingItem || !courseId || !moduleId || !moduleData) return;
 		isRegeneratingItem = true;
 		try {
 			const idToken = await auth.currentUser?.getIdToken();
 			const itemType = moduleData.type === 'quiz' ? 'question' : 'page';
-			const itemIndex = moduleData.type === 'quiz' ? currentQuestionIndex : currentPageIndex;
+			const itemIndex = moduleData.type === 'quiz' ? 0 : currentPageIndex;
 
 			const res = await fetch(`/api/modules/${moduleId}/regenerate-item`, {
 				method: 'POST',
@@ -621,7 +231,10 @@
 		}
 	};
 
-	const handleFlagContent = async () => {
+	// Content Flagging
+	const handleFlagSubmit = async () => {
+		if (!flagReason.trim() || isSubmittingFlag) return;
+		isSubmittingFlag = true;
 		try {
 			const idToken = await auth.currentUser?.getIdToken();
 			const res = await fetch('/api/flag', {
@@ -634,672 +247,236 @@
 					courseId,
 					moduleId,
 					contentType: moduleData?.type || 'lesson',
-					reason: 'User flagged module content for review'
+					reason: flagReason
 				})
 			});
 
 			if (res.ok) {
 				toastStore.success('Content flagged for review. Thank you!');
+				showFlagModal = false;
+				flagReason = '';
 			} else {
-				toastStore.error('Failed to flag content');
+				toastStore.error('Failed to submit content flag.');
 			}
 		} catch (err) {
 			console.error('Flag content error:', err);
-			toastStore.error('Error submitting content flag');
+			toastStore.error('Error submitting content flag.');
+		} finally {
+			isSubmittingFlag = false;
 		}
 	};
 </script>
 
 <svelte:head>
-	<title>{moduleData?.title || 'Study Module'} &mdash; AI Study Buddy</title>
+	<title>{moduleData?.title || 'Study Lesson'} &mdash; AI Study Buddy</title>
 </svelte:head>
 
-<div class="mx-auto flex w-full max-w-3xl flex-col gap-6 py-4">
-	<!-- Top Navigation Bar & Tools -->
-	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-		<div class="flex items-center gap-3">
-			<a
-				href={`/app/courses/${courseId}`}
-				class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
-			>
-				&larr; Course Overview
-			</a>
-
-			<!-- Item #9: Lesson TOC Sidebar Toggle Button -->
-			{#if moduleData?.type === 'lesson' && lessonPages.length > 1}
-				<button
-					type="button"
-					onclick={() => (showTocSidebar = !showTocSidebar)}
-					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text shadow-2xs hover:border-primary/50"
-				>
-					<span>📖 Contents ({lessonPages.length} Pages)</span>
-				</button>
-			{/if}
-		</div>
+<div class="mx-auto flex w-full max-w-4xl flex-col gap-6 py-4">
+	<!-- Top Navigation Bar -->
+	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+		<a
+			href={`/app/courses/${courseId}`}
+			class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
+		>
+			&larr; Return to {course?.title || 'Course Overview'}
+		</a>
 
 		<div class="flex items-center gap-2">
-			<!-- Item #18: Granular Item AI Regeneration Button -->
-			{#if moduleData && !isCompleted}
-				<button
-					type="button"
-					onclick={handleRegenerateItem}
-					disabled={isRegeneratingItem}
-					title="Regenerate this specific page or question with AI"
-					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-primary/40 bg-primary-soft/40 px-3 py-1.5 text-xs font-bold text-primary transition-all hover:bg-primary hover:text-white active:scale-95 disabled:opacity-40"
-				>
-					{#if isRegeneratingItem}
-						<span
-							class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"
-						></span>
-						<span>Regenerating...</span>
-					{:else}
-						<span>✨ Regenerate {moduleData.type === 'quiz' ? 'Question' : 'Page'}</span>
-					{/if}
-				</button>
-			{/if}
-
-			{#if moduleData && !isCompleted}
-				<PageIndicator
-					current={moduleData.type === 'lesson' ? currentPageIndex + 1 : currentQuestionIndex + 1}
-					total={moduleData.type === 'lesson' ? lessonPages.length : quizQuestions.length}
-					label={moduleData.type === 'lesson' ? 'Page' : 'Question'}
-				/>
-			{/if}
+			<!-- Flag Content Action -->
+			<button
+				type="button"
+				onclick={() => (showFlagModal = true)}
+				class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold text-text-muted hover:border-danger hover:text-danger active:scale-95"
+				title="Report inaccuracies or formatting issues"
+			>
+				🚩 Report Issue
+			</button>
 		</div>
 	</div>
 
-	<!-- Item #9: Lesson Table of Contents Drawer/Sidebar -->
-	{#if showTocSidebar && moduleData?.type === 'lesson'}
-		<div class="flex flex-col gap-2 rounded-2xl border border-primary/30 bg-surface p-4 shadow-md">
-			<div class="flex items-center justify-between border-b border-border/40 pb-2">
-				<span class="font-display text-xs font-bold text-text">Lesson Table of Contents</span>
-				<button
-					type="button"
-					onclick={() => (showTocSidebar = false)}
-					class="text-xs font-bold text-text-muted hover:text-text"
-				>
-					✕ Close
-				</button>
-			</div>
-
-			<div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-				{#each lessonPages as p, idx (idx)}
-					<button
-						type="button"
-						onclick={() => {
-							currentPageIndex = idx;
-							showTocSidebar = false;
-						}}
-						class="flex items-center justify-between rounded-xl border p-2.5 text-left text-xs font-semibold transition-all {currentPageIndex ===
-						idx
-							? 'border-primary bg-primary-soft text-primary'
-							: 'border-border bg-surface-muted/30 text-text-muted hover:border-primary/40'}"
-					>
-						<span class="truncate">Page {idx + 1}: {p.heading || `Section ${idx + 1}`}</span>
-						{#if idx < currentPageIndex}
-							<span class="text-xs font-bold text-emerald-400">✓</span>
-						{/if}
-					</button>
-				{/each}
+	<!-- Loading State -->
+	{#if loading}
+		<div class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-8 shadow-sm">
+			<Skeleton height="32px" width="60%" />
+			<Skeleton height="16px" width="40%" />
+			<div class="space-y-3 pt-4">
+				<Skeleton height="18px" width="100%" />
+				<Skeleton height="18px" width="95%" />
+				<Skeleton height="18px" width="90%" />
 			</div>
 		</div>
-	{/if}
-
-	{#if loading}
-		<Skeleton variant="card" height="h-96" />
-	{:else if loadError || !moduleData}
+	{:else if loadError}
 		<div
-			class="rounded-2xl border border-danger/20 bg-danger-soft p-6 text-center text-xs font-bold text-danger"
+			class="flex flex-col items-center justify-center rounded-3xl border border-danger/30 bg-danger-soft p-12 text-center"
 		>
-			{loadError || 'Module not found.'}
+			<span class="text-3xl">⚠️</span>
+			<h3 class="mt-2 font-display text-base font-bold text-danger">Unable to load module</h3>
+			<p class="mt-1 text-xs text-text-muted">{loadError}</p>
+			<a
+				href={`/app/courses/${courseId}`}
+				class="mt-4 rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white"
+			>
+				Back to Course
+			</a>
 		</div>
 	{:else if isCompleted}
+		<!-- Completion Celebration Screen -->
 		<CompletionScreen
-			title={moduleData.type === 'lesson'
-				? 'Lesson Completed!'
-				: `Quiz Complete (${score}/${quizQuestions.length})`}
-			subtitle={moduleData.type === 'lesson'
-				? 'You have successfully read and mastered this lesson.'
-				: 'Great job testing your knowledge!'}
+			title="{moduleData?.title || 'Module'} Completed!"
+			subtitle="Great job! You have completed all content for this section."
+			{courseId}
+			{moduleId}
 			streakCount={completionStreak}
-			{earnedBadges}
+			quizReviewItems={quizReviewRecords}
 			nextModuleId={nextModule?.id}
 			nextModuleTitle={nextModule?.title}
-			{quizReviewItems}
 			onContinue={() => goto(`/app/courses/${courseId}`)}
 			onNextModule={(nextId) => goto(`/app/courses/${courseId}/${nextId}`)}
 		/>
-	{:else if moduleData.type === 'lesson'}
-		<!-- LESSON VIEW -->
-		<div
-			class="lesson-scroll-container relative flex flex-col gap-6 overflow-hidden rounded-3xl border border-border bg-surface p-5 shadow-sm sm:p-8 lg:p-10"
-			onscroll={handleScroll}
-		>
-			<!-- Reading Progress Bar -->
-			<div class="absolute top-0 left-0 h-1.5 w-full bg-surface-muted/60">
-				<div
-					class="h-full bg-linear-to-r from-primary to-violet-400 transition-all duration-300"
-					style="width: {scrollProgress}%"
-				></div>
-			</div>
+	{:else if moduleData?.type === 'lesson'}
+		<!-- Lesson Reading Studio with Study Lens & Zen Mode -->
+		<LessonReader
+			courseId={courseId || ''}
+			moduleId={moduleId || ''}
+			moduleTitle={moduleData.title}
+			pages={moduleData.pages || []}
+			canonicalConcepts={moduleData.concepts || []}
+			{currentPageIndex}
+			onPageChange={(newIdx) => (currentPageIndex = newIdx)}
+			onComplete={handleFinishModule}
+			onRegeneratePage={handleRegenerateItem}
+			onFlagContent={() => (showFlagModal = true)}
+			isRegenerating={isRegeneratingItem}
+		/>
+	{:else if moduleData?.type === 'quiz'}
+		<!-- Adaptive Quiz Runner -->
+		<QuizRunner
+			courseId={courseId || ''}
+			moduleId={moduleId || ''}
+			moduleTitle={moduleData.title}
+			questions={moduleData.questions || []}
+			currentQuestionIndex={0}
+			onComplete={handleFinishModule}
+			onRegenerateQuestion={handleRegenerateItem}
+			onFlagContent={() => (showFlagModal = true)}
+			isRegenerating={isRegeneratingItem}
+		/>
+	{/if}
 
-			<!-- Header -->
-			<div
-				class="anim-slide-up flex items-start justify-between border-b border-border/40 pt-1 pb-4"
-			>
-				<div>
-					<span class="text-[10px] font-bold tracking-wider text-primary uppercase">
-						{course?.title || 'Course Lesson'}
-					</span>
-					<!-- Typewriter heading (shows on page switch, fallback to module title) -->
-					<h1 class="mt-1 font-display text-2xl font-bold text-text">
-						{#if typewriterText && !typewriterDone}
-							{typewriterText}<span class="animate-pulse">|</span>
-						{:else}
-							{activeLessonPage?.heading || moduleData.title}
-						{/if}
-					</h1>
-					{#if activeLessonPage?.subheading}
-						<h2 class="mt-1 text-xs font-semibold text-text-muted">
-							{activeLessonPage.subheading}
-						</h2>
-					{/if}
+	<!-- Educational Video Recommendations -->
+	{#if moduleVideos.length > 0 && !isCompleted}
+		<div class="mt-4 flex flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-sm">
+			<div class="flex items-center justify-between">
+				<div class="flex items-center gap-2">
+					<span class="text-lg">🎬</span>
+					<h3 class="font-display text-xs font-bold text-text">
+						Recommended Video Lectures ({moduleVideos.length})
+					</h3>
 				</div>
 				<button
 					type="button"
-					onclick={handleFlagContent}
-					title="Flag lesson content"
-					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text-muted transition-all hover:border-danger hover:text-danger active:scale-95"
+					onclick={() => fetchVideos(true)}
+					disabled={loadingVideos}
+					class="cursor-pointer text-[11px] font-bold text-primary hover:underline disabled:opacity-50"
 				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-3.5 w-3.5"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
-						/>
-					</svg>
-					<span>Flag</span>
+					{loadingVideos ? 'Refreshing...' : '🔄 Refresh Videos'}
 				</button>
 			</div>
 
-			<!-- Audio Narration Player -->
-			{#if activeLessonPage?.body}
-				<LessonAudioPlayer
-					text={activeLessonPage.body}
-					title={activeLessonPage.heading || moduleData.title}
-				/>
-			{/if}
-
-			<!-- Markdown Body with Blocks / Intercepted Mermaid Diagrams & Text Selection Listener -->
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div
-				class="anim-fade prose prose-sm stagger-2 max-w-none leading-relaxed text-text"
-				style="animation-delay: {contentKey * 0}ms"
-				onmouseup={handleTextSelection}
-				ontouchend={handleTextSelection}
-			>
-				{#if activeLessonPage?.blocks && activeLessonPage.blocks.length > 0}
-					<LessonBlockRenderer blocks={activeLessonPage.blocks} {courseId} {moduleId} />
-				{:else if interceptedBody.sections.length > 0}
-					{#each interceptedBody.sections as section, idx (idx)}
-						{#if section.type === 'html'}
-							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-							{@html section.content}
-						{:else if section.type === 'mermaid'}
-							<MermaidDiagram code={section.code} id={section.id} />
-						{/if}
-					{/each}
-				{:else}
-					<!-- Fallback plain HTML -->
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html renderedBody}
-				{/if}
-			</div>
-
-			<!-- Upgraded Multi-Option Floating Text Selection Toolbar -->
-			{#if selectionCoords && selectedText}
-				<div
-					class="anim-pop fixed z-50"
-					style="top: {selectionCoords.top}px; left: {selectionCoords.left}px;"
-				>
-					<div
-						class="flex items-center gap-1 rounded-2xl border border-border/60 bg-surface p-1 shadow-2xl backdrop-blur-md"
-					>
-						<button
-							type="button"
-							onclick={handleAskAIAboutSelection}
-							title="Ask AI"
-							class="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-primary px-2.5 py-1.5 text-[11px] font-bold text-white transition-all hover:bg-primary-hover active:scale-95"
-						>
-							<span>🤖</span><span>Ask AI</span>
-						</button>
-						<button
-							type="button"
-							onclick={handleDefineSelection}
-							title="Define"
-							class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border px-2.5 py-1.5 text-[11px] font-bold text-text transition-all hover:border-primary/50 hover:text-primary active:scale-95"
-						>
-							<span>📖</span><span>Define</span>
-						</button>
-						<button
-							type="button"
-							onclick={handleSaveSelectionAsFlashcard}
-							title="Save as flashcard"
-							class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border px-2.5 py-1.5 text-[11px] font-bold text-text transition-all hover:border-amber-400/60 hover:text-amber-500 active:scale-95"
-						>
-							<span>🗂️</span><span>Flashcard</span>
-						</button>
-						<button
-							type="button"
-							onclick={handleCopySelection}
-							title="Copy text"
-							class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border px-2.5 py-1.5 text-[11px] font-bold text-text transition-all hover:border-emerald-400/60 hover:text-emerald-500 active:scale-95"
-						>
-							<span>📋</span><span>Copy</span>
-						</button>
-					</div>
-				</div>
-			{/if}
-
-			<!-- Comprehension Pulse Banner -->
-			{#if showComprehensionBanner}
-				<div class="anim-slide-up fixed right-4 bottom-24 z-50 max-w-sm sm:right-8">
-					<div
-						class="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-surface p-4 shadow-2xl backdrop-blur-md"
-					>
-						<div class="flex items-center gap-2">
-							<span class="text-lg">🧠</span>
-							<p class="text-xs font-bold text-text">Did you grasp this concept?</p>
-							<button
-								type="button"
-								onclick={() => (showComprehensionBanner = false)}
-								class="ml-auto cursor-pointer text-xs text-text-muted hover:text-text">✕</button
-							>
-						</div>
-						<div class="flex gap-2">
-							<button
-								type="button"
-								onclick={() => handleComprehension('got-it')}
-								class="flex-1 cursor-pointer rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2 text-[11px] font-bold text-emerald-500 transition-all hover:bg-emerald-500/20 active:scale-95"
-							>
-								✅ Got it!
-							</button>
-							<button
-								type="button"
-								onclick={() => handleComprehension('confused')}
-								class="flex-1 cursor-pointer rounded-xl border border-amber-500/40 bg-amber-500/10 py-2 text-[11px] font-bold text-amber-500 transition-all hover:bg-amber-500/20 active:scale-95"
-							>
-								🤔 Confused
-							</button>
-							<button
-								type="button"
-								onclick={() => handleComprehension('reread')}
-								class="flex-1 cursor-pointer rounded-xl border border-border bg-surface-muted py-2 text-[11px] font-bold text-text-muted transition-all hover:border-primary/40 active:scale-95"
-							>
-								🔁 Re-read
-							</button>
-						</div>
-					</div>
-				</div>
-			{/if}
-
-			<!-- Almost there! banner on second-to-last page -->
-			{#if currentPageIndex === lessonPages.length - 2 && lessonPages.length > 2}
-				<div
-					class="anim-pop flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/8 px-4 py-3"
-				>
-					<span class="text-base">🏁</span>
-					<p class="text-xs font-bold text-emerald-500">
-						Almost there! One more page to complete this lesson.
-					</p>
-				</div>
-			{/if}
-
-			<!-- Bottom Lesson Controls -->
-			<div class="mt-4 flex items-center justify-between border-t border-border/40 pt-6">
-				<button
-					type="button"
-					onclick={handleLessonPrev}
-					disabled={currentPageIndex === 0}
-					class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text transition-all hover:bg-surface-muted active:scale-95 disabled:opacity-30"
-				>
-					&larr; Previous Page
-				</button>
-
-				<button
-					type="button"
-					onclick={handleLessonNext}
-					class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 active:scale-95"
-				>
-					<span
-						>{currentPageIndex === lessonPages.length - 1 ? '🎉 Finish Lesson' : 'Next Page'}</span
-					>
-					<span>&rarr;</span>
-				</button>
-			</div>
-
-			<!-- Curated Educational Video Recommendations Panel -->
-			{#if moduleVideos.length > 0 || loadingVideos}
-				<div
-					class="mt-8 rounded-3xl border border-border bg-surface-muted/30 p-5 backdrop-blur-sm sm:p-6"
-				>
-					<div class="flex items-center justify-between border-b border-border/40 pb-3">
-						<div class="flex items-center gap-2">
-							<span
-								class="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10 text-rose-500"
-							>
-								<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-									<path
-										d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 4-8 4z"
-									/>
-								</svg>
-							</span>
-							<div>
-								<h3 class="font-display text-sm font-bold text-text">
-									Recommended Learning Videos
-								</h3>
-								<p class="text-[11px] text-text-muted">
-									Curated video explainers matched to this module
-								</p>
-							</div>
-						</div>
-
-						<button
-							type="button"
-							onclick={() => fetchVideos(true)}
-							disabled={loadingVideos}
-							class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-2.5 py-1 text-xs font-semibold text-text-muted hover:border-primary hover:text-primary active:scale-95 disabled:opacity-50"
-						>
-							<svg
-								class="h-3 w-3 {loadingVideos ? 'animate-spin' : ''}"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-								/>
-							</svg>
-							<span>{loadingVideos ? 'Refreshing...' : 'Reroll'}</span>
-						</button>
-					</div>
-
-					{#if loadingVideos && moduleVideos.length === 0}
-						<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-							{#each [1, 2, 3] as idx (idx)}
-								<div class="h-40 animate-pulse rounded-2xl bg-surface-muted/60"></div>
-							{/each}
-						</div>
-					{:else if moduleVideos.length > 0}
-						<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-							{#each moduleVideos as video (video.videoId)}
-								<div
-									class="group flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-surface transition-all hover:border-primary/50 hover:shadow-md"
-								>
-									<button
-										type="button"
-										onclick={() => (activeVideoId = video.videoId)}
-										class="relative aspect-video w-full cursor-pointer overflow-hidden bg-black/10"
-									>
-										<img
-											src={video.thumbnailUrl}
-											alt={video.title}
-											class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-										/>
-										<div
-											class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100"
-										>
-											<div
-												class="flex h-10 w-10 items-center justify-center rounded-full bg-rose-600 text-white shadow-lg"
-											>
-												<svg class="h-5 w-5 translate-x-0.5 fill-current" viewBox="0 0 24 24"
-													><path d="M8 5v14l11-7z" /></svg
-												>
-											</div>
-										</div>
-									</button>
-									<div class="flex flex-1 flex-col p-3">
-										<h4 class="line-clamp-2 text-xs font-bold text-text group-hover:text-primary">
-											{video.title}
-										</h4>
-										<p class="mt-1 text-[11px] font-medium text-text-muted">{video.channelTitle}</p>
-									</div>
-								</div>
-							{/each}
-						</div>
-					{/if}
-				</div>
-			{/if}
-
-			<!-- Video Embed Modal -->
-			{#if activeVideoId}
-				<div
-					class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
-					role="dialog"
-					aria-modal="true"
-					aria-label="Educational Video Player"
-				>
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+				{#each moduleVideos as video (video.videoId)}
 					<button
 						type="button"
-						aria-label="Close video backdrop"
-						class="absolute inset-0 border-0 bg-transparent"
-						onclick={() => (activeVideoId = null)}
-					></button>
-					<div
-						class="relative z-10 w-full max-w-4xl overflow-hidden rounded-3xl border border-border bg-surface shadow-2xl"
+						onclick={() => (activeVideoId = video.videoId)}
+						class="flex cursor-pointer flex-col gap-2 rounded-2xl border border-border bg-surface-muted/50 p-3 text-left transition-colors hover:border-primary/50"
 					>
-						<div class="flex items-center justify-between border-b border-border/40 px-5 py-3">
-							<span class="text-xs font-bold text-text">Educational Video Player</span>
-							<button
-								type="button"
-								onclick={() => (activeVideoId = null)}
-								aria-label="Close video player"
-								class="rounded-xl border border-border p-1.5 text-text-muted hover:bg-surface-muted"
-								>&times;</button
-							>
-						</div>
-						<div class="relative aspect-video w-full bg-black">
-							<iframe
-								src="https://www.youtube-nocookie.com/embed/{activeVideoId}?autoplay=1"
-								title="YouTube Video Player"
-								class="absolute inset-0 h-full w-full border-0"
-								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-								allowfullscreen
-							></iframe>
-						</div>
+						<img
+							src={video.thumbnailUrl}
+							alt={video.title}
+							class="h-28 w-full rounded-xl object-cover"
+							loading="lazy"
+						/>
+						<span class="line-clamp-2 text-xs font-bold text-text">{video.title}</span>
+						<span class="text-[10px] font-semibold text-text-muted">{video.channelTitle}</span>
+					</button>
+				{/each}
+			</div>
+
+			<!-- Embedded YouTube Player Modal -->
+			{#if activeVideoId}
+				<div class="mt-2 rounded-2xl border border-border/80 bg-slate-950 p-3">
+					<div class="mb-2 flex items-center justify-between">
+						<span class="text-xs font-bold text-slate-300">Video Player</span>
+						<button
+							type="button"
+							onclick={() => (activeVideoId = null)}
+							class="cursor-pointer text-xs text-slate-400 hover:text-white"
+						>
+							✕ Close Video
+						</button>
+					</div>
+					<div class="relative aspect-video w-full overflow-hidden rounded-xl">
+						<iframe
+							src="https://www.youtube.com/embed/{activeVideoId}?autoplay=1"
+							title="YouTube video player"
+							class="h-full w-full"
+							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+							allowfullscreen
+						></iframe>
 					</div>
 				</div>
 			{/if}
 		</div>
-	{:else if moduleData.type === 'quiz'}
-		<!-- QUIZ VIEW -->
+	{/if}
+
+	<!-- Report Issue / Flag Content Modal -->
+	{#if showFlagModal}
 		<div
-			class="relative flex flex-col gap-6 rounded-3xl border border-border bg-surface p-5 shadow-sm sm:p-8 lg:p-10"
+			class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
 		>
-			<div class="flex items-center justify-between border-b border-border/40 pb-4">
-				<div>
-					<span class="text-[10px] font-bold tracking-wider text-primary uppercase"
-						>Interactive Quiz</span
-					>
-					<h1 class="font-display text-xl font-bold text-text">{moduleData.title}</h1>
-				</div>
-				<div class="flex items-center gap-2">
+			<div
+				class="flex w-full max-w-md flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-2xl"
+			>
+				<div class="flex items-center justify-between border-b border-border pb-2">
+					<h3 class="font-display text-sm font-bold text-text">🚩 Report Content Issue</h3>
 					<button
 						type="button"
-						onclick={handleFlagContent}
-						title="Flag quiz question"
-						class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text-muted transition-all hover:border-danger hover:text-danger active:scale-95"
+						onclick={() => (showFlagModal = false)}
+						class="cursor-pointer text-xs text-text-muted hover:text-text"
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-3.5 w-3.5"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
-							/>
-						</svg>
-						<span>Flag</span>
+						✕
 					</button>
-					<div class="flex flex-col items-end gap-1">
-						<span class="text-[10px] font-bold text-text-muted"
-							>Score:
-							{#key scoreAnimKey}
-								<span class="anim-bounce inline-block text-primary">{displayedScore || score}</span>
-							{/key}/{quizQuestions.length}</span
-						>
-						<div class="h-1.5 w-24 overflow-hidden rounded-full bg-border">
-							<div
-								class="h-full rounded-full bg-linear-to-r from-primary to-emerald-400 transition-all duration-500"
-								style="width: {quizQuestions.length > 0
-									? ((displayedScore || score) / quizQuestions.length) * 100
-									: 0}%"
-							></div>
-						</div>
-					</div>
+				</div>
+
+				<p class="text-xs leading-relaxed text-text-muted">
+					Help us improve learning quality. Let us know if you spotted incorrect information, formatting issues, or broken elements in this module.
+				</p>
+
+				<textarea
+					bind:value={flagReason}
+					rows="3"
+					placeholder="Describe the issue in detail..."
+					class="w-full rounded-xl border border-border bg-surface-muted p-3 text-xs text-text focus:border-primary focus:outline-none"
+				></textarea>
+
+				<div class="flex justify-end gap-2">
+					<button
+						type="button"
+						onclick={() => (showFlagModal = false)}
+						class="cursor-pointer rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text"
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						onclick={handleFlagSubmit}
+						disabled={!flagReason.trim() || isSubmittingFlag}
+						class="cursor-pointer rounded-xl bg-danger px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-danger/90 disabled:opacity-50"
+					>
+						{isSubmittingFlag ? 'Submitting...' : 'Submit Report'}
+					</button>
 				</div>
 			</div>
-
-			<!-- Sparkle burst on correct answer -->
-			{#if showSparkle}
-				<div
-					class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
-					aria-hidden="true"
-				>
-					{#each [0, 1, 2, 3, 4, 5, 6, 7] as i (i)}
-						<div
-							class="absolute"
-							style="
-								top: {40 + Math.sin((i * 45 * Math.PI) / 180) * 35}%;
-								left: {50 + Math.cos((i * 45 * Math.PI) / 180) * 35}%;
-								animation: confetti-fall 0.7s ease-out {i * 60}ms both;
-							"
-						>
-							<div
-								style="width:8px;height:8px;background:{'#7c74f0,#34d399,#f59e0b,#f87171,#60a5fa,#e879f9,#34d399,#7c74f0'.split(
-									','
-								)[i]};border-radius:50%;"
-							></div>
-						</div>
-					{/each}
-				</div>
-			{/if}
-
-			{#if activeQuizQuestion}
-				<!-- Question Markdown — wrapped in a key for slide-in on each new question -->
-				{#key questionAnimKey}
-					<div class="anim-slide-left flex flex-col gap-5">
-						<div class="font-display text-base font-bold text-text">
-							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-							{@html DOMPurify.sanitize(
-								marked.parse(
-									activeQuizQuestion.prompt || activeQuizQuestion.question || ''
-								) as string
-							)}
-						</div>
-
-						<!-- Options List -->
-						<div class="flex flex-col gap-3">
-							{#each activeQuizQuestion.options as option, idx (idx)}
-								{@const isSelected = selectedOptionIndex === idx}
-								{@const correctIdx =
-									activeQuizQuestion.answerIndex ?? activeQuizQuestion.correctIndex ?? 0}
-								{@const isCorrect = idx === correctIdx}
-
-								<button
-									type="button"
-									onclick={() => handleSelectOption(idx)}
-									disabled={isAnswerLocked}
-									class="flex w-full cursor-pointer items-center justify-between rounded-2xl border p-4 text-left text-xs font-semibold transition-all duration-180 {isAnswerLocked
-										? isCorrect
-											? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
-											: isSelected
-												? 'border-rose-500 bg-rose-500/10 text-rose-300'
-												: 'border-border/40 bg-surface-muted/30 opacity-50'
-										: isSelected
-											? 'border-primary bg-primary-soft text-primary'
-											: 'border-border bg-surface hover:border-primary/50 hover:bg-surface-muted/40'}"
-								>
-									<div class="flex items-center gap-3">
-										<span
-											class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-[10px] font-bold text-text-muted"
-										>
-											{String.fromCharCode(65 + idx)}
-										</span>
-										<span>{option}</span>
-									</div>
-
-									{#if isAnswerLocked}
-										{#if isCorrect}
-											<span class="font-bold text-emerald-400">✓ Correct</span>
-										{:else if isSelected}
-											<span class="font-bold text-rose-400">&times; Incorrect</span>
-										{/if}
-									{/if}
-								</button>
-							{/each}
-						</div>
-
-						<!-- Item #11: Confirm Answer button before locking -->
-						{#if !isAnswerLocked && selectedOptionIndex !== null}
-							<div class="flex justify-end pt-2">
-								<button
-									type="button"
-									onclick={handleConfirmAnswer}
-									class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-500 px-6 py-2.5 text-xs font-bold text-slate-950 shadow-md transition-all hover:bg-emerald-400 active:scale-95"
-								>
-									<span>Confirm Answer</span>
-									<span>✓</span>
-								</button>
-							</div>
-						{/if}
-
-						<!-- Answer Explanation after locked -->
-						{#if isAnswerLocked && activeQuizQuestion.explanation}
-							<div
-								class="rounded-2xl border border-primary/20 bg-primary-soft/30 p-4 text-xs leading-relaxed text-text"
-							>
-								<span class="font-bold text-primary">Explanation:</span>
-								{activeQuizQuestion.explanation}
-							</div>
-						{/if}
-
-						<!-- Next Question CTA -->
-						{#if isAnswerLocked}
-							<div class="flex justify-end border-t border-border/40 pt-4">
-								<button
-									type="button"
-									onclick={handleQuizNext}
-									class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-hover active:scale-98"
-								>
-									<span
-										>{currentQuestionIndex === quizQuestions.length - 1
-											? 'Finish Quiz'
-											: 'Next Question'}</span
-									>
-									<span>&rarr;</span>
-								</button>
-							</div>
-						{/if}
-					</div>
-					<!-- close anim-slide-left wrapper -->
-				{/key}
-			{/if}
 		</div>
 	{/if}
 </div>

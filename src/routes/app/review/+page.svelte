@@ -600,13 +600,50 @@
 							</div>
 						{/if}
 
+						<!-- FSRS Retention Decay Visualizer -->
+						<div class="flex flex-col gap-2 rounded-2xl border border-primary/20 bg-primary-soft/30 p-4">
+							<div class="flex items-center justify-between text-xs">
+								<span class="font-bold text-primary">📈 FSRS Memory Stability & Retention Curve</span>
+								<span class="font-mono text-[11px] font-bold text-text-muted">
+									Stability (S): {currentQ?.intervalDays ? Math.max(1, currentQ.intervalDays) : 3}d &bull; Decay: R = e^(-Δt/S)
+								</span>
+							</div>
+
+							<!-- SVG Retention Curve Graph -->
+							<div class="relative h-20 w-full overflow-hidden rounded-xl border border-border/60 bg-surface p-2">
+								<svg class="h-full w-full" viewBox="0 0 300 60" preserveAspectRatio="none">
+									<!-- Grid lines -->
+									<line x1="0" y1="15" x2="300" y2="15" stroke="currentColor" class="text-border/40" stroke-dasharray="3 3" />
+									<line x1="0" y1="35" x2="300" y2="35" stroke="currentColor" class="text-border/40" stroke-dasharray="3 3" />
+									<line x1="0" y1="55" x2="300" y2="55" stroke="currentColor" class="text-border/60" />
+
+									<!-- 90% Target Retention Threshold line -->
+									<line x1="0" y1="20" x2="300" y2="20" stroke="currentColor" class="text-emerald-500/40" stroke-width="1.5" />
+									<text x="5" y="16" class="fill-emerald-400 text-[8px] font-bold">90% Target Retention Threshold</text>
+
+									<!-- Retention Decay Exponential Curve -->
+									<path
+										d="M 0,8 Q 100,24 300,52"
+										fill="none"
+										stroke="currentColor"
+										class="text-primary"
+										stroke-width="2.5"
+									/>
+
+									<!-- Current Review Point Marker -->
+									<circle cx="85" cy="22" r="4" fill="currentColor" class="text-amber-400 animate-pulse" />
+									<text x="95" y="24" class="fill-text text-[9px] font-bold">Review Scheduled Point (Today)</text>
+								</svg>
+							</div>
+						</div>
+
 						<!-- FSRS Rating Buttons -->
 						<div class="flex flex-col gap-2">
 							<div class="flex items-center justify-between">
 								<span class="text-xs font-bold text-text-muted uppercase">
 									Rate your recall difficulty (FSRS):
 								</span>
-								<span class="text-[10px] text-text-muted">Press [1], [2], [3], or [4]</span>
+								<span class="text-[10px] text-text-muted">Press keys [1], [2], [3], or [4]</span>
 							</div>
 							<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
 								<button
@@ -614,28 +651,32 @@
 									onclick={() => submitRating(1)}
 									class="cursor-pointer rounded-xl border border-rose-500/40 bg-rose-500/15 py-3 text-center text-xs font-bold text-rose-300 transition-all hover:bg-rose-500/30 active:scale-95"
 								>
-									🔴 [1] Forgot
+									<div>🔴 [1] Forgot</div>
+									<span class="text-[10px] opacity-75">+1 day</span>
 								</button>
 								<button
 									type="button"
 									onclick={() => submitRating(2)}
 									class="cursor-pointer rounded-xl border border-amber-500/40 bg-amber-500/15 py-3 text-center text-xs font-bold text-amber-300 transition-all hover:bg-amber-500/30 active:scale-95"
 								>
-									🟠 [2] Hard
+									<div>🟠 [2] Hard</div>
+									<span class="text-[10px] opacity-75">~{Math.max(1, Math.round((currentQ?.intervalDays ? Math.max(1, currentQ.intervalDays) : 3) * 0.8))}d</span>
 								</button>
 								<button
 									type="button"
 									onclick={() => submitRating(3)}
 									class="cursor-pointer rounded-xl border border-blue-500/40 bg-blue-500/15 py-3 text-center text-xs font-bold text-blue-300 transition-all hover:bg-blue-500/30 active:scale-95"
 								>
-									🟢 [3] Good
+									<div>🟢 [3] Good</div>
+									<span class="text-[10px] opacity-75">~{Math.max(2, Math.round((currentQ?.intervalDays ? Math.max(1, currentQ.intervalDays) : 3) * 2.2))}d</span>
 								</button>
 								<button
 									type="button"
 									onclick={() => submitRating(5)}
 									class="cursor-pointer rounded-xl border border-emerald-500/40 bg-emerald-500/15 py-3 text-center text-xs font-bold text-emerald-300 transition-all hover:bg-emerald-500/30 active:scale-95"
 								>
-									⚡ [4] Easy
+									<div>⚡ [4] Easy</div>
+									<span class="text-[10px] opacity-75">~{Math.max(4, Math.round((currentQ?.intervalDays ? Math.max(1, currentQ.intervalDays) : 3) * 3.8))}d</span>
 								</button>
 							</div>
 						</div>

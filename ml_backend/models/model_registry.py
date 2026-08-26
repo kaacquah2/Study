@@ -25,20 +25,22 @@ _registry_lock = threading.Lock()
 # Global lock kept for backwards compatibility
 inference_lock = threading.Lock()
 
-# Per-model inference locks to prevent CPU thrashing on the same model while allowing non-interfering parallel models
-_inference_locks: dict[str, threading.Lock] = {}
+# Per-model concurrency pools: bounded to 2 workers to strictly limit memory while allowing parallel inference
+_inference_semaphores: dict[str, threading.BoundedSemaphore] = {}
+_inference_active_counts: dict[str, int] = {}
 
-def get_inference_lock(model_id: str) -> threading.Lock:
-    """Retrieve or create a dedicated inference lock for a specific model ID."""
+def get_inference_lock(model_id: str):
+    """Retrieve or create a dedicated concurrency pool semaphore (max 2 workers) for a specific model ID."""
     with _registry_lock:
-        if model_id not in _inference_locks:
-            _inference_locks[model_id] = threading.Lock()
-        return _inference_locks[model_id]
+        if model_id not in _inference_semaphores:
+            _inference_semaphores[model_id] = threading.BoundedSemaphore(value=2)
+        return _inference_semaphores[model_id]
 
 def is_any_inference_busy() -> bool:
-    """Check if any per-model or global inference lock is currently held."""
+    """Check if any per-model concurrency pool is saturated."""
     with _registry_lock:
-        return any(lock.locked() for lock in _inference_locks.values()) or inference_lock.locked()
+        return inference_lock.locked()
+
 
 _pipelines: dict[str, Pipeline] = {}
 _loading_locks: dict[str, threading.Lock] = {}
@@ -70,22 +72,25 @@ def get_pipeline(task: str, model_id: str, **kwargs) -> Pipeline:
         if CUDA_AVAILABLE and "torch_dtype" not in kwargs:
             kwargs["torch_dtype"] = torch.float16
 
-        pipe = pipeline(
-            task,
+        from typing import Any, cast
+        pipe: Any = pipeline(
+            task=cast(Any, task),
             model=model_id,
             tokenizer=model_id,
             **kwargs
-        )
+        )  # type: ignore
 
         # Apply PyTorch dynamic INT8 quantization on CPU for linear layers to boost CPU speed
         if DEVICE == -1:
             try:
-                pipe.model = torch.ao.quantization.quantize_dynamic(
+                pipe.model = torch.ao.quantization.quantize_dynamic(  # type: ignore
                     pipe.model, {torch.nn.Linear}, dtype=torch.qint8
                 )
+
                 logger.info(f"Model Registry: Applied dynamic INT8 quantization to '{model_id}'.")
             except Exception as q_err:
                 logger.debug(f"Model Registry: Dynamic quantization skipped for '{model_id}': {q_err}")
+
 
         with _registry_lock:
             _pipelines[key] = pipe

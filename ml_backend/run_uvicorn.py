@@ -34,15 +34,16 @@ def run():
     
     try:
         # Read output line by line and write to file
-        for line in iter(process.stdout.readline, ''):
-            if not line:
-                break
-            # Print to stdout so it goes to task log
-            sys.stdout.write(line)
-            sys.stdout.flush()
-            # Write to file
-            log_file.write(line)
-            log_file.flush()
+        if process.stdout is not None:
+            for line in iter(process.stdout.readline, ''):
+                if not line:
+                    break
+                # Print to stdout so it goes to task log
+                sys.stdout.write(line)
+                sys.stdout.flush()
+                # Write to file
+                log_file.write(line)
+                log_file.flush()
     except KeyboardInterrupt:
         print("Stopping uvicorn...", flush=True)
     finally:

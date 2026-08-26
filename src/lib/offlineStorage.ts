@@ -10,7 +10,7 @@ export interface OfflineReviewLog {
 	cardId: string;
 	rating: number; // 1 = Again, 2 = Hard, 3 = Good, 4 = Easy
 	reviewedAt: string;
-	engine: 'fsrs' | 'sm2';
+	engine: 'fsrs';
 	synced: boolean;
 }
 

@@ -176,3 +176,36 @@ export function optimizeFSRSWeights(logs: FSRSReviewLog[]): FSRSOptimizationResu
 		isCalibrated: logs.length >= 10
 	};
 }
+
+/**
+ * Converts legacy SM-2 card state (easeFactor, intervalDays, repetitions) to standard FSRS-4.5 parameters.
+ * Uses the Open-Spaced-Repetition standard transformation formulas.
+ */
+export function convertSM2ToFSRS(sm2Card: {
+	easeFactor?: number;
+	intervalDays?: number;
+	repetitions?: number;
+	lapses?: number;
+}): FSRSCard {
+	const ef = typeof sm2Card.easeFactor === 'number' ? Math.max(1.3, Math.min(3.0, sm2Card.easeFactor)) : 2.5;
+	const interval = typeof sm2Card.intervalDays === 'number' ? Math.max(1, sm2Card.intervalDays) : 1;
+	const reps = typeof sm2Card.repetitions === 'number' ? sm2Card.repetitions : 0;
+	const lapses = typeof sm2Card.lapses === 'number' ? sm2Card.lapses : 0;
+
+	// FSRS difficulty mapping from SM-2 ease factor: D = clamp(11 - (EF - 1.3) / 0.2, 1, 10)
+	const difficulty = Math.max(1, Math.min(10, Math.round((11 - (ef - 1.3) / 0.2) * 10) / 10));
+
+	// FSRS stability mapping from interval: S = max(1, interval * (D / 5)^(-0.5))
+	const stability = Math.max(1, Math.round(interval * Math.pow(difficulty / 5, -0.5) * 10) / 10);
+
+	const state = reps > 0 ? (lapses > 0 ? 'Relearning' : 'Review') : 'New';
+
+	return {
+		stability,
+		difficulty,
+		reps,
+		lapses,
+		state,
+		lastReview: new Date().toISOString()
+	};
+}
