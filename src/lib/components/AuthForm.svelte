@@ -132,13 +132,13 @@
 	};
 </script>
 
-<div class="mx-auto my-auto flex w-full max-w-md flex-col gap-6 py-8 md:py-0">
+<div class="max-w-md gap-6 py-8 md:py-0 mx-auto my-auto flex w-full flex-col">
 	<!-- Tabs -->
 	{#if !isResetPassword}
-		<div class="flex rounded-xl border border-border bg-surface-muted p-1">
+		<div class="p-1 flex rounded-xl border border-border bg-surface-muted">
 			<button
 				type="button"
-				class="flex-1 cursor-pointer rounded-lg py-2 text-xs font-bold transition-all duration-180 {!isSignUp
+				class="py-2 text-xs font-bold flex-1 cursor-pointer rounded-lg transition-all duration-180 {!isSignUp
 					? 'bg-surface text-text shadow-sm'
 					: 'text-text-muted hover:text-text'}"
 				onclick={() => {
@@ -151,7 +151,7 @@
 			</button>
 			<button
 				type="button"
-				class="flex-1 cursor-pointer rounded-lg py-2 text-xs font-bold transition-all duration-180 {isSignUp
+				class="py-2 text-xs font-bold flex-1 cursor-pointer rounded-lg transition-all duration-180 {isSignUp
 					? 'bg-surface text-text shadow-sm'
 					: 'text-text-muted hover:text-text'}"
 				onclick={() => {
@@ -167,7 +167,7 @@
 
 	<!-- Form Heading -->
 	<div>
-		<h2 class="mb-1.5 font-display text-2xl font-bold text-text lg:text-3xl">
+		<h2 class="mb-1.5 font-display text-2xl font-bold lg:text-3xl text-text">
 			{#if isResetPassword}
 				Reset password
 			{:else if isSignUp}
@@ -176,7 +176,7 @@
 				Welcome back
 			{/if}
 		</h2>
-		<p class="text-xs text-text-muted lg:text-sm">
+		<p class="text-xs lg:text-sm text-text-muted">
 			{#if isResetPassword}
 				Enter your email address to receive password reset instructions.
 			{:else if isSignUp}
@@ -190,7 +190,7 @@
 	<!-- Alerts -->
 	{#if authError}
 		<div
-			class="animate-shake flex items-start gap-2.5 rounded-xl border border-danger/20 bg-danger-soft p-3.5 text-xs font-semibold text-danger shadow-xs"
+			class="animate-shake gap-2.5 p-3.5 text-xs font-semibold shadow-xs flex items-start rounded-xl border border-danger/20 bg-danger-soft text-danger"
 		>
 			<span class="leading-relaxed">{authError}</span>
 		</div>
@@ -198,7 +198,7 @@
 
 	{#if successMessage}
 		<div
-			class="flex items-start gap-2.5 rounded-xl border border-success/20 bg-success-soft p-3.5 text-xs font-semibold text-success shadow-xs"
+			class="gap-2.5 p-3.5 text-xs font-semibold shadow-xs flex items-start rounded-xl border border-success/20 bg-success-soft text-success"
 		>
 			<span class="leading-relaxed">{successMessage}</span>
 		</div>
@@ -208,7 +208,7 @@
 	{#if !isResetPassword}
 		<button
 			type="button"
-			class="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-xs font-semibold text-text shadow-xs transition-all duration-180 hover:border-border/80 hover:bg-surface-muted focus:outline-none sm:text-sm"
+			class="gap-3 px-4 py-3 text-xs font-semibold shadow-xs sm:text-sm flex w-full cursor-pointer items-center justify-center rounded-xl border border-border bg-surface text-text transition-all duration-180 hover:border-border/80 hover:bg-surface-muted focus:outline-none"
 			onclick={handleGoogleSignIn}
 			disabled={loading}
 		>
@@ -235,7 +235,7 @@
 
 		<div class="my-1 flex items-center justify-center text-center select-none">
 			<div class="grow border-t border-border"></div>
-			<span class="mx-3 text-[10px] font-bold tracking-wider text-text-muted uppercase"
+			<span class="mx-3 font-bold tracking-wider text-[10px] text-text-muted uppercase"
 				>or continue with email</span
 			>
 			<div class="grow border-t border-border"></div>
@@ -243,15 +243,15 @@
 	{/if}
 
 	<!-- Form -->
-	<form class="flex flex-col gap-4" onsubmit={handleSubmit}>
-		<div class="flex flex-col gap-1.5">
+	<form class="gap-4 flex flex-col" onsubmit={handleSubmit}>
+		<div class="gap-1.5 flex flex-col">
 			<label for="email" class="text-xs font-bold tracking-wider text-text-muted uppercase">
 				Email Address
 			</label>
 			<input
 				type="email"
 				id="email"
-				class="w-full rounded-xl border bg-surface px-4 py-3 text-xs transition-colors duration-180 sm:text-sm {emailError
+				class="px-4 py-3 text-xs sm:text-sm w-full rounded-xl border bg-surface transition-colors duration-180 {emailError
 					? 'border-danger'
 					: 'border-border'}"
 				placeholder="alex@example.com"
@@ -260,19 +260,19 @@
 				disabled={loading}
 			/>
 			{#if emailError}
-				<span class="pl-1 text-[11px] font-semibold text-danger">{emailError}</span>
+				<span class="pl-1 font-semibold text-[11px] text-danger">{emailError}</span>
 			{/if}
 		</div>
 
 		{#if !isResetPassword}
-			<div class="flex flex-col gap-1.5">
+			<div class="gap-1.5 flex flex-col">
 				<div class="flex items-center justify-between">
 					<label for="password" class="text-xs font-bold tracking-wider text-text-muted uppercase">
 						Password
 					</label>
 					<button
 						type="button"
-						class="cursor-pointer text-xs font-semibold text-primary"
+						class="text-xs font-semibold cursor-pointer text-primary"
 						onclick={() => {
 							isResetPassword = true;
 							authError = '';
@@ -286,7 +286,7 @@
 					<input
 						type={showPassword ? 'text' : 'password'}
 						id="password"
-						class="w-full rounded-xl border bg-surface py-3 pr-10 pl-4 text-xs transition-colors duration-180 sm:text-sm {passwordError
+						class="py-3 pr-10 pl-4 text-xs sm:text-sm w-full rounded-xl border bg-surface transition-colors duration-180 {passwordError
 							? 'border-danger'
 							: 'border-border'}"
 						placeholder="••••••••••••"
@@ -296,21 +296,21 @@
 					/>
 					<button
 						type="button"
-						class="absolute right-3 cursor-pointer text-text-muted hover:text-text"
+						class="right-3 absolute cursor-pointer text-text-muted hover:text-text"
 						onclick={() => (showPassword = !showPassword)}
 					>
 						{showPassword ? '👁️' : '🔒'}
 					</button>
 				</div>
 				{#if passwordError}
-					<span class="pl-1 text-[11px] font-semibold text-danger">{passwordError}</span>
+					<span class="pl-1 font-semibold text-[11px] text-danger">{passwordError}</span>
 				{/if}
 			</div>
 		{/if}
 
 		<button
 			type="submit"
-			class="mt-2 w-full cursor-pointer rounded-xl bg-primary px-4 py-3.5 font-bold text-white shadow-md transition-all duration-180 select-none hover:bg-primary-hover disabled:opacity-50"
+			class="mt-2 px-4 py-3.5 font-bold text-white w-full cursor-pointer rounded-xl bg-primary shadow-md transition-all duration-180 select-none hover:bg-primary-hover disabled:opacity-50"
 			disabled={loading}
 		>
 			{#if loading}
@@ -324,11 +324,11 @@
 	</form>
 
 	<!-- Footer switcher -->
-	<div class="mt-1 text-center text-xs text-text-muted">
+	<div class="mt-1 text-xs text-center text-text-muted">
 		{#if isResetPassword}
 			<button
 				type="button"
-				class="cursor-pointer font-semibold text-primary"
+				class="font-semibold cursor-pointer text-primary"
 				onclick={() => {
 					isResetPassword = false;
 					authError = '';
@@ -341,7 +341,7 @@
 			<span>{isSignUp ? 'Already have an account?' : "Don't have an account yet?"}</span>
 			<button
 				type="button"
-				class="ml-1 cursor-pointer font-bold text-primary"
+				class="ml-1 font-bold cursor-pointer text-primary"
 				onclick={() => {
 					isSignUp = !isSignUp;
 					authError = '';

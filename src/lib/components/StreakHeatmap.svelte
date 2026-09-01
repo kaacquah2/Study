@@ -76,11 +76,11 @@
 	let totalActiveDays = $derived(gridDays.filter((d) => d.active).length);
 </script>
 
-<div class="flex flex-col gap-2.5 rounded-2xl border border-border bg-surface p-3.5 shadow-xs">
+<div class="gap-2.5 rounded-2xl p-3.5 shadow-xs flex flex-col border border-border bg-surface">
 	<!-- Slim Header with Caption & Inline Stat Row Above Grid -->
-	<div class="flex flex-col gap-1.5">
+	<div class="gap-1.5 flex flex-col">
 		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-1.5 text-text-muted">
+			<div class="gap-1.5 flex items-center text-text-muted">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					class="h-3.5 w-3.5 text-primary"
@@ -97,19 +97,19 @@
 				</svg>
 				<h4 class="font-display text-xs font-bold text-text">Activity</h4>
 			</div>
-			<span class="text-[10px] font-semibold text-text-muted">Last 4 weeks</span>
+			<span class="font-semibold text-[10px] text-text-muted">Last 4 weeks</span>
 		</div>
 
 		<!-- Stat pills placed above grid as single inline row -->
-		<div class="flex items-center gap-1.5 text-[10px] font-bold">
+		<div class="gap-1.5 font-bold flex items-center text-[10px]">
 			<span
-				class="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-amber-500"
+				class="border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-amber-500 rounded-full border"
 			>
 				🔥 {currentStreak}d streak
 			</span>
 			<span class="text-text-muted/40">•</span>
 			<span
-				class="rounded-full border border-primary/30 bg-primary-soft/50 px-2 py-0.5 text-primary"
+				class="px-2 py-0.5 rounded-full border border-primary/30 bg-primary-soft/50 text-primary"
 			>
 				🏆 Best: {longestStreak}d
 			</span>
@@ -117,8 +117,8 @@
 	</div>
 
 	<!-- GitHub-style Contribution Heatmap Grid -->
-	<div class="flex flex-col gap-1.5 pt-0.5">
-		<div class="grid grid-cols-7 gap-1">
+	<div class="gap-1.5 pt-0.5 flex flex-col">
+		<div class="gap-1 grid grid-cols-7">
 			{#each gridDays as day (day.dateStr)}
 				<!--
 					Use `overflow-visible` so the tooltip can escape the cell bounds
@@ -128,7 +128,7 @@
 					tooltip hides → cursor back on cell → hover gained → repeat).
 				-->
 				<div
-					class="group relative flex h-5.5 w-full cursor-help items-center justify-center overflow-visible rounded-md border transition-all duration-150 select-none {day.active
+					class="group h-5.5 relative flex w-full cursor-help items-center justify-center overflow-visible rounded-md border transition-all duration-150 select-none {day.active
 						? 'border-amber-500/50 bg-amber-500 font-bold text-slate-950 shadow-xs shadow-amber-500/30'
 						: day.isToday
 							? 'border-dashed border-primary bg-primary-soft/30 text-primary'
@@ -143,8 +143,8 @@
 
 					<!-- Tooltip — opacity/visibility transition; never triggers layout reflow -->
 					<div
-						class="pointer-events-none invisible absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 rounded-xl border border-slate-700/60 bg-slate-900 px-2.5 py-1 text-[10px] font-semibold whitespace-nowrap text-white
-						       opacity-0 shadow-xl transition-opacity duration-150 ease-out
+						class="mb-2 border-slate-700/60 bg-slate-900 px-2.5 py-1 font-semibold text-white shadow-xl ease-out pointer-events-none invisible absolute bottom-full left-1/2 z-30 -translate-x-1/2 rounded-xl border
+						       text-[10px] whitespace-nowrap opacity-0 transition-opacity duration-150
 						       group-hover:visible group-hover:opacity-100"
 					>
 						{day.label}: {day.active ? '1+ module studied 🔥' : 'No activity recorded'}
@@ -154,13 +154,13 @@
 		</div>
 
 		<!-- Legend Footer right-aligned under grid -->
-		<div class="flex items-center justify-between pt-1 text-[9px] font-semibold text-text-muted">
+		<div class="pt-1 font-semibold flex items-center justify-between text-[9px] text-text-muted">
 			<span>{totalActiveDays} active day{totalActiveDays === 1 ? '' : 's'}</span>
-			<div class="flex items-center gap-1 text-[9px]">
+			<div class="gap-1 flex items-center text-[9px]">
 				<span>Less</span>
 				<span class="h-2 w-2 rounded-xs border border-heatmap-empty-border bg-heatmap-empty-bg"
 				></span>
-				<span class="h-2 w-2 rounded-xs border border-amber-500/50 bg-amber-500"></span>
+				<span class="h-2 w-2 rounded-xs border-amber-500/50 bg-amber-500 border"></span>
 				<span>More</span>
 			</div>
 		</div>

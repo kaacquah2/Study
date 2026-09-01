@@ -7,14 +7,14 @@
 	];
 </script>
 
-<div class="inline-flex rounded-full border border-border bg-surface-muted p-1 shadow-xs">
+<div class="p-1 shadow-xs inline-flex rounded-full border border-border bg-surface-muted">
 	{#each themes as { id, label } (id)}
 		<button
 			type="button"
 			aria-label={`Switch to ${label} theme`}
-			class="flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-180 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 {themeStore.current ===
+			class="gap-1.5 px-3.5 py-1.5 text-xs font-semibold flex cursor-pointer items-center rounded-full transition-all duration-180 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 {themeStore.current ===
 			id
-				? 'bg-primary text-white shadow-xs'
+				? 'text-white shadow-xs bg-primary'
 				: 'text-text-muted hover:text-text'}"
 			onclick={() => themeStore.setTheme(id)}
 		>

@@ -42,12 +42,12 @@
 
 	{#if !authStore.authResolved && !authStore.profile && requireAuth}
 		<!-- Authentication loading state with theme-compliant aesthetics -->
-		<div class="flex grow flex-col items-center justify-center p-6">
+		<div class="p-6 flex grow flex-col items-center justify-center">
 			{#if showTimeoutError}
 				<!-- Timeout / Error State -->
 				<div class="max-w-md text-center">
 					<div
-						class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-md bg-danger-soft text-danger"
+						class="mb-4 h-12 w-12 inline-flex items-center justify-center rounded-md bg-danger-soft text-danger"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -75,18 +75,18 @@
 					</p>
 					<button
 						type="button"
-						class="cursor-pointer rounded-md bg-primary px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
+						class="px-4 py-2 text-xs font-bold text-white cursor-pointer rounded-md bg-primary shadow-sm hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
 						onclick={() => window.location.reload()}
 					>
 						Retry connection
 					</button>
 				</div>
 			{:else}
-				<div class="relative flex h-12 w-12 items-center justify-center">
+				<div class="h-12 w-12 relative flex items-center justify-center">
 					<!-- Visual loading rings -->
 					<div class="absolute h-full w-full rounded-full border-4 border-primary-soft"></div>
 					<div
-						class="absolute h-full w-full animate-spin rounded-full border-4 border-primary border-t-transparent"
+						class="animate-spin absolute h-full w-full rounded-full border-4 border-primary border-t-transparent"
 					></div>
 				</div>
 				<p class="mt-6 animate-pulse text-xs font-bold tracking-widest text-text uppercase">

@@ -39,29 +39,29 @@
 
 <AppShell requireAuth={true}>
 	<div
-		class="mx-auto flex w-full max-w-md grow flex-col items-center justify-center px-6 py-12 select-none"
+		class="max-w-md px-6 py-12 mx-auto flex w-full grow flex-col items-center justify-center select-none"
 	>
 		<!-- Centered Celebration Container Card -->
 		<div
-			class="relative flex w-full flex-col items-center gap-6 overflow-hidden rounded-lg border border-border bg-surface p-8 text-center shadow-lg sm:p-10"
+			class="gap-6 p-8 sm:p-10 relative flex w-full flex-col items-center overflow-hidden rounded-lg border border-border bg-surface text-center shadow-lg"
 		>
 			<!-- Subtle decorative background rings -->
 			<div
-				class="absolute -top-12 -right-12 h-32 w-32 rounded-full border border-accent/10 bg-accent/5"
+				class="-top-12 -right-12 h-32 w-32 absolute rounded-full border border-accent/10 bg-accent/5"
 			></div>
 			<div
-				class="absolute -bottom-16 -left-16 h-40 w-40 rounded-full border border-primary/5 bg-primary/5"
+				class="-bottom-16 -left-16 h-40 w-40 absolute rounded-full border border-primary/5 bg-primary/5"
 			></div>
 
 			<!-- Large Streak Badge Block (Orange, Rounded, Spring Animated) -->
 			<div
-				class="relative flex h-28 w-28 flex-col items-center justify-center rounded-3xl border-4 border-accent-soft bg-accent text-white shadow-lg
+				class="h-28 w-28 rounded-3xl text-white relative flex flex-col items-center justify-center border-4 border-accent-soft bg-accent shadow-lg
                {triggerSpring ? 'animate-spring-scale' : ''} z-10 motion-reduce:transform-none"
 			>
-				<span class="font-display text-5xl leading-none font-bold tracking-tight">
+				<span class="font-display text-5xl font-bold tracking-tight leading-none">
 					{displayedStreak}
 				</span>
-				<span class="mt-1 block text-[9px] font-bold tracking-widest text-white/95 uppercase">
+				<span class="mt-1 font-bold tracking-widest text-white/95 block text-[9px] uppercase">
 					Days
 				</span>
 			</div>
@@ -69,29 +69,29 @@
 			<!-- Status Caption -->
 			<div class="z-10">
 				<span
-					class="inline-flex items-center rounded-full border border-accent/10 bg-accent-soft px-3 py-1 text-xs font-bold tracking-wider text-accent uppercase"
+					class="px-3 py-1 text-xs font-bold tracking-wider inline-flex items-center rounded-full border border-accent/10 bg-accent-soft text-accent uppercase"
 				>
 					{extended ? 'Streak Extended' : 'Streak Safe'}
 				</span>
 			</div>
 
 			<!-- Heading -->
-			<div class="z-10 flex flex-col gap-2">
+			<div class="gap-2 z-10 flex flex-col">
 				<h2
-					class="font-display text-2xl leading-tight font-bold tracking-tight text-text sm:text-3xl"
+					class="font-display text-2xl leading-tight font-bold tracking-tight sm:text-3xl text-text"
 				>
 					{type === 'quiz' ? 'Quiz complete!' : 'Lesson complete!'}
 				</h2>
 
 				{#if type === 'quiz' && score !== null && total !== null}
 					<p
-						class="mx-auto inline-block rounded-r-md border border-primary/10 bg-primary-soft/50 px-4 py-2.5 text-sm font-bold text-primary"
+						class="px-4 py-2.5 text-sm font-bold mx-auto inline-block rounded-r-md border border-primary/10 bg-primary-soft/50 text-primary"
 					>
 						You scored {score} / {total} correct answers
 					</p>
 				{/if}
 
-				<p class="mt-1 max-w-xs text-xs leading-relaxed text-text-muted sm:text-sm">
+				<p class="mt-1 max-w-xs text-xs leading-relaxed sm:text-sm text-text-muted">
 					{#if extended}
 						Awesome! You studied today &mdash; your streak is now {finalStreak} days. Keep it up tomorrow!
 					{:else}
@@ -103,17 +103,17 @@
 
 			<!-- Actions Buttons -->
 			<div
-				class="z-10 flex w-full flex-col gap-3 border-t border-border pt-4 select-none sm:flex-row"
+				class="gap-3 pt-4 sm:flex-row z-10 flex w-full flex-col border-t border-border select-none"
 			>
 				<a
 					href={resolve(`/courses/${courseId}`)}
-					class="flex-1 rounded-r-md bg-primary px-4 py-3.5 text-center text-xs font-bold text-white shadow-md transition-all duration-180 hover:bg-primary-hover active:scale-[0.98]"
+					class="px-4 py-3.5 text-xs font-bold text-white flex-1 rounded-r-md bg-primary text-center shadow-md transition-all duration-180 hover:bg-primary-hover active:scale-[0.98]"
 				>
 					Back to course
 				</a>
 				<a
 					href={resolve('/app')}
-					class="flex-1 rounded-r-md border border-border bg-surface-muted px-4 py-3.5 text-center text-xs font-bold text-text-muted shadow-sm transition-all duration-180 hover:bg-border hover:text-text"
+					class="px-4 py-3.5 text-xs font-bold flex-1 rounded-r-md border border-border bg-surface-muted text-center text-text-muted shadow-sm transition-all duration-180 hover:bg-border hover:text-text"
 				>
 					Dashboard
 				</a>

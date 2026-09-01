@@ -42,13 +42,13 @@
 	let currentStyle = $derived(styleClasses[style] || styleClasses.tip);
 </script>
 
-<div class="my-4 overflow-hidden rounded-2xl border {currentStyle.border} transition-all">
+<div class="my-4 rounded-2xl overflow-hidden border {currentStyle.border} transition-all">
 	<button
 		type="button"
 		onclick={() => (isOpen = !isOpen)}
-		class="flex w-full cursor-pointer items-center justify-between p-3.5 text-left text-xs font-bold"
+		class="p-3.5 text-xs font-bold flex w-full cursor-pointer items-center justify-between text-left"
 	>
-		<div class="flex items-center gap-2">
+		<div class="gap-2 flex items-center">
 			<span>{currentStyle.icon}</span>
 			<span class={currentStyle.accent}>{title}</span>
 		</div>
@@ -58,7 +58,7 @@
 	</button>
 
 	{#if isOpen}
-		<div class="border-t border-border/20 px-4 py-3 text-xs leading-relaxed">
+		<div class="px-4 py-3 text-xs leading-relaxed border-t border-border/20">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			{@html renderedHtml}
 		</div>

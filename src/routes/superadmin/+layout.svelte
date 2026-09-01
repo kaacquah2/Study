@@ -45,22 +45,22 @@
 
 <div class="relative flex min-h-screen flex-col bg-bg text-text">
 	<!-- Top Super Admin Header -->
-	<header class="sticky top-0 z-40 border-b border-border bg-surface/90 backdrop-blur-md">
-		<div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
-			<div class="flex items-center gap-4">
-				<a href={resolve('/superadmin')} class="flex items-center gap-2.5">
+	<header class="top-0 backdrop-blur-md sticky z-40 border-b border-border bg-surface/90">
+		<div class="max-w-7xl px-6 py-3.5 mx-auto flex items-center justify-between">
+			<div class="gap-4 flex items-center">
+				<a href={resolve('/superadmin')} class="gap-2.5 flex items-center">
 					<div
-						class="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-violet-600 to-indigo-700 text-white shadow-md shadow-violet-500/20"
+						class="h-9 w-9 from-violet-600 to-indigo-700 text-white shadow-violet-500/20 flex items-center justify-center rounded-xl bg-linear-to-br shadow-md"
 					>
 						<span class="text-base">👑</span>
 					</div>
 					<div>
-						<div class="flex items-center gap-2">
+						<div class="gap-2 flex items-center">
 							<span class="font-display text-base font-black tracking-tight text-text">
 								Super Admin
 							</span>
 							<span
-								class="rounded-md border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-violet-500 uppercase"
+								class="border-violet-500/30 bg-violet-500/10 px-2 py-0.5 font-extrabold tracking-wider text-violet-500 rounded-md border text-[10px] uppercase"
 							>
 								Root Console
 							</span>
@@ -69,14 +69,14 @@
 				</a>
 
 				<!-- Desktop Navigation Tabs -->
-				<nav class="ml-6 hidden items-center gap-1.5 md:flex">
+				<nav class="ml-6 gap-1.5 md:flex hidden items-center">
 					{#each navItems as item (item.href)}
 						{@const active =
 							currentPath === item.href ||
 							(item.href !== '/superadmin' && currentPath.startsWith(item.href))}
 						<a
 							href={resolve(item.href as '/app')}
-							class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all duration-180 {active
+							class="px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all duration-180 {active
 								? 'bg-primary/15 text-primary'
 								: 'text-text-muted hover:bg-surface-muted hover:text-text'}"
 						>
@@ -86,10 +86,10 @@
 				</nav>
 			</div>
 
-			<div class="flex items-center gap-3">
+			<div class="gap-3 flex items-center">
 				<a
 					href={resolve('/app')}
-					class="hidden items-center gap-1.5 rounded-xl border border-border bg-surface-muted px-3 py-1.5 text-xs font-bold text-text-muted transition-colors hover:bg-border/40 hover:text-text sm:flex"
+					class="gap-1.5 px-3 py-1.5 text-xs font-bold sm:flex hidden items-center rounded-xl border border-border bg-surface-muted text-text-muted transition-colors hover:bg-border/40 hover:text-text"
 				>
 					<span>← Back to App</span>
 				</a>
@@ -98,7 +98,7 @@
 
 				{#if authStore.user}
 					<div
-						class="flex items-center gap-2 rounded-full border border-border bg-surface-muted p-1 pr-3"
+						class="gap-2 p-1 pr-3 flex items-center rounded-full border border-border bg-surface-muted"
 					>
 						{#if authStore.user.photoURL}
 							<img
@@ -108,12 +108,12 @@
 							/>
 						{:else}
 							<div
-								class="flex h-7 w-7 items-center justify-center rounded-full bg-violet-600 text-xs font-bold text-white"
+								class="h-7 w-7 bg-violet-600 text-xs font-bold text-white flex items-center justify-center rounded-full"
 							>
 								{userInitials}
 							</div>
 						{/if}
-						<span class="hidden max-w-30 truncate text-xs font-bold text-text sm:inline">
+						<span class="max-w-30 text-xs font-bold sm:inline hidden truncate text-text">
 							{authStore.user.displayName || authStore.user.email}
 						</span>
 					</div>
@@ -122,14 +122,14 @@
 		</div>
 
 		<!-- Mobile Navigation Bar -->
-		<div class="flex border-t border-border/50 px-4 py-2 md:hidden">
+		<div class="px-4 py-2 md:hidden flex border-t border-border/50">
 			{#each navItems as item (item.href)}
 				{@const active =
 					currentPath === item.href ||
 					(item.href !== '/superadmin' && currentPath.startsWith(item.href))}
 				<a
 					href={resolve(item.href as '/app')}
-					class="flex-1 py-1.5 text-center text-xs font-bold transition-colors {active
+					class="py-1.5 text-xs font-bold flex-1 text-center transition-colors {active
 						? 'text-primary'
 						: 'text-text-muted'}"
 				>
@@ -140,7 +140,7 @@
 	</header>
 
 	<!-- Main Content Body -->
-	<main class="mx-auto flex w-full max-w-7xl grow flex-col p-6 sm:p-8">
+	<main class="max-w-7xl p-6 sm:p-8 mx-auto flex w-full grow flex-col">
 		{@render children()}
 	</main>
 

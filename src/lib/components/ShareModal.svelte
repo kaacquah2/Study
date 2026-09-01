@@ -37,18 +37,18 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
-		class="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-text/50 p-4 backdrop-blur-xs"
+		class="animate-fade-in inset-0 p-4 backdrop-blur-xs fixed z-50 flex items-center justify-center bg-text/50"
 		onclick={onClose}
 	>
 		<!-- Modal container, stopPropagation prevents click from propagating to backdrop -->
 		<div
-			class="relative flex w-full max-w-md flex-col gap-5 rounded-lg border border-border bg-surface p-6 shadow-lg"
+			class="max-w-md gap-5 p-6 relative flex w-full flex-col rounded-lg border border-border bg-surface shadow-lg"
 			onclick={(e) => e.stopPropagation()}
 		>
 			<!-- Close Button (Touch target expanded to 44x44px via p-3, while maintaining icon style) -->
 			<button
 				type="button"
-				class="absolute top-2 right-2 cursor-pointer rounded-full p-3 text-text-muted transition-colors hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+				class="top-2 right-2 p-3 absolute cursor-pointer rounded-full text-text-muted transition-colors hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 				onclick={onClose}
 				aria-label="Close share dialog"
 			>
@@ -75,18 +75,18 @@
 
 			<!-- Link copy block -->
 			<div
-				class="flex items-center gap-2 overflow-hidden rounded-r-md border border-border bg-surface-muted p-1"
+				class="gap-2 p-1 flex items-center overflow-hidden rounded-r-md border border-border bg-surface-muted"
 			>
 				<input
 					type="text"
 					readonly
 					value={shareUrl}
 					aria-label="Shareable course link"
-					class="grow bg-transparent px-2 py-2 text-xs text-text select-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+					class="px-2 py-2 text-xs grow bg-transparent text-text select-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 				/>
 				<button
 					type="button"
-					class="cursor-pointer rounded-r-md bg-primary px-4 py-2 text-xs font-bold text-white transition-all select-none hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
+					class="px-4 py-2 text-xs font-bold text-white cursor-pointer rounded-r-md bg-primary transition-all select-none hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
 					onclick={copyToClipboard}
 				>
 					{copied ? 'Copied' : 'Copy'}
@@ -94,10 +94,10 @@
 			</div>
 
 			<!-- Revoke Actions -->
-			<div class="mt-2 flex items-center justify-between border-t border-border pt-4">
+			<div class="mt-2 pt-4 flex items-center justify-between border-t border-border">
 				<button
 					type="button"
-					class="flex cursor-pointer items-center gap-1.5 rounded-sm p-2 text-xs font-semibold text-danger transition-all hover:bg-danger-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-danger active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+					class="gap-1.5 p-2 text-xs font-semibold flex cursor-pointer items-center rounded-sm text-danger transition-all hover:bg-danger-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-danger active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
 					onclick={onRevoke}
 					disabled={actionLoading}
 				>
@@ -121,7 +121,7 @@
 				</button>
 				<button
 					type="button"
-					class="cursor-pointer rounded-r-md bg-surface-muted px-4 py-2 text-xs font-semibold text-text-muted transition-all hover:bg-border hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
+					class="px-4 py-2 text-xs font-semibold cursor-pointer rounded-r-md bg-surface-muted text-text-muted transition-all hover:bg-border hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
 					onclick={onClose}
 				>
 					Close

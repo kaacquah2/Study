@@ -432,13 +432,13 @@
 	<title>Create Course Wizard &mdash; AI Study Buddy</title>
 </svelte:head>
 
-<div class="mx-auto flex w-full max-w-3xl flex-col gap-6 py-4">
+<div class="max-w-3xl gap-6 py-4 mx-auto flex w-full flex-col">
 	<!-- Top Stepper Indicator -->
-	<div class="flex items-center justify-between border-b border-border pb-4">
+	<div class="pb-4 flex items-center justify-between border-b border-border">
 		<div>
 			<a
 				href="/app"
-				class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
+				class="gap-1.5 text-xs font-bold inline-flex items-center text-text-muted transition-colors hover:text-primary"
 			>
 				&larr; Return to Dashboard
 			</a>
@@ -446,22 +446,22 @@
 		</div>
 
 		<!-- Step Progress Badges -->
-		<div class="flex items-center gap-2">
+		<div class="gap-2 flex items-center">
 			<span
-				class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold {step >= 1
-					? 'bg-primary text-white'
+				class="h-7 w-7 text-xs font-bold flex items-center justify-center rounded-full {step >= 1
+					? 'text-white bg-primary'
 					: 'bg-surface-muted text-text-muted'}">1</span
 			>
 			<div class="h-0.5 w-6 bg-border"></div>
 			<span
-				class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold {step >= 2
-					? 'bg-primary text-white'
+				class="h-7 w-7 text-xs font-bold flex items-center justify-center rounded-full {step >= 2
+					? 'text-white bg-primary'
 					: 'bg-surface-muted text-text-muted'}">2</span
 			>
 			<div class="h-0.5 w-6 bg-border"></div>
 			<span
-				class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold {step >= 3
-					? 'bg-primary text-white'
+				class="h-7 w-7 text-xs font-bold flex items-center justify-center rounded-full {step >= 3
+					? 'text-white bg-primary'
 					: 'bg-surface-muted text-text-muted'}">3</span
 			>
 		</div>
@@ -469,15 +469,15 @@
 
 	{#if hasRestoredDraft && (topic || referenceText)}
 		<div
-			class="flex items-center justify-between rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-4 text-xs font-semibold text-indigo-300"
+			class="rounded-2xl border-indigo-500/30 bg-indigo-500/10 p-4 text-xs font-semibold text-indigo-300 flex items-center justify-between border"
 		>
-			<div class="flex items-center gap-2">
+			<div class="gap-2 flex items-center">
 				<span>📝 Resumed your previous course wizard draft.</span>
 			</div>
 			<button
 				type="button"
 				onclick={clearSavedWizardState}
-				class="cursor-pointer font-bold text-indigo-300 underline hover:text-white"
+				class="font-bold text-indigo-300 hover:text-white cursor-pointer underline"
 			>
 				Reset & Start Fresh
 			</button>
@@ -486,7 +486,7 @@
 
 	{#if errorMsg}
 		<div
-			class="rounded-xl border border-danger/20 bg-danger-soft p-4 text-xs font-bold text-danger"
+			class="p-4 text-xs font-bold rounded-xl border border-danger/20 bg-danger-soft text-danger"
 		>
 			{errorMsg}
 		</div>
@@ -495,7 +495,7 @@
 	<!-- STEP 1: Topic & Notes -->
 	{#if step === 1}
 		<div
-			class="flex flex-col gap-6 rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8"
+			class="gap-6 rounded-2xl p-6 sm:p-8 flex flex-col border border-border bg-surface shadow-sm"
 		>
 			<div>
 				<h2 class="font-display text-lg font-bold text-text">Step 1: Choose a Subject</h2>
@@ -505,7 +505,7 @@
 			</div>
 
 			<!-- Topic Input & Real-time Hint -->
-			<div class="flex flex-col gap-2">
+			<div class="gap-2 flex flex-col">
 				<div class="flex items-center justify-between">
 					<label
 						for="topic-input"
@@ -516,27 +516,27 @@
 					<!-- Topic Quality Badge -->
 					{#if topicQuality === 'vague'}
 						<span
-							class="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-400"
+							class="bg-amber-500/20 px-2 py-0.5 font-bold text-amber-400 rounded-full text-[10px]"
 						>
 							⚠️ Vague Topic &mdash; Consider adding specific focus
 						</span>
 					{:else if topicQuality === 'specific'}
 						<span
-							class="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400"
+							class="bg-emerald-500/20 px-2 py-0.5 font-bold text-emerald-400 rounded-full text-[10px]"
 						>
 							✓ Highly Specific Topic &mdash; Great quality expected
 						</span>
 					{/if}
 				</div>
 
-				<div class="flex gap-2">
+				<div class="gap-2 flex">
 					<input
 						id="topic-input"
 						type="text"
 						bind:value={topic}
 						onblur={validateStep1}
 						placeholder="e.g., Quantum Computing Fundamentals, Microeconomics"
-						class="grow rounded-xl border bg-surface px-4 py-3 text-sm font-semibold text-text transition-colors {topicError
+						class="px-4 py-3 text-sm font-semibold grow rounded-xl border bg-surface text-text transition-colors {topicError
 							? 'border-danger'
 							: 'border-border'} focus:border-primary focus:outline-none"
 					/>
@@ -547,7 +547,7 @@
 						onclick={handleEnhanceTopic}
 						disabled={isEnhancing || !topic.trim()}
 						title="Use AI to automatically expand your topic into a detailed course subject"
-						class="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-primary/40 bg-primary-soft/80 px-4 py-3 text-xs font-bold text-primary shadow-xs transition-all hover:bg-primary hover:text-white active:scale-95 disabled:opacity-40"
+						class="gap-1.5 px-4 py-3 text-xs font-bold shadow-xs hover:text-white inline-flex shrink-0 cursor-pointer items-center justify-center rounded-xl border border-primary/40 bg-primary-soft/80 text-primary transition-all hover:bg-primary active:scale-95 disabled:opacity-40"
 					>
 						{#if isEnhancing}
 							<span
@@ -561,12 +561,12 @@
 				</div>
 
 				{#if topicError}
-					<span class="text-[11px] font-semibold text-danger">{topicError}</span>
+					<span class="font-semibold text-[11px] text-danger">{topicError}</span>
 				{/if}
 
 				<!-- Real-time Hint Nudge Box -->
 				<div
-					class="rounded-xl border border-border/60 bg-surface-muted/40 p-3 text-[11px] leading-relaxed text-text-muted"
+					class="p-3 leading-relaxed rounded-xl border border-border/60 bg-surface-muted/40 text-[11px] text-text-muted"
 				>
 					💡 <strong>Pro Tip:</strong> More specific topics generate dramatically higher quality
 					outlines.<br />
@@ -577,9 +577,9 @@
 			</div>
 
 			<!-- Suggestion Chips -->
-			<div class="flex flex-col gap-2">
-				<span class="text-[11px] font-bold text-text-muted uppercase">Need inspiration?</span>
-				<div class="flex flex-wrap gap-2">
+			<div class="gap-2 flex flex-col">
+				<span class="font-bold text-[11px] text-text-muted uppercase">Need inspiration?</span>
+				<div class="gap-2 flex flex-wrap">
 					{#each enhancedSuggestions.length > 0 ? enhancedSuggestions : topicSuggestions.map((s) => s.value) as sug (sug)}
 						<button
 							type="button"
@@ -587,7 +587,7 @@
 								topic = sug;
 								validateStep1();
 							}}
-							class="cursor-pointer rounded-xl border border-border bg-surface-muted/50 px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:border-primary hover:bg-primary-soft/30"
+							class="px-3 py-1.5 text-xs font-semibold cursor-pointer rounded-xl border border-border bg-surface-muted/50 text-text transition-colors hover:border-primary hover:bg-primary-soft/30"
 						>
 							{sug}
 						</button>
@@ -596,14 +596,14 @@
 			</div>
 
 			<!-- Optional Notes / Reference Text -->
-			<div class="flex flex-col gap-2 border-t border-border/40 pt-2">
+			<div class="gap-2 pt-2 flex flex-col border-t border-border/40">
 				<div class="flex items-center justify-between">
 					<label
 						for="notes-input"
 						class="text-xs font-bold tracking-wider text-text-muted uppercase"
 						>Pasted Notes / Context (Optional)</label
 					>
-					<label class="cursor-pointer text-[11px] font-bold text-primary hover:underline">
+					<label class="font-bold cursor-pointer text-[11px] text-primary hover:underline">
 						Upload .txt or .md
 						<input type="file" accept=".txt,.md" class="hidden" onchange={handleFileUpload} />
 					</label>
@@ -613,16 +613,16 @@
 					bind:value={referenceText}
 					rows="4"
 					placeholder="Paste syllabus, textbook excerpts, or custom notes here to anchor the AI generation..."
-					class="w-full resize-none rounded-xl border border-border bg-surface px-4 py-3 text-xs leading-relaxed text-text focus:border-primary focus:outline-none"
+					class="px-4 py-3 text-xs leading-relaxed w-full resize-none rounded-xl border border-border bg-surface text-text focus:border-primary focus:outline-none"
 				></textarea>
 			</div>
 
 			<!-- Step 1 Next Action -->
-			<div class="flex justify-end pt-4">
+			<div class="pt-4 flex justify-end">
 				<button
 					type="button"
 					onclick={goToStep2}
-					class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-hover active:scale-98"
+					class="gap-2 px-6 py-3 text-xs font-bold text-white inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/20 hover:bg-primary-hover active:scale-98"
 				>
 					<span>Continue to Preferences &rarr;</span>
 				</button>
@@ -632,7 +632,7 @@
 		<!-- STEP 2: Preferences -->
 	{:else if step === 2}
 		<div
-			class="flex flex-col gap-6 rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8"
+			class="gap-6 rounded-2xl p-6 sm:p-8 flex flex-col border border-border bg-surface shadow-sm"
 		>
 			<div>
 				<h2 class="font-display text-lg font-bold text-text">Step 2: Learning Preferences</h2>
@@ -642,18 +642,18 @@
 			</div>
 
 			<!-- Skill Level -->
-			<div class="flex flex-col gap-2">
+			<div class="gap-2 flex flex-col">
 				<span class="text-xs font-bold tracking-wider text-text-muted uppercase"
 					>Target Skill Level</span
 				>
-				<div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
+				<div class="gap-2.5 sm:grid-cols-3 sm:gap-3 grid grid-cols-1">
 					{#each ['beginner', 'intermediate', 'advanced'] as lvl (lvl)}
 						<button
 							type="button"
 							onclick={() => (level = lvl as 'beginner' | 'intermediate' | 'advanced')}
-							class="cursor-pointer rounded-xl border p-3 text-center text-xs font-bold capitalize transition-all {level ===
+							class="p-3 text-xs font-bold cursor-pointer rounded-xl border text-center capitalize transition-all {level ===
 							lvl
-								? 'border-primary bg-primary-soft text-primary shadow-xs'
+								? 'shadow-xs border-primary bg-primary-soft text-primary'
 								: 'border-border bg-surface text-text-muted hover:border-border/80'}"
 						>
 							{lvl}
@@ -663,16 +663,16 @@
 			</div>
 
 			<!-- Primary Goal with Smart Defaults (Item #3) -->
-			<div class="flex flex-col gap-2">
+			<div class="gap-2 flex flex-col">
 				<span class="text-xs font-bold tracking-wider text-text-muted uppercase">Primary Goal</span>
-				<div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
+				<div class="gap-2.5 sm:grid-cols-3 sm:gap-3 grid grid-cols-1">
 					{#each [{ label: 'Exam Prep', val: 'exam prep' }, { label: 'Job Skill', val: 'job skill' }, { label: 'Curiosity', val: 'curiosity' }] as g (g.val)}
 						<button
 							type="button"
 							onclick={() => handleGoalChange(g.val)}
-							class="cursor-pointer rounded-xl border p-3 text-center text-xs font-bold transition-all {goal ===
+							class="p-3 text-xs font-bold cursor-pointer rounded-xl border text-center transition-all {goal ===
 							g.val
-								? 'border-primary bg-primary-soft text-primary shadow-xs'
+								? 'shadow-xs border-primary bg-primary-soft text-primary'
 								: 'border-border bg-surface text-text-muted hover:border-border/80'}"
 						>
 							{g.label}
@@ -682,19 +682,19 @@
 			</div>
 
 			<!-- Format & Module Count -->
-			<div class="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
+			<div class="gap-4 pt-2 sm:grid-cols-2 grid grid-cols-1">
 				<!-- Format -->
-				<div class="flex flex-col gap-2">
+				<div class="gap-2 flex flex-col">
 					<span class="text-xs font-bold tracking-wider text-text-muted uppercase"
 						>Course Format</span
 					>
-					<div class="flex rounded-xl border border-border bg-surface-muted p-1">
+					<div class="p-1 flex rounded-xl border border-border bg-surface-muted">
 						<button
 							type="button"
 							onclick={() => (format = 'lessons_and_quizzes')}
-							class="flex-1 rounded-lg py-2 text-[11px] font-bold transition-all {format ===
+							class="py-2 font-bold flex-1 rounded-lg text-[11px] transition-all {format ===
 							'lessons_and_quizzes'
-								? 'bg-surface text-text shadow-xs'
+								? 'shadow-xs bg-surface text-text'
 								: 'text-text-muted'}"
 						>
 							Lessons & Quizzes
@@ -702,9 +702,9 @@
 						<button
 							type="button"
 							onclick={() => (format = 'quizzes_only')}
-							class="flex-1 rounded-lg py-2 text-[11px] font-bold transition-all {format ===
+							class="py-2 font-bold flex-1 rounded-lg text-[11px] transition-all {format ===
 							'quizzes_only'
-								? 'bg-surface text-text shadow-xs'
+								? 'shadow-xs bg-surface text-text'
 								: 'text-text-muted'}"
 						>
 							Quizzes Only
@@ -713,8 +713,8 @@
 				</div>
 
 				<!-- Module Count -->
-				<div class="flex flex-col gap-2">
-					<div class="flex justify-between text-xs font-bold">
+				<div class="gap-2 flex flex-col">
+					<div class="text-xs font-bold flex justify-between">
 						<span class="tracking-wider text-text-muted uppercase">Module Count</span>
 						<span class="text-primary">{moduleCount} Modules</span>
 					</div>
@@ -726,7 +726,7 @@
 						oninput={() => (userManuallySetModules = true)}
 						class="mt-2 w-full cursor-pointer accent-primary"
 					/>
-					<span class="text-[10px] font-medium text-text-muted">
+					<span class="font-medium text-[10px] text-text-muted">
 						{#if goal === 'exam prep'}
 							💡 Exam Prep goal pre-selected 6 modules for thorough practice.
 						{:else if goal === 'curiosity'}
@@ -740,9 +740,9 @@
 
 			<!-- Past Exam Style Mode Toggle -->
 			<div
-				class="flex items-center justify-between rounded-xl border border-border/80 bg-surface-muted/30 p-4"
+				class="p-4 flex items-center justify-between rounded-xl border border-border/80 bg-surface-muted/30"
 			>
-				<div class="flex flex-col gap-0.5">
+				<div class="gap-0.5 flex flex-col">
 					<span class="text-xs font-bold text-text">Past Exam Style Mode</span>
 					<span class="text-[11px] text-text-muted">
 						Generate quiz questions structured like university and standardized past papers.
@@ -754,12 +754,12 @@
 					aria-checked={examStyleMode}
 					aria-label="Toggle Past Exam Style Mode"
 					onclick={() => (examStyleMode = !examStyleMode)}
-					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {examStyleMode
+					class="h-6 w-11 ease-in-out relative inline-flex shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none {examStyleMode
 						? 'bg-primary'
 						: 'bg-border'}"
 				>
 					<span
-						class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out {examStyleMode
+						class="h-5 w-5 bg-white ease-in-out pointer-events-none inline-block transform rounded-full shadow-sm ring-0 transition duration-200 {examStyleMode
 							? 'translate-x-5'
 							: 'translate-x-0'}"
 					></span>
@@ -768,10 +768,10 @@
 
 			{#if loading}
 				<div
-					class="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-primary-soft/10 p-5 shadow-xs"
+					class="gap-3 rounded-2xl p-5 shadow-xs flex flex-col border border-primary/30 bg-primary-soft/10"
 				>
 					<div class="flex items-center justify-between">
-						<div class="flex items-center gap-2.5">
+						<div class="gap-2.5 flex items-center">
 							<span
 								class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"
 							></span>
@@ -789,16 +789,16 @@
 							style="width: {Math.min(100, (loadingProgressStep + 1) * 25)}%"
 						></div>
 					</div>
-					<div class="flex flex-col gap-1.5 pt-1">
+					<div class="gap-1.5 pt-1 flex flex-col">
 						{#each ['Analyzing topic & reference materials...', 'Structuring curriculum layout & module hierarchy...', 'Generating learning objectives & key points...', 'Finalizing course draft outline...'] as stepLabel, idx (idx)}
 							<div
-								class="flex items-center gap-2 text-xs font-semibold {idx <= loadingProgressStep
+								class="gap-2 text-xs font-semibold flex items-center {idx <= loadingProgressStep
 									? 'text-primary'
 									: 'text-text-muted/40'}"
 							>
 								{#if idx < loadingProgressStep}
 									<span
-										class="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white"
+										class="h-3.5 w-3.5 font-bold text-white flex items-center justify-center rounded-full bg-primary text-[9px]"
 										>✓</span
 									>
 								{:else if idx === loadingProgressStep}
@@ -816,11 +816,11 @@
 			{/if}
 
 			<!-- Step 2 Actions -->
-			<div class="flex items-center justify-between border-t border-border/40 pt-4">
+			<div class="pt-4 flex items-center justify-between border-t border-border/40">
 				<button
 					type="button"
 					onclick={() => (step = 1)}
-					class="cursor-pointer text-xs font-bold text-text-muted hover:text-text"
+					class="text-xs font-bold cursor-pointer text-text-muted hover:text-text"
 				>
 					&larr; Back to Subject
 				</button>
@@ -828,11 +828,11 @@
 					type="button"
 					onclick={generateDraftOutline}
 					disabled={loading}
-					class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-hover active:scale-98 disabled:opacity-50"
+					class="gap-2 px-6 py-3 text-xs font-bold text-white inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/20 hover:bg-primary-hover active:scale-98 disabled:opacity-50"
 				>
 					{#if loading}
 						<span
-							class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+							class="h-4 w-4 animate-spin border-white rounded-full border-2 border-t-transparent"
 						></span>
 						Generating Outline...
 					{:else}
@@ -844,9 +844,9 @@
 
 		<!-- STEP 3: Draft Outline Review -->
 	{:else if step === 3}
-		<div class="flex flex-col gap-4">
+		<div class="gap-4 flex flex-col">
 			<div
-				class="rounded-2xl border border-primary/30 bg-primary-soft/30 p-4 text-xs font-bold text-primary"
+				class="rounded-2xl p-4 text-xs font-bold border border-primary/30 bg-primary-soft/30 text-primary"
 			>
 				✨ Draft outline ready! Review module titles, drag to reorder, add/remove modules, or edit
 				details before finalizing your course.

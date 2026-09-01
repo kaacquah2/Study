@@ -268,22 +268,22 @@
 	<title>{moduleData?.title || 'Study Lesson'} &mdash; AI Study Buddy</title>
 </svelte:head>
 
-<div class="mx-auto flex w-full max-w-4xl flex-col gap-6 py-4">
+<div class="max-w-4xl gap-6 py-4 mx-auto flex w-full flex-col">
 	<!-- Top Navigation Bar -->
-	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+	<div class="gap-3 pb-3 flex flex-wrap items-center justify-between border-b border-border">
 		<a
 			href={`/app/courses/${courseId}`}
-			class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
+			class="gap-1.5 text-xs font-bold inline-flex items-center text-text-muted transition-colors hover:text-primary"
 		>
 			&larr; Return to {course?.title || 'Course Overview'}
 		</a>
 
-		<div class="flex items-center gap-2">
+		<div class="gap-2 flex items-center">
 			<!-- Flag Content Action -->
 			<button
 				type="button"
 				onclick={() => (showFlagModal = true)}
-				class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold text-text-muted hover:border-danger hover:text-danger active:scale-95"
+				class="gap-1 px-2.5 py-1 font-semibold inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-[11px] text-text-muted hover:border-danger hover:text-danger active:scale-95"
 				title="Report inaccuracies or formatting issues"
 			>
 				🚩 Report Issue
@@ -293,7 +293,7 @@
 
 	<!-- Loading State -->
 	{#if loading}
-		<div class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-8 shadow-sm">
+		<div class="gap-6 rounded-3xl p-8 flex flex-col border border-border bg-surface shadow-sm">
 			<Skeleton height="32px" width="60%" />
 			<Skeleton height="16px" width="40%" />
 			<div class="space-y-3 pt-4">
@@ -304,14 +304,14 @@
 		</div>
 	{:else if loadError}
 		<div
-			class="flex flex-col items-center justify-center rounded-3xl border border-danger/30 bg-danger-soft p-12 text-center"
+			class="rounded-3xl p-12 flex flex-col items-center justify-center border border-danger/30 bg-danger-soft text-center"
 		>
 			<span class="text-3xl">⚠️</span>
 			<h3 class="mt-2 font-display text-base font-bold text-danger">Unable to load module</h3>
 			<p class="mt-1 text-xs text-text-muted">{loadError}</p>
 			<a
 				href={`/app/courses/${courseId}`}
-				class="mt-4 rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white"
+				class="mt-4 px-5 py-2 text-xs font-bold text-white rounded-xl bg-primary"
 			>
 				Back to Course
 			</a>
@@ -349,34 +349,34 @@
 		{#if !quizStarted}
 			<!-- Quiz Pre-Session Briefing Card -->
 			<div
-				class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8"
+				class="gap-6 rounded-3xl p-6 sm:p-8 flex flex-col border border-border bg-surface shadow-sm"
 			>
-				<div class="flex flex-col gap-2">
+				<div class="gap-2 flex flex-col">
 					<div
-						class="inline-flex items-center gap-1.5 self-start rounded-full border border-primary/30 bg-primary-soft px-3 py-1 text-[10px] font-black tracking-wider text-primary uppercase"
+						class="gap-1.5 px-3 py-1 font-black tracking-wider inline-flex items-center self-start rounded-full border border-primary/30 bg-primary-soft text-[10px] text-primary uppercase"
 					>
 						<span>🎯 Focused Assessment</span>
 					</div>
-					<h2 class="font-display text-xl font-bold text-text sm:text-2xl">
+					<h2 class="font-display text-xl font-bold sm:text-2xl text-text">
 						{moduleData.title}
 					</h2>
-					<p class="text-xs leading-relaxed text-text-muted sm:text-sm">
+					<p class="text-xs leading-relaxed sm:text-sm text-text-muted">
 						{moduleData.summary ||
 							'Test your comprehension with adaptive questions, instant reasoning, and long-term memory scheduling.'}
 					</p>
 				</div>
 
 				<!-- Quick Session Stats -->
-				<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-					<div class="rounded-2xl border border-border bg-surface-muted p-3.5">
-						<span class="block text-[10px] font-bold text-text-muted uppercase">Questions</span>
+				<div class="gap-3 sm:grid-cols-3 grid grid-cols-2">
+					<div class="rounded-2xl p-3.5 border border-border bg-surface-muted">
+						<span class="font-bold block text-[10px] text-text-muted uppercase">Questions</span>
 						<span class="font-display text-base font-bold text-text">
 							{moduleData.questions?.length || 0} Questions
 						</span>
 					</div>
 
-					<div class="rounded-2xl border border-border bg-surface-muted p-3.5">
-						<span class="block text-[10px] font-bold text-text-muted uppercase">Estimated Time</span
+					<div class="rounded-2xl p-3.5 border border-border bg-surface-muted">
+						<span class="font-bold block text-[10px] text-text-muted uppercase">Estimated Time</span
 						>
 						<span class="font-display text-base font-bold text-text">
 							~{moduleData.estimatedMinutes ||
@@ -387,21 +387,21 @@
 					</div>
 
 					<div
-						class="col-span-2 rounded-2xl border border-border bg-surface-muted p-3.5 sm:col-span-1"
+						class="rounded-2xl p-3.5 sm:col-span-1 col-span-2 border border-border bg-surface-muted"
 					>
-						<span class="block text-[10px] font-bold text-text-muted uppercase">Difficulty</span>
+						<span class="font-bold block text-[10px] text-text-muted uppercase">Difficulty</span>
 						<span class="font-display text-base font-bold text-primary"> Adaptive FSRS </span>
 					</div>
 				</div>
 
 				<!-- Concepts Covered Tag List -->
 				{#if moduleData.concepts && moduleData.concepts.length > 0}
-					<div class="flex flex-col gap-2 border-t border-border/80 pt-4">
+					<div class="gap-2 pt-4 flex flex-col border-t border-border/80">
 						<span class="text-xs font-bold text-text">Key Concepts Tested:</span>
-						<div class="flex flex-wrap gap-1.5">
+						<div class="gap-1.5 flex flex-wrap">
 							{#each moduleData.concepts as c, idx (c.id || c.term || idx)}
 								<span
-									class="rounded-lg border border-border bg-surface-muted px-2.5 py-1 text-xs font-medium text-text"
+									class="px-2.5 py-1 text-xs font-medium rounded-lg border border-border bg-surface-muted text-text"
 								>
 									{c.term}
 								</span>
@@ -411,12 +411,12 @@
 				{/if}
 
 				<!-- Start Quiz CTA -->
-				<div class="flex items-center justify-between border-t border-border/80 pt-4">
+				<div class="pt-4 flex items-center justify-between border-t border-border/80">
 					<span class="text-xs text-text-muted">Keyboard navigation [1-4, Enter] supported</span>
 					<button
 						type="button"
 						onclick={() => (quizStarted = true)}
-						class="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-95"
+						class="gap-2 rounded-2xl px-6 py-3 text-xs font-bold text-white inline-flex cursor-pointer items-center bg-primary shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-95"
 					>
 						<span>Start Quiz Practice &rarr;</span>
 					</button>
@@ -440,9 +440,9 @@
 
 	<!-- Educational Video Recommendations -->
 	{#if moduleVideos.length > 0 && !isCompleted}
-		<div class="mt-4 flex flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-sm">
+		<div class="mt-4 gap-4 rounded-3xl p-6 flex flex-col border border-border bg-surface shadow-sm">
 			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-2">
+				<div class="gap-2 flex items-center">
 					<span class="text-lg">🎬</span>
 					<h3 class="font-display text-xs font-bold text-text">
 						Recommended Video Lectures ({moduleVideos.length})
@@ -452,18 +452,18 @@
 					type="button"
 					onclick={() => fetchVideos(true)}
 					disabled={loadingVideos}
-					class="cursor-pointer text-[11px] font-bold text-primary hover:underline disabled:opacity-50"
+					class="font-bold cursor-pointer text-[11px] text-primary hover:underline disabled:opacity-50"
 				>
 					{loadingVideos ? 'Refreshing...' : '🔄 Refresh Videos'}
 				</button>
 			</div>
 
-			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+			<div class="gap-3 sm:grid-cols-2 lg:grid-cols-3 grid grid-cols-1">
 				{#each moduleVideos as video (video.videoId)}
 					<button
 						type="button"
 						onclick={() => (activeVideoId = video.videoId)}
-						class="flex cursor-pointer flex-col gap-2 rounded-2xl border border-border bg-surface-muted/50 p-3 text-left transition-colors hover:border-primary/50"
+						class="gap-2 rounded-2xl p-3 flex cursor-pointer flex-col border border-border bg-surface-muted/50 text-left transition-colors hover:border-primary/50"
 					>
 						<img
 							src={video.thumbnailUrl}
@@ -471,26 +471,26 @@
 							class="h-28 w-full rounded-xl object-cover"
 							loading="lazy"
 						/>
-						<span class="line-clamp-2 text-xs font-bold text-text">{video.title}</span>
-						<span class="text-[10px] font-semibold text-text-muted">{video.channelTitle}</span>
+						<span class="text-xs font-bold line-clamp-2 text-text">{video.title}</span>
+						<span class="font-semibold text-[10px] text-text-muted">{video.channelTitle}</span>
 					</button>
 				{/each}
 			</div>
 
 			<!-- Embedded YouTube Player Modal -->
 			{#if activeVideoId}
-				<div class="mt-2 rounded-2xl border border-border/80 bg-slate-950 p-3">
+				<div class="mt-2 rounded-2xl bg-slate-950 p-3 border border-border/80">
 					<div class="mb-2 flex items-center justify-between">
 						<span class="text-xs font-bold text-slate-300">Video Player</span>
 						<button
 							type="button"
 							onclick={() => (activeVideoId = null)}
-							class="cursor-pointer text-xs text-slate-400 hover:text-white"
+							class="text-xs text-slate-400 hover:text-white cursor-pointer"
 						>
 							✕ Close Video
 						</button>
 					</div>
-					<div class="relative aspect-video w-full overflow-hidden rounded-xl">
+					<div class="aspect-video relative w-full overflow-hidden rounded-xl">
 						<iframe
 							src="https://www.youtube.com/embed/{activeVideoId}?autoplay=1"
 							title="YouTube video player"
@@ -507,17 +507,17 @@
 	<!-- Report Issue / Flag Content Modal -->
 	{#if showFlagModal}
 		<div
-			class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+			class="inset-0 bg-slate-950/60 p-4 backdrop-blur-xs fixed z-50 flex items-center justify-center"
 		>
 			<div
-				class="flex w-full max-w-md flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-2xl"
+				class="max-w-md gap-4 rounded-3xl p-6 shadow-2xl flex w-full flex-col border border-border bg-surface"
 			>
-				<div class="flex items-center justify-between border-b border-border pb-2">
+				<div class="pb-2 flex items-center justify-between border-b border-border">
 					<h3 class="font-display text-sm font-bold text-text">🚩 Report Content Issue</h3>
 					<button
 						type="button"
 						onclick={() => (showFlagModal = false)}
-						class="cursor-pointer text-xs text-text-muted hover:text-text"
+						class="text-xs cursor-pointer text-text-muted hover:text-text"
 					>
 						✕
 					</button>
@@ -532,14 +532,14 @@
 					bind:value={flagReason}
 					rows="3"
 					placeholder="Describe the issue in detail..."
-					class="w-full rounded-xl border border-border bg-surface-muted p-3 text-xs text-text focus:border-primary focus:outline-none"
+					class="p-3 text-xs w-full rounded-xl border border-border bg-surface-muted text-text focus:border-primary focus:outline-none"
 				></textarea>
 
-				<div class="flex justify-end gap-2">
+				<div class="gap-2 flex justify-end">
 					<button
 						type="button"
 						onclick={() => (showFlagModal = false)}
-						class="cursor-pointer rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text"
+						class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl border border-border text-text-muted hover:text-text"
 					>
 						Cancel
 					</button>
@@ -547,7 +547,7 @@
 						type="button"
 						onclick={handleFlagSubmit}
 						disabled={!flagReason.trim() || isSubmittingFlag}
-						class="cursor-pointer rounded-xl bg-danger px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-danger/90 disabled:opacity-50"
+						class="px-5 py-2 text-xs font-bold text-white shadow-xs cursor-pointer rounded-xl bg-danger hover:bg-danger/90 disabled:opacity-50"
 					>
 						{isSubmittingFlag ? 'Submitting...' : 'Submit Report'}
 					</button>

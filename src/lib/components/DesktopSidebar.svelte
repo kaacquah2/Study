@@ -41,13 +41,13 @@
 </script>
 
 <aside
-	class="sticky top-0 z-30 hidden h-screen w-56 shrink-0 flex-col justify-between overflow-hidden border-r border-border bg-surface select-none md:flex xl:w-64"
+	class="top-0 w-56 md:flex xl:w-64 sticky z-30 hidden h-screen shrink-0 flex-col justify-between overflow-hidden border-r border-border bg-surface select-none"
 >
 	<!-- Fixed Top Zone -->
-	<div class="flex shrink-0 flex-col gap-4 p-4 pb-2 xl:gap-6 xl:p-5 xl:pb-3">
-		<a href="/app" class="flex items-center gap-3">
+	<div class="gap-4 p-4 pb-2 xl:gap-6 xl:p-5 xl:pb-3 flex shrink-0 flex-col">
+		<a href="/app" class="gap-3 flex items-center">
 			<div
-				class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/20"
+				class="h-10 w-10 text-white flex items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/20"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -66,29 +66,29 @@
 			</div>
 			<div class="min-w-0">
 				<span
-					class="block truncate font-display text-sm font-bold tracking-tight text-text xl:text-base"
+					class="font-display text-sm font-bold tracking-tight xl:text-base block truncate text-text"
 					>AI Study Buddy</span
 				>
-				<span class="block truncate text-[10px] font-semibold text-text-muted"
+				<span class="font-semibold block truncate text-[10px] text-text-muted"
 					>Interactive AI Tutor</span
 				>
 			</div>
 		</a>
 
-		<nav class="flex flex-col gap-1 xl:gap-1.5">
+		<nav class="gap-1 xl:gap-1.5 flex flex-col">
 			<!-- AI Study Tutor Prominent Quick Action -->
 			<button
 				type="button"
 				onclick={() => chatStore.toggle()}
-				class="mb-1 flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-primary/30 bg-primary-soft/50 px-3 py-2.5 text-xs font-bold text-primary shadow-xs transition-all duration-180 hover:bg-primary hover:text-white xl:px-4 xl:py-2.5"
+				class="mb-1 gap-2.5 px-3 py-2.5 text-xs font-bold shadow-xs hover:text-white xl:px-4 xl:py-2.5 flex w-full cursor-pointer items-center justify-between rounded-xl border border-primary/30 bg-primary-soft/50 text-primary transition-all duration-180 hover:bg-primary"
 				aria-label="Open AI Study Tutor"
 			>
-				<div class="flex items-center gap-2.5 truncate">
+				<div class="gap-2.5 flex items-center truncate">
 					<span class="text-base leading-none">✨</span>
 					<span class="truncate">AI Study Tutor</span>
 				</div>
 				<span
-					class="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-black text-primary uppercase transition-colors group-hover:bg-white/20 group-hover:text-white"
+					class="px-1.5 py-0.5 font-black group-hover:bg-white/20 group-hover:text-white rounded-md bg-primary/10 text-[10px] text-primary uppercase transition-colors"
 				>
 					{chatStore.isOpen ? 'Open' : 'Chat'}
 				</span>
@@ -97,7 +97,7 @@
 			{#each navItems as item, idx (item.href)}
 				{#if sectionBreaks[idx]}
 					<div
-						class="mt-2.5 mb-1 px-3 text-[10px] font-black tracking-wider text-text-muted/60 uppercase"
+						class="mt-2.5 mb-1 px-3 font-black tracking-wider text-[10px] text-text-muted/60 uppercase"
 					>
 						{sectionBreaks[idx]}
 					</div>
@@ -106,8 +106,8 @@
 					currentPath === item.href || (item.href !== '/app' && currentPath.startsWith(item.href))}
 				<a
 					href={item.href}
-					class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition-all duration-180 xl:px-4 xl:py-2.5 {active
-						? 'bg-primary text-white shadow-md shadow-primary/20'
+					class="gap-2.5 px-3 py-2 text-xs font-bold xl:px-4 xl:py-2.5 flex items-center rounded-xl transition-all duration-180 {active
+						? 'text-white bg-primary shadow-md shadow-primary/20'
 						: 'text-text-muted hover:bg-surface-muted hover:text-text'}"
 				>
 					<svg
@@ -126,13 +126,13 @@
 	</div>
 
 	<!-- Scrollable Middle Zone -->
-	<div class="min-h-0 flex-1 scrollbar-thin overflow-y-auto px-5 py-2">
+	<div class="min-h-0 px-5 py-2 flex-1 scrollbar-thin overflow-y-auto">
 		<StreakHeatmap />
 	</div>
 
 	<!-- Fixed Bottom Zone -->
-	<div class="relative flex shrink-0 flex-col gap-2.5 border-t border-border/80 p-4 pt-3">
-		<div class="flex items-center justify-between px-2 text-xs font-bold text-text-muted">
+	<div class="gap-2.5 p-4 pt-3 relative flex shrink-0 flex-col border-t border-border/80">
+		<div class="px-2 text-xs font-bold flex items-center justify-between text-text-muted">
 			<span>Theme</span>
 			<ThemeSwitcher />
 		</div>
@@ -140,9 +140,9 @@
 		<div class="relative">
 			{#if sidebarProfileOpen}
 				<div
-					class="absolute bottom-full left-0 z-50 mb-3 flex w-full flex-col gap-3 rounded-2xl border border-border bg-surface p-3 shadow-2xl transition-all duration-180"
+					class="left-0 mb-3 gap-3 rounded-2xl p-3 shadow-2xl absolute bottom-full z-50 flex w-full flex-col border border-border bg-surface transition-all duration-180"
 				>
-					<div class="flex items-center gap-3 border-b border-border/60 pb-3">
+					<div class="gap-3 pb-3 flex items-center border-b border-border/60">
 						{#if authStore.user?.photoURL}
 							<img
 								src={authStore.user.photoURL}
@@ -151,13 +151,13 @@
 							/>
 						{:else}
 							<div
-								class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary"
+								class="h-9 w-9 text-xs font-bold flex shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"
 							>
 								{userInitials}
 							</div>
 						{/if}
 						<div class="min-w-0 truncate">
-							<span class="block truncate text-xs font-bold text-text">
+							<span class="text-xs font-bold block truncate text-text">
 								{authStore.user?.displayName || authStore.profile?.displayName || 'Student'}
 							</span>
 							<span
@@ -169,13 +169,13 @@
 						</div>
 					</div>
 
-					<div class="flex flex-col gap-1 text-xs font-semibold">
+					<div class="gap-1 text-xs font-semibold flex flex-col">
 						<a
 							href="/app/settings"
 							onclick={() => (sidebarProfileOpen = false)}
-							class="flex items-center justify-between rounded-xl px-3 py-2 text-text transition-colors hover:bg-surface-muted"
+							class="px-3 py-2 flex items-center justify-between rounded-xl text-text transition-colors hover:bg-surface-muted"
 						>
-							<div class="flex items-center gap-2.5">
+							<div class="gap-2.5 flex items-center">
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
 									class="h-4 w-4 text-text-muted"
@@ -194,7 +194,7 @@
 							</div>
 							{#if authStore.profile?.streak?.current}
 								<span
-									class="rounded-full bg-primary-soft/80 px-2 py-0.5 text-[10px] font-bold text-primary"
+									class="px-2 py-0.5 font-bold rounded-full bg-primary-soft/80 text-[10px] text-primary"
 								>
 									🔥 {authStore.profile.streak.current}d
 								</span>
@@ -208,7 +208,7 @@
 							sidebarProfileOpen = false;
 							authStore.logout();
 						}}
-						class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-danger-soft py-2.5 text-xs font-bold text-danger transition-all hover:bg-danger/15 active:scale-95"
+						class="gap-2 py-2.5 text-xs font-bold flex w-full cursor-pointer items-center justify-center rounded-xl bg-danger-soft text-danger transition-all hover:bg-danger/15 active:scale-95"
 					>
 						<span>Log out</span>
 					</button>
@@ -220,9 +220,9 @@
 				onclick={() => (sidebarProfileOpen = !sidebarProfileOpen)}
 				aria-label="User account menu"
 				aria-expanded={sidebarProfileOpen}
-				class="group flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-transparent px-2 py-1.5 text-left transition-all duration-180 hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
+				class="group gap-2.5 px-2 py-1.5 flex w-full cursor-pointer items-center justify-between rounded-xl border border-transparent text-left transition-all duration-180 hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
 			>
-				<div class="flex items-center gap-2.5 overflow-hidden">
+				<div class="gap-2.5 flex items-center overflow-hidden">
 					{#if authStore.user?.photoURL}
 						<img
 							src={authStore.user.photoURL}
@@ -231,14 +231,14 @@
 						/>
 					{:else}
 						<div
-							class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary"
+							class="h-8 w-8 text-xs font-bold flex shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"
 						>
 							{userInitials}
 						</div>
 					{/if}
 					<div class="min-w-0 truncate">
 						<span
-							class="block truncate text-xs font-bold text-text transition-colors group-hover:text-primary"
+							class="text-xs font-bold block truncate text-text transition-colors group-hover:text-primary"
 							>{authStore.user?.displayName || authStore.user?.email || 'Student'}</span
 						>
 						<span class="block truncate text-[10px] text-text-muted">Account settings</span>

@@ -254,12 +254,12 @@
 	let questionsAnsweredCount = $derived(currentQuestionIndex + (isAnswerLocked ? 1 : 0));
 </script>
 
-<div class="flex w-full flex-col gap-5">
+<div class="gap-5 flex w-full flex-col">
 	<!-- Top Bar with Progress -->
-	<div class="flex flex-col gap-2.5 border-b border-border pb-3.5">
+	<div class="gap-2.5 pb-3.5 flex flex-col border-b border-border">
 		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-2.5">
-				<span class="rounded-lg bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary">
+			<div class="gap-2.5 flex items-center">
+				<span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-primary-soft text-primary">
 					Question {currentQuestionIndex + 1} of {questions.length}
 				</span>
 				<span class="text-xs font-semibold text-text-muted">
@@ -272,12 +272,12 @@
 				</span>
 			</div>
 
-			<div class="flex items-center gap-2">
+			<div class="gap-2 flex items-center">
 				{#if onFlagContent}
 					<button
 						type="button"
 						onclick={onFlagContent}
-						class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold text-text-muted hover:border-danger hover:text-danger active:scale-95"
+						class="gap-1 px-2.5 py-1 font-semibold inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-[11px] text-text-muted hover:border-danger hover:text-danger active:scale-95"
 						title="Report issue with this quiz"
 					>
 						🚩 Report
@@ -289,7 +289,7 @@
 						type="button"
 						onclick={onRegenerateQuestion}
 						disabled={isRegenerating}
-						class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-primary/40 bg-primary-soft/50 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary hover:text-white disabled:opacity-50"
+						class="gap-1.5 px-3 py-1.5 text-xs font-bold hover:text-white inline-flex cursor-pointer items-center rounded-xl border border-primary/40 bg-primary-soft/50 text-primary hover:bg-primary disabled:opacity-50"
 						title="Regenerate this specific question with AI"
 					>
 						{#if isRegenerating}
@@ -323,14 +323,14 @@
 	<!-- Question Card -->
 	{#if activeQuestion}
 		<div
-			class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8"
+			class="gap-6 rounded-3xl p-6 sm:p-8 flex flex-col border border-border bg-surface shadow-sm"
 		>
-			<h3 class="font-display text-lg font-bold text-text sm:text-xl">
+			<h3 class="font-display text-lg font-bold sm:text-xl text-text">
 				{questionPrompt}
 			</h3>
 
 			<!-- Option List -->
-			<div class="flex flex-col gap-3">
+			<div class="gap-3 flex flex-col">
 				{#each activeQuestion.options as option, idx (idx)}
 					{@const isSelected = selectedOptionIndex === idx}
 					{@const isCorrectOption = isAnswerLocked && idx === correctIndex}
@@ -340,24 +340,24 @@
 						type="button"
 						onclick={() => handleSelectOption(idx)}
 						disabled={isAnswerLocked}
-						class="flex w-full cursor-pointer items-center justify-between rounded-2xl border p-4 text-left text-xs font-medium transition-all duration-180 sm:text-sm
+						class="rounded-2xl p-4 text-xs font-medium sm:text-sm flex w-full cursor-pointer items-center justify-between border text-left transition-all duration-180
 						{isCorrectOption
 							? 'border-emerald-500 bg-emerald-500/10 font-bold text-emerald-400 shadow-xs'
 							: isWrongSelection
-								? 'anim-shake border-danger bg-danger/10 font-bold text-danger'
+								? 'anim-shake font-bold border-danger bg-danger/10 text-danger'
 								: isSelected
-									? 'border-primary bg-primary-soft font-bold text-primary ring-2 ring-primary/40'
+									? 'font-bold border-primary bg-primary-soft text-primary ring-2 ring-primary/40'
 									: 'border-border bg-surface text-text hover:border-text-muted hover:bg-surface-muted/60'}"
 					>
-						<div class="flex items-center gap-3">
+						<div class="gap-3 flex items-center">
 							<span
-								class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-xs font-bold
+								class="h-6 w-6 text-xs font-bold flex shrink-0 items-center justify-center rounded-lg
 								{isCorrectOption
 									? 'bg-emerald-500 text-slate-950'
 									: isWrongSelection
-										? 'bg-danger text-white'
+										? 'text-white bg-danger'
 										: isSelected
-											? 'bg-primary text-white'
+											? 'text-white bg-primary'
 											: 'bg-surface-muted text-text-muted'}"
 							>
 								{['A', 'B', 'C', 'D'][idx]}
@@ -377,14 +377,14 @@
 			<!-- Post-Answer Feedback & AI Explanation Section -->
 			{#if isAnswerLocked}
 				<div
-					class="flex flex-col gap-3 rounded-2xl border border-border/80 bg-surface-muted/60 p-4"
+					class="gap-3 rounded-2xl p-4 flex flex-col border border-border/80 bg-surface-muted/60"
 				>
 					{#if selectedOptionIndex === correctIndex}
-						<div class="flex items-center gap-2 text-xs font-bold text-emerald-400">
+						<div class="gap-2 text-xs font-bold text-emerald-400 flex items-center">
 							<span>🎉 Great job! That's correct.</span>
 						</div>
 					{:else}
-						<div class="flex items-center justify-between gap-2">
+						<div class="gap-2 flex items-center justify-between">
 							<span class="text-xs font-bold text-danger"
 								>Incorrect. The correct answer was option {['A', 'B', 'C', 'D'][
 									correctIndex
@@ -394,7 +394,7 @@
 								<button
 									type="button"
 									onclick={handleRequestExplanation}
-									class="cursor-pointer rounded-lg bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary hover:bg-primary hover:text-white"
+									class="px-2.5 py-1 text-xs font-bold hover:text-white cursor-pointer rounded-lg bg-primary-soft text-primary hover:bg-primary"
 								>
 									🤖 Explain My Mistake
 								</button>
@@ -412,8 +412,8 @@
 
 					<!-- Streaming AI Explanation -->
 					{#if isExplaining || aiExplanation}
-						<div class="mt-2 rounded-xl border border-primary/30 bg-primary-soft/30 p-3.5 text-xs">
-							<div class="mb-1.5 flex items-center gap-2 font-bold text-primary">
+						<div class="mt-2 p-3.5 text-xs rounded-xl border border-primary/30 bg-primary-soft/30">
+							<div class="mb-1.5 gap-2 font-bold flex items-center text-primary">
 								<span>🤖 AI Tutor Reasoning:</span>
 								{#if isExplaining}
 									<span class="h-2 w-2 animate-ping rounded-full bg-primary"></span>
@@ -431,8 +431,8 @@
 	{/if}
 
 	<!-- Bottom Action Confirmation -->
-	<div class="flex items-center justify-between pt-2">
-		<span class="text-[11px] font-semibold text-text-muted">
+	<div class="pt-2 flex items-center justify-between">
+		<span class="font-semibold text-[11px] text-text-muted">
 			Keyboard: Keys [1-4] to select, [Enter] to submit
 		</span>
 
@@ -441,7 +441,7 @@
 				type="button"
 				onclick={handleConfirmAnswer}
 				disabled={selectedOptionIndex === null}
-				class="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+				class="gap-2 rounded-2xl px-6 py-3 text-xs font-bold text-white inline-flex cursor-pointer items-center bg-primary shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
 			>
 				<span>Confirm Answer &rarr;</span>
 			</button>
@@ -449,7 +449,7 @@
 			<button
 				type="button"
 				onclick={handleNextQuestion}
-				class="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-95"
+				class="gap-2 rounded-2xl px-6 py-3 text-xs font-bold text-white inline-flex cursor-pointer items-center bg-primary shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-95"
 			>
 				<span
 					>{currentQuestionIndex < questions.length - 1

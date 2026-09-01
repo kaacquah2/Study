@@ -177,15 +177,15 @@
 	<title>Knowledge Map &mdash; AI Study Buddy</title>
 </svelte:head>
 
-<div class="mx-auto flex w-full max-w-5xl flex-col gap-6 py-4">
+<div class="max-w-5xl gap-6 py-4 mx-auto flex w-full flex-col">
 	<!-- Header Bar -->
 	<div
-		class="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between"
+		class="gap-4 pb-4 sm:flex-row sm:items-center sm:justify-between flex flex-col border-b border-border"
 	>
 		<div>
 			<a
 				href={resolve('/app')}
-				class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
+				class="gap-1.5 text-xs font-bold inline-flex items-center text-text-muted transition-colors hover:text-primary"
 			>
 				&larr; Return to Dashboard
 			</a>
@@ -196,12 +196,12 @@
 		</div>
 
 		<!-- Course Selector Dropdown & Search -->
-		<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+		<div class="gap-2 sm:flex-row sm:items-center flex flex-col">
 			<input
 				type="text"
 				bind:value={searchQuery}
 				placeholder="Search concept..."
-				class="rounded-xl border border-border bg-surface px-3 py-2 text-xs font-medium text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+				class="px-3 py-2 text-xs font-medium rounded-xl border border-border bg-surface text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
 			/>
 			{#if loadingCourses}
 				<div class="h-10 w-48 animate-pulse rounded-xl bg-surface-muted"></div>
@@ -209,7 +209,7 @@
 				<select
 					value={selectedCourseId}
 					onchange={handleCourseSelect}
-					class="w-full cursor-pointer rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text shadow-xs focus:border-primary focus:outline-none sm:w-64"
+					class="px-4 py-2 text-xs font-bold shadow-xs sm:w-64 w-full cursor-pointer rounded-xl border border-border bg-surface text-text focus:border-primary focus:outline-none"
 				>
 					{#each courses as course (course.id)}
 						<option value={course.id}>📚 {course.title}</option>
@@ -221,26 +221,26 @@
 
 	<!-- Mastery Color Legend Bar -->
 	<div
-		class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-text-muted shadow-2xs"
+		class="gap-3 rounded-2xl px-4 py-2.5 text-xs font-semibold shadow-2xs flex flex-wrap items-center justify-between border border-border bg-surface text-text-muted"
 	>
-		<div class="flex items-center gap-2 font-bold text-text">
+		<div class="gap-2 font-bold flex items-center text-text">
 			<span>🎨 Mastery Legend:</span>
 		</div>
-		<div class="flex flex-wrap items-center gap-4">
-			<span class="flex items-center gap-1.5">
-				<span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+		<div class="gap-4 flex flex-wrap items-center">
+			<span class="gap-1.5 flex items-center">
+				<span class="h-2.5 w-2.5 bg-emerald-500 rounded-full"></span>
 				<strong class="text-text">Mastered</strong> (≥80%)
 			</span>
-			<span class="flex items-center gap-1.5">
+			<span class="gap-1.5 flex items-center">
 				<span class="h-2.5 w-2.5 rounded-full bg-primary"></span>
 				<strong class="text-text">Reviewing</strong> (40–79%)
 			</span>
-			<span class="flex items-center gap-1.5">
-				<span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+			<span class="gap-1.5 flex items-center">
+				<span class="h-2.5 w-2.5 bg-amber-500 rounded-full"></span>
 				<strong class="text-text">Learning</strong> (1–39%)
 			</span>
-			<span class="flex items-center gap-1.5">
-				<span class="h-2.5 w-2.5 rounded-full bg-slate-400"></span>
+			<span class="gap-1.5 flex items-center">
+				<span class="h-2.5 w-2.5 bg-slate-400 rounded-full"></span>
 				<strong class="text-text">Not Assessed</strong>
 			</span>
 		</div>
@@ -249,18 +249,18 @@
 	<!-- AI Recommended Next Step Banner (if available from recommendNext.ts) -->
 	{#if mapData.recommendation}
 		<div
-			class="flex flex-col justify-between gap-4 rounded-3xl border border-primary/30 bg-linear-to-r from-primary-soft/40 via-surface to-surface p-5 shadow-xs sm:flex-row sm:items-center"
+			class="gap-4 rounded-3xl p-5 shadow-xs sm:flex-row sm:items-center flex flex-col justify-between border border-primary/30 bg-linear-to-r from-primary-soft/40 via-surface to-surface"
 		>
-			<div class="flex items-center gap-3.5">
+			<div class="gap-3.5 flex items-center">
 				<div
-					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-xl text-white shadow-md shadow-primary/20"
+					class="h-11 w-11 rounded-2xl text-xl text-white flex shrink-0 items-center justify-center bg-primary shadow-md shadow-primary/20"
 				>
 					🎯
 				</div>
 				<div>
-					<div class="flex items-center gap-2">
+					<div class="gap-2 flex items-center">
 						<span
-							class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black tracking-wider text-primary uppercase"
+							class="px-2 py-0.5 font-black tracking-wider rounded-full bg-primary/10 text-[10px] text-primary uppercase"
 						>
 							AI Recommended Next Topic
 						</span>
@@ -279,12 +279,12 @@
 				</div>
 			</div>
 
-			<div class="flex shrink-0 items-center gap-2">
+			<div class="gap-2 flex shrink-0 items-center">
 				<button
 					type="button"
 					onclick={() =>
 						mapData.recommendation && handleNodeAction(mapData.recommendation.node, 'lesson')}
-					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-primary-hover active:scale-95"
+					class="gap-1.5 px-4 py-2.5 text-xs font-bold text-white shadow-xs inline-flex cursor-pointer items-center rounded-xl bg-primary transition-all hover:bg-primary-hover active:scale-95"
 				>
 					<span>Study Topic &rarr;</span>
 				</button>
@@ -293,7 +293,7 @@
 	{/if}
 
 	{#if loadingMap || loadingCourses}
-		<div class="flex flex-col gap-4">
+		<div class="gap-4 flex flex-col">
 			<Skeleton variant="card" />
 			<Skeleton variant="card" />
 		</div>

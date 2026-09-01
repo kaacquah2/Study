@@ -378,7 +378,7 @@
 	{#if !chatStore.isOpen}
 		<button
 			type="button"
-			class="fixed right-6 bottom-20 z-40 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-xl transition-all duration-180 hover:scale-105 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 md:right-6 md:bottom-6"
+			class="right-6 bottom-20 h-14 w-14 text-white shadow-xl md:right-6 md:bottom-6 fixed z-40 flex cursor-pointer items-center justify-center rounded-full bg-primary transition-all duration-180 hover:scale-105 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
 			onclick={toggleDrawer}
 			aria-label="Open AI Study Assistant"
 		>
@@ -407,15 +407,15 @@
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		{#if !chatStore.isDocked}
 			<div
-				class="fixed inset-0 z-40 bg-text/20 backdrop-blur-xs md:hidden"
+				class="inset-0 backdrop-blur-xs md:hidden fixed z-40 bg-text/20"
 				onclick={toggleDrawer}
 			></div>
 		{/if}
 
 		<aside
-			class="animate-slide-in flex flex-col border-l border-border bg-surface shadow-2xl transition-all duration-150 {chatStore.isDocked
+			class="animate-slide-in shadow-2xl flex flex-col border-l border-border bg-surface transition-all duration-150 {chatStore.isDocked
 				? 'relative z-20 h-screen shrink-0 border-l border-border bg-surface'
-				: 'fixed top-0 right-0 z-50 h-full w-full max-w-[calc(100vw-2rem)] md:w-96 lg:w-105'}"
+				: 'top-0 right-0 md:w-96 lg:w-105 fixed z-50 h-full w-full max-w-[calc(100vw-2rem)]'}"
 			style={chatStore.isDocked ? `width: ${chatStore.dockWidth}px;` : ''}
 		>
 			<!-- Resize Drag Handle (Only active when docked on desktop >= 1024px) -->
@@ -426,11 +426,11 @@
 					aria-orientation="vertical"
 					aria-label="Resize chat panel"
 					onmousedown={handleMouseDownResize}
-					class="group absolute top-0 bottom-0 -left-1.5 z-30 w-3 cursor-col-resize select-none focus:outline-none"
+					class="group top-0 bottom-0 -left-1.5 w-3 absolute z-30 cursor-col-resize select-none focus:outline-none"
 					title="Drag to resize AI Companion width"
 				>
 					<div
-						class="mx-auto h-full w-1 rounded-full transition-colors group-hover:bg-primary {isResizing
+						class="w-1 mx-auto h-full rounded-full transition-colors group-hover:bg-primary {isResizing
 							? 'bg-primary'
 							: 'bg-transparent'}"
 					></div>
@@ -438,23 +438,23 @@
 			{/if}
 
 			<!-- Header -->
-			<div class="flex items-center justify-between border-b border-border p-4">
-				<div class="flex items-center gap-2">
+			<div class="p-4 flex items-center justify-between border-b border-border">
+				<div class="gap-2 flex items-center">
 					<div
-						class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-soft text-primary shadow-xs"
+						class="h-8 w-8 shadow-xs flex items-center justify-center rounded-xl bg-primary-soft text-primary"
 					>
 						<span class="text-sm">✨</span>
 					</div>
 					<div>
 						<h3 class="font-display text-xs font-bold text-text">AI Study Tutor</h3>
-						<div class="flex items-center gap-2">
-							<span class="text-[10px] font-bold tracking-wider text-success uppercase"
+						<div class="gap-2 flex items-center">
+							<span class="font-bold tracking-wider text-[10px] text-success uppercase"
 								>● Online</span
 							>
 							<button
 								type="button"
 								onclick={() => (socraticMode = !socraticMode)}
-								class="inline-flex cursor-pointer items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-all {socraticMode
+								class="gap-1 px-2 py-0.5 font-bold inline-flex cursor-pointer items-center rounded-full text-[10px] transition-all {socraticMode
 									? 'border border-primary/30 bg-primary-soft text-primary'
 									: 'border border-border bg-surface-muted text-text-muted'}"
 								title={socraticMode
@@ -468,12 +468,12 @@
 					</div>
 				</div>
 
-				<div class="flex items-center gap-1">
+				<div class="gap-1 flex items-center">
 					{#if messages.length > 1}
 						<button
 							type="button"
 							onclick={clearChat}
-							class="cursor-pointer rounded-lg p-1.5 text-xs text-text-muted hover:bg-surface-muted hover:text-text"
+							class="p-1.5 text-xs cursor-pointer rounded-lg text-text-muted hover:bg-surface-muted hover:text-text"
 							title="Clear conversation"
 							aria-label="Clear chat"
 						>
@@ -485,7 +485,7 @@
 					<button
 						type="button"
 						onclick={toggleDock}
-						class="hidden cursor-pointer rounded-lg p-1.5 text-text-muted hover:bg-surface-muted hover:text-text lg:inline-flex"
+						class="p-1.5 lg:inline-flex hidden cursor-pointer rounded-lg text-text-muted hover:bg-surface-muted hover:text-text"
 						title={chatStore.isDocked
 							? 'Switch to floating window'
 							: 'Dock side-by-side with lesson'}
@@ -527,7 +527,7 @@
 					<!-- Close Button -->
 					<button
 						type="button"
-						class="cursor-pointer rounded-lg p-1.5 text-text-muted hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
+						class="p-1.5 cursor-pointer rounded-lg text-text-muted hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
 						onclick={toggleDrawer}
 						aria-label="Close assistant"
 					>
@@ -551,11 +551,11 @@
 			<!-- Active Study Context Banner -->
 			{#if activeContextLabel}
 				<div
-					class="flex items-center justify-between border-b border-primary/20 bg-primary-soft/40 px-3.5 py-1.5 text-[11px] font-semibold text-primary"
+					class="px-3.5 py-1.5 font-semibold flex items-center justify-between border-b border-primary/20 bg-primary-soft/40 text-[11px] text-primary"
 				>
-					<div class="flex items-center gap-1.5 truncate">
+					<div class="gap-1.5 flex items-center truncate">
 						<span>📍 Context:</span>
-						<span class="truncate font-bold text-text">{activeContextLabel}</span>
+						<span class="font-bold truncate text-text">{activeContextLabel}</span>
 					</div>
 					<button
 						type="button"
@@ -571,14 +571,14 @@
 
 			<!-- Quick Action Prompt Chips Strip -->
 			<div
-				class="flex gap-1.5 overflow-x-auto border-b border-border/60 bg-surface-muted/40 px-3 py-2 text-[11px]"
+				class="gap-1.5 px-3 py-2 flex overflow-x-auto border-b border-border/60 bg-surface-muted/40 text-[11px]"
 			>
 				{#each promptChips as chip (chip.label)}
 					<button
 						type="button"
 						onclick={() => handleChipClick(chip.prompt)}
 						disabled={loading}
-						class="inline-flex shrink-0 cursor-pointer items-center rounded-lg border border-border bg-surface px-2.5 py-1 font-semibold text-text-muted transition-colors hover:border-primary/40 hover:text-primary active:scale-95 disabled:opacity-50"
+						class="px-2.5 py-1 font-semibold inline-flex shrink-0 cursor-pointer items-center rounded-lg border border-border bg-surface text-text-muted transition-colors hover:border-primary/40 hover:text-primary active:scale-95 disabled:opacity-50"
 					>
 						{chip.label}
 					</button>
@@ -588,29 +588,29 @@
 			<!-- Message List Container -->
 			<div
 				bind:this={messagesContainer}
-				class="flex-1 space-y-3.5 overflow-y-auto scroll-smooth p-3.5"
+				class="space-y-3.5 p-3.5 flex-1 overflow-y-auto scroll-smooth"
 			>
 				<!-- Initial Mode Entry Panel when conversation is fresh -->
 				{#if messages.length <= 1}
-					<div class="rounded-2xl border border-border/80 bg-surface-muted/50 p-4">
+					<div class="rounded-2xl p-4 border border-border/80 bg-surface-muted/50">
 						<div class="mb-3 flex items-center justify-between">
-							<span class="text-[10px] font-bold tracking-wider text-text-muted uppercase">
+							<span class="font-bold tracking-wider text-[10px] text-text-muted uppercase">
 								Choose a learning mode:
 							</span>
-							<span class="text-[10px] font-semibold text-primary">
+							<span class="font-semibold text-[10px] text-primary">
 								{socraticMode ? '💡 Socratic Mode Active' : '⚡ Direct Mode Active'}
 							</span>
 						</div>
 
-						<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+						<div class="gap-2 sm:grid-cols-2 grid grid-cols-1">
 							{#each tutorModes as mode (mode.title)}
 								<button
 									type="button"
 									onclick={() => handleChipClick(mode.prompt)}
 									disabled={loading}
-									class="flex cursor-pointer flex-col items-start rounded-xl border border-border bg-surface p-2.5 text-left transition-all hover:border-primary/50 hover:bg-primary-soft/20 hover:shadow-xs active:scale-98 disabled:opacity-50"
+									class="p-2.5 hover:shadow-xs flex cursor-pointer flex-col items-start rounded-xl border border-border bg-surface text-left transition-all hover:border-primary/50 hover:bg-primary-soft/20 active:scale-98 disabled:opacity-50"
 								>
-									<div class="flex items-center gap-1.5 text-xs font-bold text-text">
+									<div class="gap-1.5 text-xs font-bold flex items-center text-text">
 										<span>{mode.icon}</span>
 										<span>{mode.title}</span>
 									</div>
@@ -626,9 +626,9 @@
 				{#each messages as msg, idx (idx)}
 					<div class="group flex {msg.role === 'user' ? 'justify-end' : 'justify-start'}">
 						<div
-							class="relative max-w-[88%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed shadow-xs
+							class="rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed shadow-xs relative max-w-[88%]
 							{msg.role === 'user'
-								? 'rounded-br-none bg-primary text-white'
+								? 'text-white rounded-br-none bg-primary'
 								: 'prose dark:prose-invert rounded-bl-none border border-border bg-surface-muted text-text'}"
 						>
 							{#if msg.role === 'assistant'}
@@ -641,7 +641,7 @@
 								<button
 									type="button"
 									onclick={() => handleCopyMessage(msg.content)}
-									class="absolute top-2 right-2 hidden rounded p-1 text-[10px] text-text-muted opacity-80 transition-opacity group-hover:inline-flex hover:bg-surface hover:text-text"
+									class="top-2 right-2 rounded p-1 absolute hidden text-[10px] text-text-muted opacity-80 transition-opacity group-hover:inline-flex hover:bg-surface hover:text-text"
 									title="Copy response"
 								>
 									📋
@@ -651,23 +651,23 @@
 							{/if}
 
 							{#if msg.sources && msg.sources.length > 0}
-								<div class="mt-2.5 border-t border-border/40 pt-2 text-[11px]">
-									<div class="mb-1 flex items-center gap-1.5 font-bold">
+								<div class="mt-2.5 pt-2 border-t border-border/40 text-[11px]">
+									<div class="mb-1 gap-1.5 font-bold flex items-center">
 										{#if msg.sourceSupport === 'strong'}
 											<span
-												class="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-600 dark:text-emerald-400"
+												class="rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-600 dark:text-emerald-400 text-[10px]"
 											>
 												📘 Strong source support
 											</span>
 										{:else}
 											<span
-												class="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-600 dark:text-blue-400"
+												class="rounded bg-blue-500/10 px-1.5 py-0.5 text-blue-600 dark:text-blue-400 text-[10px]"
 											>
 												📘 Limited source support
 											</span>
 										{/if}
 									</div>
-									<div class="text-muted-foreground flex flex-col gap-0.5 text-[10px]">
+									<div class="text-muted-foreground gap-0.5 flex flex-col text-[10px]">
 										{#each msg.sources as src, srcIdx (src.chunkId || `${src.sourceTitle}-${srcIdx}`)}
 											<div>
 												• <strong>{src.sourceTitle}</strong>
@@ -683,30 +683,30 @@
 								</div>
 							{:else if msg.role === 'assistant' && msg.sourceSupport === 'none' && !msg.isError}
 								<div
-									class="text-muted-foreground mt-2 flex items-center gap-1 border-t border-border/40 pt-1 text-[10px]"
+									class="text-muted-foreground mt-2 gap-1 pt-1 flex items-center border-t border-border/40 text-[10px]"
 								>
 									<span>🌐 General knowledge explanation</span>
 								</div>
 							{/if}
 
 							{#if msg.isError}
-								<div class="mt-3 flex flex-wrap items-center gap-2 border-t border-border/50 pt-2">
+								<div class="mt-3 gap-2 pt-2 flex flex-wrap items-center border-t border-border/50">
 									<a
 										href="/app/review"
-										class="bg-card text-foreground hover:bg-muted rounded-lg border border-border px-2.5 py-1 text-[11px] font-semibold"
+										class="bg-card text-foreground hover:bg-muted px-2.5 py-1 font-semibold rounded-lg border border-border text-[11px]"
 									>
 										🧠 Review Flashcards
 									</a>
 									<a
 										href="/app/courses"
-										class="bg-card text-foreground hover:bg-muted rounded-lg border border-border px-2.5 py-1 text-[11px] font-semibold"
+										class="bg-card text-foreground hover:bg-muted px-2.5 py-1 font-semibold rounded-lg border border-border text-[11px]"
 									>
 										📖 Continue Lesson
 									</a>
 									<button
 										type="button"
 										onclick={() => handleSend()}
-										class="rounded-lg bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20"
+										class="px-2.5 py-1 font-semibold rounded-lg bg-primary/10 text-[11px] text-primary hover:bg-primary/20"
 									>
 										🔄 Retry Question
 									</button>
@@ -719,7 +719,7 @@
 				{#if loading}
 					<div class="flex justify-start">
 						<div
-							class="flex items-center gap-1 rounded-2xl rounded-bl-none border border-border bg-surface-muted px-3.5 py-2.5"
+							class="gap-1 rounded-2xl px-3.5 py-2.5 flex items-center rounded-bl-none border border-border bg-surface-muted"
 						>
 							<span
 								class="h-1.5 w-1.5 animate-bounce rounded-full bg-text-muted"
@@ -739,8 +739,8 @@
 			</div>
 
 			<!-- Input form footer -->
-			<div class="border-t border-border bg-surface p-3">
-				<div class="flex gap-2">
+			<div class="p-3 border-t border-border bg-surface">
+				<div class="gap-2 flex">
 					<input
 						type="text"
 						bind:value={inputMessage}
@@ -749,12 +749,12 @@
 							? `Ask about "${activeContextLabel}"...`
 							: 'Ask a study question...'}
 						aria-label="Ask a question"
-						class="grow rounded-xl border border-border bg-surface-muted px-3.5 py-2.5 text-xs transition-colors duration-180 hover:border-text-muted focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+						class="px-3.5 py-2.5 text-xs grow rounded-xl border border-border bg-surface-muted transition-colors duration-180 hover:border-text-muted focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 						disabled={loading}
 					/>
 					<button
 						type="button"
-						class="flex cursor-pointer items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-white shadow-xs transition-all duration-180 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+						class="px-4 py-2.5 text-white shadow-xs flex cursor-pointer items-center justify-center rounded-xl bg-primary transition-all duration-180 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
 						onclick={handleSend}
 						disabled={loading || !inputMessage.trim()}
 						aria-label="Send message"

@@ -109,7 +109,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="relative flex flex-col justify-between rounded-lg border border-border bg-surface p-6 shadow-md transition-all duration-200 select-none {borderClasses[
+	class="p-6 relative flex flex-col justify-between rounded-lg border border-border bg-surface shadow-md transition-all duration-200 select-none {borderClasses[
 		course.accent || 'violet'
 	] || 'border-t-4 border-t-primary'} {isHovered ? 'shadow-xl' : ''}"
 	onmousemove={handleMouseMove}
@@ -119,36 +119,36 @@
 		: 1}); will-change: transform;"
 >
 	<!-- Card Header -->
-	<div class="mb-3 flex items-start justify-between gap-4">
+	<div class="mb-3 gap-4 flex items-start justify-between">
 		<!-- Status Badge -->
 		<div>
 			{#if course.status === 'building'}
 				<span
-					class="inline-flex items-center gap-1.5 rounded-sm bg-primary-soft px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary uppercase"
+					class="gap-1.5 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-primary-soft text-[10px] text-primary uppercase"
 				>
-					<span class="relative flex h-1.5 w-1.5">
+					<span class="h-1.5 w-1.5 relative flex">
 						<span
-							class="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"
+							class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
 						></span>
-						<span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary"></span>
+						<span class="h-1.5 w-1.5 relative inline-flex rounded-full bg-primary"></span>
 					</span>
 					Building...
 				</span>
 			{:else if course.status === 'ready'}
 				<span
-					class="inline-flex items-center gap-1 rounded-sm bg-success-soft px-2 py-0.5 text-[10px] font-bold tracking-wider text-success uppercase"
+					class="gap-1 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-success-soft text-[10px] text-success uppercase"
 				>
 					Ready
 				</span>
 			{:else if course.status === 'failed'}
 				<span
-					class="inline-flex items-center gap-1 rounded-sm bg-danger-soft px-2 py-0.5 text-[10px] font-bold tracking-wider text-danger uppercase"
+					class="gap-1 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-danger-soft text-[10px] text-danger uppercase"
 				>
 					Failed
 				</span>
 			{:else}
 				<span
-					class="inline-flex items-center gap-1 rounded-sm bg-surface-muted px-2 py-0.5 text-[10px] font-bold tracking-wider text-text-muted uppercase"
+					class="gap-1 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-surface-muted text-[10px] text-text-muted uppercase"
 				>
 					Draft
 				</span>
@@ -161,7 +161,7 @@
 				type="button"
 				onclick={toggleMenu}
 				aria-label="Course options menu"
-				class="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-muted hover:text-text"
+				class="h-7 w-7 flex items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-muted hover:text-text"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -182,7 +182,7 @@
 			<!-- Dropdown Menu -->
 			{#if showMenu}
 				<div
-					class="absolute top-full right-0 z-20 mt-1 w-36 rounded-md border border-border bg-surface p-1 shadow-lg"
+					class="right-0 mt-1 w-36 p-1 absolute top-full z-20 rounded-md border border-border bg-surface shadow-lg"
 				>
 					<button
 						type="button"
@@ -191,7 +191,7 @@
 							showMenu = false;
 							onShare(course.id);
 						}}
-						class="flex w-full items-center gap-2 rounded px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-surface-muted"
+						class="gap-2 rounded px-3 py-1.5 text-xs font-semibold flex w-full items-center text-text transition-colors hover:bg-surface-muted"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -222,7 +222,7 @@
 							e.stopPropagation();
 							triggerDelete();
 						}}
-						class="flex w-full items-center gap-2 rounded px-3 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger-soft"
+						class="gap-2 rounded px-3 py-1.5 text-xs font-semibold flex w-full items-center text-danger transition-colors hover:bg-danger-soft"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -256,7 +256,7 @@
 		>
 			{course.title}
 		</h3>
-		<p class="line-clamp-3 text-xs leading-relaxed text-text-muted">
+		<p class="text-xs leading-relaxed line-clamp-3 text-text-muted">
 			{course.description}
 		</p>
 	</div>
@@ -265,7 +265,7 @@
 	<div class="mt-auto">
 		<!-- Progress Indicator -->
 		<div
-			class="mb-2 flex items-center justify-between text-[10px] font-bold tracking-wider text-text-muted uppercase"
+			class="mb-2 font-bold tracking-wider flex items-center justify-between text-[10px] text-text-muted uppercase"
 		>
 			<span>{course.moduleCount} modules</span>
 			<span class={textAccentClasses[course.accent || 'violet'] || 'text-primary'}
@@ -290,7 +290,7 @@
 		<!-- Start Learning Button -->
 		<a
 			href={`/app/courses/${course.id}`}
-			class="flex w-full items-center justify-center rounded-md bg-primary-soft px-4 py-3 text-xs font-bold text-primary shadow-sm transition-all duration-180 hover:bg-primary hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
+			class="px-4 py-3 text-xs font-bold hover:text-white flex w-full items-center justify-center rounded-md bg-primary-soft text-primary shadow-sm transition-all duration-180 hover:bg-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
 		>
 			{#if percent === 0}
 				Start learning
@@ -305,11 +305,11 @@
 
 <!-- Delete Confirmation Modal Dialog -->
 {#if showDeleteConfirmModal}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+	<div class="inset-0 bg-black/60 p-4 backdrop-blur-xs fixed z-50 flex items-center justify-center">
 		<div
-			class="flex w-full max-w-sm flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-2xl"
+			class="max-w-sm gap-4 rounded-2xl p-6 shadow-2xl flex w-full flex-col border border-border bg-surface"
 		>
-			<div class="flex items-center gap-3 text-danger">
+			<div class="gap-3 flex items-center text-danger">
 				<span class="text-2xl">⚠️</span>
 				<h3 class="font-display text-base font-bold">Delete Course?</h3>
 			</div>
@@ -319,11 +319,11 @@
 				will permanently remove all modules, quiz progress, and certificate records.
 			</p>
 
-			<div class="flex items-center justify-end gap-3 pt-2">
+			<div class="gap-3 pt-2 flex items-center justify-end">
 				<button
 					type="button"
 					onclick={() => (showDeleteConfirmModal = false)}
-					class="cursor-pointer rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text"
+					class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl border border-border text-text-muted hover:text-text"
 				>
 					Cancel
 				</button>
@@ -331,7 +331,7 @@
 				<button
 					type="button"
 					onclick={confirmDelete}
-					class="cursor-pointer rounded-xl bg-danger px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-danger/90 active:scale-95"
+					class="px-4 py-2 text-xs font-bold text-white cursor-pointer rounded-xl bg-danger shadow-sm hover:bg-danger/90 active:scale-95"
 				>
 					Delete Course
 				</button>

@@ -156,11 +156,11 @@
 </svelte:head>
 
 <AppShell requireAuth={true}>
-	<div class="mx-auto flex w-full max-w-3xl grow flex-col gap-6 px-6 py-8">
+	<div class="max-w-3xl gap-6 px-6 py-8 mx-auto flex w-full grow flex-col">
 		<!-- Header Navigation Back Link -->
 		<a
 			href={resolve(`/courses/${courseId}`)}
-			class="inline-flex items-center gap-1.5 rounded-md p-1.5 text-xs font-bold tracking-wider text-text-muted uppercase transition-all duration-180 select-none hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
+			class="gap-1.5 p-1.5 text-xs font-bold tracking-wider inline-flex items-center rounded-md text-text-muted uppercase transition-all duration-180 select-none hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -177,9 +177,9 @@
 		</a>
 
 		{#if loadError}
-			<div class="my-6 rounded-lg border border-border bg-surface p-10 text-center shadow-md">
+			<div class="my-6 p-10 rounded-lg border border-border bg-surface text-center shadow-md">
 				<div
-					class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-md bg-danger-soft text-danger"
+					class="mb-4 h-12 w-12 inline-flex items-center justify-center rounded-md bg-danger-soft text-danger"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -202,16 +202,16 @@
 				<p class="mb-6 text-sm text-text-muted">
 					{loadError}
 				</p>
-				<div class="flex justify-center gap-3">
+				<div class="gap-3 flex justify-center">
 					<a
 						href={resolve(`/courses/${courseId}`)}
-						class="rounded-r-md border border-border bg-surface px-6 py-3 text-xs font-bold text-text shadow-sm hover:bg-surface-muted"
+						class="px-6 py-3 text-xs font-bold rounded-r-md border border-border bg-surface text-text shadow-sm hover:bg-surface-muted"
 					>
 						Back to course
 					</a>
 					<button
 						type="button"
-						class="rounded-r-md bg-primary px-6 py-3 text-xs font-bold text-white shadow-sm hover:bg-primary-hover active:scale-[0.98]"
+						class="px-6 py-3 text-xs font-bold text-white rounded-r-md bg-primary shadow-sm hover:bg-primary-hover active:scale-[0.98]"
 						onclick={() => {
 							loading = true;
 							loadError = '';
@@ -225,28 +225,28 @@
 		{:else if loading || !moduleData}
 			<!-- Shimmer loading state -->
 			<div
-				class="flex grow animate-pulse flex-col gap-5 rounded-lg border border-border bg-surface p-6 shadow-md sm:p-10"
+				class="animate-pulse gap-5 p-6 sm:p-10 flex grow flex-col rounded-lg border border-border bg-surface shadow-md"
 			>
 				<div class="mb-2 h-4 w-24 rounded bg-surface-muted"></div>
-				<div class="mb-4 h-8 w-2/3 rounded bg-surface-muted"></div>
+				<div class="mb-4 h-8 rounded w-2/3 bg-surface-muted"></div>
 				{#each [0, 1, 2, 3] as idx (idx)}
-					<div class="h-12 w-full rounded bg-surface-muted"></div>
+					<div class="h-12 rounded w-full bg-surface-muted"></div>
 				{/each}
 			</div>
 		{:else}
 			<!-- Breadcrumb Header Row (Quiz variation, as specified in PDF Page 05) -->
 			<div
-				class="flex items-center justify-between rounded-lg border border-border bg-surface p-4 shadow-sm select-none"
+				class="p-4 flex items-center justify-between rounded-lg border border-border bg-surface shadow-sm select-none"
 			>
-				<div class="flex items-center gap-4">
+				<div class="gap-4 flex items-center">
 					<div
-						class="flex h-10 w-10 items-center justify-center rounded-lg bg-course-amber-soft text-sm font-bold text-course-amber shadow-sm"
+						class="h-10 w-10 text-sm font-bold flex items-center justify-center rounded-lg bg-course-amber-soft text-course-amber shadow-sm"
 					>
 						Q
 					</div>
 					<div>
 						<span
-							class="mb-0.5 block text-[9px] font-bold tracking-widest text-text-muted uppercase"
+							class="mb-0.5 font-bold tracking-widest block text-[9px] text-text-muted uppercase"
 						>
 							{course ? course.title : 'Course'}
 						</span>
@@ -258,7 +258,7 @@
 
 				<!-- Live Score Counter -->
 				<span
-					class="rounded border border-border bg-surface-muted px-3 py-1.5 text-xs font-bold text-text"
+					class="rounded px-3 py-1.5 text-xs font-bold border border-border bg-surface-muted text-text"
 				>
 					Score {score} / {totalQuestions}
 				</span>
@@ -266,23 +266,23 @@
 
 			<!-- Quiz Card -->
 			<div
-				class="flex min-h-[380px] grow flex-col justify-between rounded-lg border border-border bg-surface p-6 shadow-md sm:p-10"
+				class="p-6 sm:p-10 flex min-h-[380px] grow flex-col justify-between rounded-lg border border-border bg-surface shadow-md"
 			>
 				<div>
 					<!-- Question Caption -->
 					<div
-						class="mb-6 text-[10px] font-bold tracking-widest text-text-muted uppercase select-none"
+						class="mb-6 font-bold tracking-widest text-[10px] text-text-muted uppercase select-none"
 					>
 						Question {currentQuestionIndex + 1} of {totalQuestions}
 					</div>
 
 					<!-- Question Prompt -->
-					<h3 class="mb-6 font-display text-lg leading-snug font-bold text-text sm:text-xl">
+					<h3 class="mb-6 font-display text-lg leading-snug font-bold sm:text-xl text-text">
 						{currentQuestion.prompt}
 					</h3>
 
 					<!-- Option Choices List -->
-					<div class="flex flex-col gap-3">
+					<div class="gap-3 flex flex-col">
 						{#each currentQuestion.options as option, idx (idx)}
 							{@const isSelected = selectedOptionIndex === idx}
 							{@const isCorrectOption = currentQuestion.correctIndex === idx}
@@ -301,25 +301,25 @@
 
 							<button
 								type="button"
-								class="flex w-full items-center justify-between rounded-r-md border p-4 text-left transition-all duration-180 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary {optionBgClass} {selectedOptionIndex ===
+								class="p-4 flex w-full items-center justify-between rounded-r-md border text-left transition-all duration-180 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary {optionBgClass} {selectedOptionIndex ===
 								null
 									? 'cursor-pointer active:scale-[0.99]'
 									: 'cursor-default'}"
 								onclick={() => handleSelectOption(idx)}
 								disabled={selectedOptionIndex !== null}
 							>
-								<div class="flex items-center gap-3.5 pr-4">
+								<div class="gap-3.5 pr-4 flex items-center">
 									<!-- Letter box (A, B, C, D) -->
 									<div
-										class="flex h-7 w-7 items-center justify-center rounded text-xs font-bold shadow-inner select-none
+										class="h-7 w-7 rounded text-xs font-bold shadow-inner flex items-center justify-center select-none
                     {!isRevealed
 											? 'border border-border bg-surface-muted text-text-muted'
 											: isSelected && isCorrectOption
-												? 'bg-success text-white'
+												? 'text-white bg-success'
 												: isSelected && !isCorrectOption
-													? 'bg-danger text-white'
+													? 'text-white bg-danger'
 													: isCorrectOption
-														? 'bg-success text-white'
+														? 'text-white bg-success'
 														: 'bg-surface-muted text-text-muted opacity-50'}"
 									>
 										{String.fromCharCode(65 + idx)}
@@ -333,7 +333,7 @@
 								{#if isRevealed}
 									{#if isCorrectOption}
 										<div
-											class="flex h-5 w-5 items-center justify-center rounded-full bg-success text-white shadow-sm"
+											class="h-5 w-5 text-white flex items-center justify-center rounded-full bg-success shadow-sm"
 										>
 											<svg
 												xmlns="http://www.w3.org/2000/svg"
@@ -348,7 +348,7 @@
 										</div>
 									{:else if isSelected}
 										<div
-											class="flex h-5 w-5 items-center justify-center rounded-full bg-danger text-white shadow-sm"
+											class="h-5 w-5 text-white flex items-center justify-center rounded-full bg-danger shadow-sm"
 										>
 											<svg
 												xmlns="http://www.w3.org/2000/svg"
@@ -375,13 +375,13 @@
 				</div>
 
 				<!-- Explanation & Actions block -->
-				<div class="mt-8 flex flex-col gap-6">
+				<div class="mt-8 gap-6 flex flex-col">
 					<!-- Explanation Panel (slides in when revealed) -->
 					{#if selectedOptionIndex !== null}
 						<div
-							class="animate-slide-down rounded-r-md border-l-4 border-primary bg-surface-muted p-4 text-xs leading-relaxed"
+							class="animate-slide-down p-4 text-xs leading-relaxed rounded-r-md border-l-4 border-primary bg-surface-muted"
 						>
-							<span class="mb-1 block font-bold tracking-wider text-text uppercase"
+							<span class="mb-1 font-bold tracking-wider block text-text uppercase"
 								>Explanation</span
 							>
 							<p class="leading-relaxed text-text-muted">
@@ -391,11 +391,11 @@
 					{/if}
 
 					<!-- Footer Action Button -->
-					<div class="flex justify-end border-t border-border pt-6 select-none">
+					<div class="pt-6 flex justify-end border-t border-border select-none">
 						{#if selectedOptionIndex !== null}
 							<button
 								type="button"
-								class="animate-fade-in cursor-pointer rounded-r-md bg-primary px-6 py-2.5 text-xs font-bold text-white shadow-sm transition-all duration-180 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
+								class="animate-fade-in px-6 py-2.5 text-xs font-bold text-white cursor-pointer rounded-r-md bg-primary shadow-sm transition-all duration-180 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
 								onclick={handleNext}
 								disabled={loading}
 							>

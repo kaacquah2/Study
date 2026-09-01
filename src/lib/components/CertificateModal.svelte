@@ -25,18 +25,18 @@
 </script>
 
 {#if isOpen}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
+	<div class="inset-0 bg-black/60 p-4 backdrop-blur-md fixed z-50 flex items-center justify-center">
 		<div
-			class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+			class="max-w-2xl rounded-2xl border-slate-200 bg-white p-8 shadow-2xl dark:border-slate-800 dark:bg-slate-900 w-full border"
 		>
 			<!-- Printable Certificate Container -->
 			<div
 				id="certificate-print-area"
-				class="relative overflow-hidden rounded-xl border-8 border-double border-amber-500/40 bg-linear-to-b from-amber-50/50 via-white to-amber-50/30 p-8 text-center dark:from-slate-900 dark:via-slate-900 dark:to-slate-950"
+				class="border-amber-500/40 from-amber-50/50 via-white to-amber-50/30 p-8 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 relative overflow-hidden rounded-xl border-8 border-double bg-linear-to-b text-center"
 			>
 				<!-- Decorative Ribbon Icon -->
 				<div
-					class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400"
+					class="mb-4 h-16 w-16 bg-amber-500/10 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center rounded-full"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -55,7 +55,7 @@
 				</div>
 
 				<p
-					class="text-xs font-semibold tracking-widest text-amber-600 uppercase dark:text-amber-400"
+					class="text-xs font-semibold tracking-widest text-amber-600 dark:text-amber-400 uppercase"
 				>
 					Official Certificate of Completion
 				</p>
@@ -67,7 +67,7 @@
 				<p class="text-xs text-slate-500 dark:text-slate-400">This certifies that</p>
 
 				<p
-					class="my-2 text-2xl font-semibold text-slate-900 underline decoration-amber-400/50 decoration-2 underline-offset-4 dark:text-amber-300"
+					class="my-2 text-2xl font-semibold text-slate-900 decoration-amber-400/50 dark:text-amber-300 underline decoration-2 underline-offset-4"
 				>
 					{userName || 'Learner'}
 				</p>
@@ -77,13 +77,13 @@
 				</p>
 
 				<p
-					class="my-3 inline-block rounded-lg bg-amber-500/10 px-4 py-1 text-lg font-bold text-slate-800 dark:text-slate-100"
+					class="my-3 bg-amber-500/10 px-4 py-1 text-lg font-bold text-slate-800 dark:text-slate-100 inline-block rounded-lg"
 				>
 					{courseTitle}
 				</p>
 
 				<div
-					class="mt-6 flex items-end justify-between border-t border-slate-200 pt-4 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400"
+					class="mt-6 border-slate-200 pt-4 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400 flex items-end justify-between border-t"
 				>
 					<div class="text-left">
 						<p class="font-medium text-slate-700 dark:text-slate-300">Date Issued</p>
@@ -100,18 +100,18 @@
 			</div>
 
 			<!-- Actions -->
-			<div class="mt-6 flex justify-end gap-3">
+			<div class="mt-6 gap-3 flex justify-end">
 				<button
 					type="button"
 					onclick={onClose}
-					class="rounded-lg px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+					class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 rounded-lg"
 				>
 					Close
 				</button>
 				<button
 					type="button"
 					onclick={handlePrint}
-					class="flex items-center gap-1.5 rounded-lg bg-amber-500 px-5 py-2 text-xs font-semibold text-white shadow-md hover:bg-amber-600"
+					class="gap-1.5 bg-amber-500 px-5 py-2 text-xs font-semibold text-white hover:bg-amber-600 flex items-center rounded-lg shadow-md"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"

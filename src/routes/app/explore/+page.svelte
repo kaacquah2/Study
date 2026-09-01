@@ -123,23 +123,23 @@
 	<title>Explore Courses &mdash; AI Study Buddy</title>
 </svelte:head>
 
-<div class="flex w-full flex-col gap-8">
+<div class="gap-8 flex w-full flex-col">
 	<!-- Page Header -->
 	<div>
-		<h1 class="font-display text-2xl font-bold text-text sm:text-3xl">Explore Community Courses</h1>
-		<p class="mt-1 text-xs text-text-muted sm:text-sm">
+		<h1 class="font-display text-2xl font-bold sm:text-3xl text-text">Explore Community Courses</h1>
+		<p class="mt-1 text-xs sm:text-sm text-text-muted">
 			Browse and import courses created and shared by learners around the world.
 		</p>
 	</div>
 
 	<!-- Search & Tag Filter Bar -->
-	<div class="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
+	<div class="gap-4 sm:flex-row sm:items-center flex flex-col items-stretch justify-between">
 		<!-- Search Input & Sort Dropdown -->
-		<div class="flex max-w-xl grow flex-col gap-2.5 sm:flex-row sm:items-center">
+		<div class="max-w-xl gap-2.5 sm:flex-row sm:items-center flex grow flex-col">
 			<div class="relative grow">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					class="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-text-muted"
+					class="left-3.5 h-4 w-4 pointer-events-none absolute top-1/2 -translate-y-1/2 text-text-muted"
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
@@ -155,13 +155,13 @@
 					type="text"
 					bind:value={searchQuery}
 					placeholder="Search title, description, or author..."
-					class="w-full rounded-2xl border border-border bg-surface py-2.5 pr-4 pl-10 text-xs font-medium text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+					class="rounded-2xl py-2.5 pr-4 pl-10 text-xs font-medium w-full border border-border bg-surface text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
 				/>
 			</div>
 
 			<select
 				bind:value={sortBy}
-				class="cursor-pointer rounded-2xl border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text shadow-xs focus:border-primary focus:outline-none"
+				class="rounded-2xl px-4 py-2.5 text-xs font-bold shadow-xs cursor-pointer border border-border bg-surface text-text focus:border-primary focus:outline-none"
 			>
 				<option value="popular">🔥 Most Popular</option>
 				<option value="beginner">🌱 Beginner Friendly</option>
@@ -169,14 +169,14 @@
 		</div>
 
 		<!-- Tag Filter Chips -->
-		<div class="flex flex-wrap items-center gap-1.5">
+		<div class="gap-1.5 flex flex-wrap items-center">
 			{#each availableTags as tag (tag)}
 				<button
 					type="button"
 					onclick={() => (selectedTag = tag)}
-					class="cursor-pointer rounded-xl border px-3 py-1.5 text-xs font-bold transition-all {selectedTag ===
+					class="px-3 py-1.5 text-xs font-bold cursor-pointer rounded-xl border transition-all {selectedTag ===
 					tag
-						? 'border-primary bg-primary text-white shadow-xs'
+						? 'text-white shadow-xs border-primary bg-primary'
 						: 'border-border bg-surface text-text-muted hover:border-border/80'}"
 				>
 					{tag}
@@ -187,14 +187,14 @@
 
 	<!-- Course Grid -->
 	{#if loading}
-		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+		<div class="gap-6 md:grid-cols-2 xl:grid-cols-3 grid grid-cols-1">
 			<Skeleton variant="card" />
 			<Skeleton variant="card" />
 			<Skeleton variant="card" />
 		</div>
 	{:else if loadError}
 		<div
-			class="rounded-2xl border border-danger/20 bg-danger-soft p-6 text-center text-xs font-bold text-danger"
+			class="rounded-2xl p-6 text-xs font-bold border border-danger/20 bg-danger-soft text-center text-danger"
 		>
 			{loadError}
 		</div>
@@ -215,7 +215,7 @@
 			}}
 		/>
 	{:else}
-		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+		<div class="gap-6 md:grid-cols-2 xl:grid-cols-3 grid grid-cols-1">
 			{#each filteredCourses as item (item.id)}
 				<SharedCourseCard
 					shareId={item.id || ''}

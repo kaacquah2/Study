@@ -82,10 +82,10 @@
 	];
 </script>
 
-<div class="my-6 flex flex-col items-center gap-3">
+<div class="my-6 gap-3 flex flex-col items-center">
 	<!-- 3D Flip Card -->
 	<div
-		class="flip-card h-52 w-full max-w-md cursor-pointer"
+		class="flip-card h-52 max-w-md w-full cursor-pointer"
 		onclick={flipCard}
 		onkeydown={(e) => e.key === 'Enter' && flipCard()}
 		role="button"
@@ -97,14 +97,14 @@
 		<div class="flip-card-inner {isFlipped ? 'is-flipped' : ''}">
 			<!-- Front face -->
 			<div
-				class="flip-card-front flex flex-col justify-between rounded-2xl border border-primary/30 bg-surface p-5 shadow-md"
+				class="flip-card-front rounded-2xl p-5 flex flex-col justify-between border border-primary/30 bg-surface shadow-md"
 			>
-				<div class="flex items-center justify-between text-[10px] font-bold text-text-muted">
+				<div class="font-bold flex items-center justify-between text-[10px] text-text-muted">
 					<span>🎴 Flashcard (Front)</span>
 					<span class="text-primary">Tap to flip 🔄</span>
 				</div>
 				<div
-					class="flex flex-1 items-center justify-center py-2 text-center font-display text-sm font-bold text-text"
+					class="py-2 font-display text-sm font-bold flex flex-1 items-center justify-center text-center text-text"
 				>
 					{front}
 				</div>
@@ -113,20 +113,20 @@
 
 			<!-- Back face -->
 			<div
-				class="flip-card-back flex flex-col justify-between rounded-2xl border border-primary/50 bg-primary-soft/20 p-5 shadow-md"
+				class="flip-card-back rounded-2xl p-5 flex flex-col justify-between border border-primary/50 bg-primary-soft/20 shadow-md"
 			>
-				<div class="flex items-center justify-between text-[10px] font-bold text-text-muted">
+				<div class="font-bold flex items-center justify-between text-[10px] text-text-muted">
 					<span>🎴 Flashcard (Back)</span>
 					<span class="text-primary/70">Tap to flip back</span>
 				</div>
 				<div
-					class="flex flex-1 items-center justify-center py-2 text-center font-display text-sm font-bold text-primary"
+					class="py-2 font-display text-sm font-bold flex flex-1 items-center justify-center text-center text-primary"
 				>
 					{back}
 				</div>
 
 				<!-- Self-rating buttons -->
-				<div class="flex items-center justify-center gap-2 pt-1">
+				<div class="gap-2 pt-1 flex items-center justify-center">
 					{#each ratingConfig as r (r.key)}
 						<button
 							type="button"
@@ -134,7 +134,7 @@
 								e.stopPropagation();
 								selfRating = r.key;
 							}}
-							class="rounded-lg border px-2 py-1 text-[10px] font-bold transition-all active:scale-90 {selfRating ===
+							class="px-2 py-1 font-bold rounded-lg border text-[10px] transition-all active:scale-90 {selfRating ===
 							r.key
 								? r.cls + ' scale-105 shadow-sm'
 								: 'border-border bg-surface text-text-muted hover:border-border/80'}"
@@ -150,7 +150,7 @@
 	<!-- Save button (shown after flip) -->
 	{#if isFlipped}
 		<div
-			class="anim-slide-up flex w-full max-w-md items-center justify-between gap-2 rounded-xl border border-border bg-surface px-4 py-2.5"
+			class="anim-slide-up max-w-md gap-2 px-4 py-2.5 flex w-full items-center justify-between rounded-xl border border-border bg-surface"
 		>
 			<span class="text-[11px] text-text-muted">
 				{selfRating ? `Rated: ${selfRating}` : 'Rate how well you knew this ↑'}
@@ -159,7 +159,7 @@
 				type="button"
 				onclick={handleAddToReview}
 				disabled={isSaved || isSaving}
-				class="inline-flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary-soft/60 px-3 py-1.5 text-[11px] font-bold text-primary transition-all hover:bg-primary hover:text-white active:scale-95 disabled:opacity-50"
+				class="gap-1.5 px-3 py-1.5 font-bold hover:text-white inline-flex items-center rounded-xl border border-primary/40 bg-primary-soft/60 text-[11px] text-primary transition-all hover:bg-primary active:scale-95 disabled:opacity-50"
 			>
 				{#if isSaved}
 					<span>✓ Added to Review</span>

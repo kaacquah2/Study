@@ -41,26 +41,26 @@
 </script>
 
 <div
-	class="flex flex-col justify-between rounded-2xl border border-border bg-surface p-6 shadow-sm transition-all duration-200 hover:border-primary/40 hover:shadow-md"
+	class="rounded-2xl p-6 flex flex-col justify-between border border-border bg-surface shadow-sm transition-all duration-200 hover:border-primary/40 hover:shadow-md"
 >
 	<div>
 		<!-- Level badge, Official badge & import count -->
 		<div class="mb-3 flex items-center justify-between">
-			<div class="flex items-center gap-1.5">
+			<div class="gap-1.5 flex items-center">
 				{#if isOfficial}
 					<span
-						class="rounded-lg border border-amber-500/30 bg-amber-500/15 px-2.5 py-1 text-[10px] font-black tracking-wider text-amber-500 uppercase"
+						class="border-amber-500/30 bg-amber-500/15 px-2.5 py-1 font-black tracking-wider text-amber-500 rounded-lg border text-[10px] uppercase"
 					>
 						⭐ Official
 					</span>
 				{/if}
 				<span
-					class="rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase {levelBadge}"
+					class="px-2.5 py-1 font-bold tracking-wider rounded-lg border text-[10px] uppercase {levelBadge}"
 				>
 					{level}
 				</span>
 			</div>
-			<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-text-muted">
+			<span class="gap-1 font-semibold inline-flex items-center text-[11px] text-text-muted">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					class="h-3.5 w-3.5"
@@ -81,18 +81,18 @@
 		</div>
 
 		<!-- Title & Creator -->
-		<h3 class="mb-1 line-clamp-1 font-display text-base font-bold text-text">{title}</h3>
-		<p class="mb-3 text-[11px] font-semibold text-text-muted">Created by {sharedByName}</p>
+		<h3 class="mb-1 font-display text-base font-bold line-clamp-1 text-text">{title}</h3>
+		<p class="mb-3 font-semibold text-[11px] text-text-muted">Created by {sharedByName}</p>
 
 		<!-- Description -->
-		<p class="mb-4 line-clamp-2 text-xs leading-relaxed text-text-muted">{description}</p>
+		<p class="mb-4 text-xs leading-relaxed line-clamp-2 text-text-muted">{description}</p>
 
 		<!-- Tags -->
 		{#if tags.length > 0}
-			<div class="mb-4 flex flex-wrap gap-1.5">
+			<div class="mb-4 gap-1.5 flex flex-wrap">
 				{#each tags.slice(0, 3) as tag (tag)}
 					<span
-						class="rounded-md border border-border/40 bg-surface-muted px-2 py-0.5 text-[10px] font-semibold text-text-muted"
+						class="px-2 py-0.5 font-semibold rounded-md border border-border/40 bg-surface-muted text-[10px] text-text-muted"
 					>
 						#{tag}
 					</span>
@@ -102,17 +102,17 @@
 	</div>
 
 	<!-- Action Footer -->
-	<div class="mt-2 flex items-center justify-between border-t border-border/40 pt-4">
+	<div class="mt-2 pt-4 flex items-center justify-between border-t border-border/40">
 		<span class="text-xs font-bold text-text-muted">{moduleCount} Modules</span>
 		<button
 			type="button"
 			onclick={() => onImport(shareId)}
 			disabled={loading}
-			class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs transition-all duration-180 hover:bg-primary-hover active:scale-95 disabled:opacity-50"
+			class="gap-1.5 px-4 py-2 text-xs font-bold text-white shadow-xs inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary transition-all duration-180 hover:bg-primary-hover active:scale-95 disabled:opacity-50"
 		>
 			{#if loading}
 				<span
-					class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent"
+					class="h-3.5 w-3.5 animate-spin border-white rounded-full border-2 border-t-transparent"
 				></span>
 				Importing...
 			{:else}

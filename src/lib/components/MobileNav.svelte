@@ -14,15 +14,15 @@
 
 <!-- Mobile Sliding Drawer -->
 {#if mobileMenuOpen}
-	<div class="fixed inset-0 z-40 flex md:hidden">
+	<div class="inset-0 md:hidden fixed z-40 flex">
 		<button
 			type="button"
 			aria-label="Close menu backdrop"
-			class="fixed inset-0 border-none bg-black/50 backdrop-blur-xs"
+			class="inset-0 bg-black/50 backdrop-blur-xs fixed border-none"
 			onclick={onCloseMenu}
 		></button>
-		<div class="relative z-50 flex w-72 flex-col justify-between bg-surface p-6 shadow-2xl">
-			<div class="flex flex-col gap-6">
+		<div class="w-72 p-6 shadow-2xl relative z-50 flex flex-col justify-between bg-surface">
+			<div class="gap-6 flex flex-col">
 				<div class="flex items-center justify-between">
 					<span class="font-display text-base font-bold text-text">Navigation</span>
 					<button
@@ -35,7 +35,7 @@
 					</button>
 				</div>
 
-				<nav class="flex flex-col gap-2">
+				<nav class="gap-2 flex flex-col">
 					<!-- Prominent AI Tutor Button -->
 					<button
 						type="button"
@@ -43,7 +43,7 @@
 							onCloseMenu();
 							chatStore.toggle();
 						}}
-						class="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary-soft/50 px-4 py-3 text-xs font-bold text-primary"
+						class="gap-3 px-4 py-3 text-xs font-bold flex items-center rounded-xl border border-primary/30 bg-primary-soft/50 text-primary"
 					>
 						<span>✨</span>
 						<span>AI Study Tutor</span>
@@ -56,8 +56,8 @@
 						<a
 							href={item.href}
 							onclick={onCloseMenu}
-							class="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold transition-all {active
-								? 'bg-primary text-white'
+							class="gap-3 px-4 py-3 text-xs font-bold flex items-center rounded-xl transition-all {active
+								? 'text-white bg-primary'
 								: 'text-text-muted hover:bg-surface-muted hover:text-text'}"
 						>
 							<svg
@@ -80,7 +80,7 @@
 					<a
 						href="/app/settings"
 						onclick={onCloseMenu}
-						class="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold text-text-muted hover:bg-surface-muted hover:text-text"
+						class="gap-3 px-4 py-3 text-xs font-bold flex items-center rounded-xl text-text-muted hover:bg-surface-muted hover:text-text"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -107,7 +107,7 @@
 					onCloseMenu();
 					authStore.logout();
 				}}
-				class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-danger-soft py-3 text-xs font-bold text-danger"
+				class="gap-2 py-3 text-xs font-bold flex w-full cursor-pointer items-center justify-center rounded-xl bg-danger-soft text-danger"
 			>
 				Log out
 			</button>
@@ -117,13 +117,13 @@
 
 <!-- 5-Item Focused Bottom Navigation Bar for Mobile -->
 <nav
-	class="sticky bottom-0 z-30 flex items-center justify-around border-t border-border bg-surface/95 px-2 py-2.5 shadow-lg backdrop-blur-md md:hidden"
+	class="bottom-0 px-2 py-2.5 backdrop-blur-md md:hidden sticky z-30 flex items-center justify-around border-t border-border bg-surface/95 shadow-lg"
 	aria-label="Mobile Bottom Navigation"
 >
 	<!-- 1. Home / Dashboard -->
 	<a
 		href="/app"
-		class="flex min-h-11 min-w-14 flex-col items-center justify-center gap-0.5 text-[10px] font-bold transition-colors {currentPath ===
+		class="min-h-11 min-w-14 gap-0.5 font-bold flex flex-col items-center justify-center text-[10px] transition-colors {currentPath ===
 		'/app'
 			? 'text-primary'
 			: 'text-text-muted hover:text-text'}"
@@ -148,7 +148,7 @@
 	<!-- 2. Practice & Review -->
 	<a
 		href="/app/review"
-		class="flex min-h-11 min-w-14 flex-col items-center justify-center gap-0.5 text-[10px] font-bold transition-colors {currentPath.startsWith(
+		class="min-h-11 min-w-14 gap-0.5 font-bold flex flex-col items-center justify-center text-[10px] transition-colors {currentPath.startsWith(
 			'/app/review'
 		)
 			? 'text-primary'
@@ -176,10 +176,10 @@
 		type="button"
 		onclick={() => chatStore.toggle()}
 		aria-label="Toggle AI Tutor"
-		class="flex min-h-11 min-w-14 flex-col items-center justify-center gap-0.5 text-[10px] font-black text-primary transition-transform active:scale-95"
+		class="min-h-11 min-w-14 gap-0.5 font-black flex flex-col items-center justify-center text-[10px] text-primary transition-transform active:scale-95"
 	>
 		<div
-			class="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white shadow-md shadow-primary/30"
+			class="h-7 w-7 text-white flex items-center justify-center rounded-full bg-primary shadow-md shadow-primary/30"
 		>
 			<span class="text-xs">✨</span>
 		</div>
@@ -189,7 +189,7 @@
 	<!-- 4. Knowledge Map -->
 	<a
 		href="/app/knowledge-map"
-		class="flex min-h-11 min-w-14 flex-col items-center justify-center gap-0.5 text-[10px] font-bold transition-colors {currentPath.startsWith(
+		class="min-h-11 min-w-14 gap-0.5 font-bold flex flex-col items-center justify-center text-[10px] transition-colors {currentPath.startsWith(
 			'/app/knowledge-map'
 		)
 			? 'text-primary'
@@ -215,7 +215,7 @@
 	<!-- 5. Study Library -->
 	<a
 		href="/app/knowledge"
-		class="flex min-h-11 min-w-14 flex-col items-center justify-center gap-0.5 text-[10px] font-bold transition-colors {currentPath.startsWith(
+		class="min-h-11 min-w-14 gap-0.5 font-bold flex flex-col items-center justify-center text-[10px] transition-colors {currentPath.startsWith(
 			'/app/knowledge'
 		)
 			? 'text-primary'

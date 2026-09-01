@@ -22,16 +22,16 @@
 	/>
 </svelte:head>
 
-<div class="flex min-h-screen flex-col bg-bg text-text md:flex-row">
+<div class="md:flex-row flex min-h-screen flex-col bg-bg text-text">
 	<HeroPanel />
 
 	<div
-		class="relative flex grow flex-col justify-between overflow-y-auto bg-surface p-5 sm:p-10 md:w-1/2 md:p-10 lg:p-16"
+		class="p-5 sm:p-10 md:w-1/2 md:p-10 lg:p-16 relative flex grow flex-col justify-between overflow-y-auto bg-surface"
 	>
 		<!-- Mobile Header Logo -->
-		<div class="flex items-center gap-2.5 md:hidden">
+		<div class="gap-2.5 md:hidden flex items-center">
 			<div
-				class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white shadow-md"
+				class="h-9 w-9 text-white flex items-center justify-center rounded-lg bg-primary shadow-md"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -52,12 +52,12 @@
 		</div>
 
 		{#if authStore.user}
-			<div class="mx-auto my-auto flex w-full max-w-md flex-col gap-6 py-8 md:py-0">
+			<div class="max-w-md gap-6 py-8 md:py-0 mx-auto my-auto flex w-full flex-col">
 				<div
-					class="rounded-2xl border border-primary/20 bg-primary-soft/30 p-6 text-center shadow-sm"
+					class="rounded-2xl p-6 border border-primary/20 bg-primary-soft/30 text-center shadow-sm"
 				>
 					<div
-						class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-base font-bold text-primary"
+						class="mb-3 h-14 w-14 text-base font-bold mx-auto flex items-center justify-center rounded-full bg-primary-soft text-primary"
 					>
 						{#if authStore.user.photoURL}
 							<img
@@ -78,10 +78,10 @@
 						>
 					</p>
 
-					<div class="mt-6 flex flex-col gap-3">
+					<div class="mt-6 gap-3 flex flex-col">
 						<a
 							href="/app"
-							class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-xs font-bold text-white shadow-md transition-all duration-180 hover:bg-primary-hover sm:text-sm"
+							class="gap-2 px-4 py-3.5 text-xs font-bold text-white sm:text-sm flex w-full items-center justify-center rounded-xl bg-primary shadow-md transition-all duration-180 hover:bg-primary-hover"
 						>
 							<span>Go to Dashboard</span>
 							<span>&rarr;</span>
@@ -89,7 +89,7 @@
 						<button
 							type="button"
 							onclick={() => authStore.logout()}
-							class="w-full cursor-pointer rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-danger transition-colors duration-180 hover:bg-danger-soft"
+							class="px-4 py-2.5 text-xs font-semibold w-full cursor-pointer rounded-xl border border-border bg-surface text-danger transition-colors duration-180 hover:bg-danger-soft"
 						>
 							Sign Out / Switch Account
 						</button>
@@ -102,7 +102,7 @@
 
 		<!-- Footer Links -->
 		<div
-			class="mt-10 flex flex-wrap items-center justify-center gap-4 text-center text-[11px] font-medium text-text-muted select-none md:mt-0"
+			class="mt-10 gap-4 font-medium md:mt-0 flex flex-wrap items-center justify-center text-center text-[11px] text-text-muted select-none"
 		>
 			<span>&copy; 2026 AI Study Buddy</span>
 			<span>&bull;</span>

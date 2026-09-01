@@ -102,14 +102,14 @@
 </svelte:head>
 
 <AppShell requireAuth={true}>
-	<div class="mx-auto flex w-full max-w-md grow flex-col justify-center px-6 py-12 select-none">
+	<div class="max-w-md px-6 py-12 mx-auto flex w-full grow flex-col justify-center select-none">
 		<!-- Invitation Card -->
 		<div
-			class="relative flex flex-col gap-6 rounded-lg border border-border bg-surface p-6 shadow-lg sm:p-10"
+			class="gap-6 p-6 sm:p-10 relative flex flex-col rounded-lg border border-border bg-surface shadow-lg"
 		>
-			<div class="flex flex-col items-center gap-3 text-center">
+			<div class="gap-3 flex flex-col items-center text-center">
 				<div
-					class="flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/5 bg-primary-soft text-primary shadow-sm"
+					class="h-16 w-16 rounded-2xl flex items-center justify-center border border-primary/5 bg-primary-soft text-primary shadow-sm"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -127,7 +127,7 @@
 					</svg>
 				</div>
 				<h1
-					class="mt-2 font-display text-xl leading-tight font-bold tracking-tight text-text sm:text-2xl"
+					class="mt-2 font-display text-xl leading-tight font-bold tracking-tight sm:text-2xl text-text"
 				>
 					Course Invitation
 				</h1>
@@ -137,7 +137,7 @@
 			<!-- Errors / Success Feedback -->
 			{#if errorMsg}
 				<div
-					class="rounded-r-md border-l-4 border-danger bg-danger-soft p-3.5 text-xs leading-relaxed font-semibold text-danger"
+					class="p-3.5 text-xs leading-relaxed font-semibold rounded-r-md border-l-4 border-danger bg-danger-soft text-danger"
 				>
 					{errorMsg}
 				</div>
@@ -145,7 +145,7 @@
 
 			{#if successMsg}
 				<div
-					class="rounded-r-md border-l-4 border-success bg-success-soft p-3.5 text-xs leading-relaxed font-semibold text-success"
+					class="p-3.5 text-xs leading-relaxed font-semibold rounded-r-md border-l-4 border-success bg-success-soft text-success"
 				>
 					{successMsg}
 				</div>
@@ -153,18 +153,18 @@
 
 			{#if loading}
 				<!-- Loading preview shimmers -->
-				<div class="flex animate-pulse flex-col gap-3 py-4">
-					<div class="h-5 w-3/4 rounded bg-surface-muted"></div>
-					<div class="h-3 w-full rounded bg-surface-muted"></div>
-					<div class="h-3 w-5/6 rounded bg-surface-muted"></div>
+				<div class="animate-pulse gap-3 py-4 flex flex-col">
+					<div class="h-5 rounded w-3/4 bg-surface-muted"></div>
+					<div class="h-3 rounded w-full bg-surface-muted"></div>
+					<div class="h-3 rounded w-5/6 bg-surface-muted"></div>
 					<div class="mt-2 h-4 w-20 rounded bg-surface-muted"></div>
 				</div>
-				<div class="h-11 w-full rounded bg-surface-muted"></div>
+				<div class="h-11 rounded w-full bg-surface-muted"></div>
 			{:else if preview && !successMsg}
 				<!-- Shared Course Info Preview -->
-				<div class="flex flex-col gap-4 rounded-r-md border border-border bg-surface-muted p-5">
+				<div class="gap-4 p-5 flex flex-col rounded-r-md border border-border bg-surface-muted">
 					<div>
-						<span class="mb-1 block text-[9px] font-bold tracking-widest text-primary uppercase">
+						<span class="mb-1 font-bold tracking-widest block text-[9px] text-primary uppercase">
 							Shared by {preview.sharedByName}
 						</span>
 						<h2 class="mb-1.5 font-display text-base leading-tight font-bold text-text">
@@ -176,7 +176,7 @@
 					</div>
 
 					<div
-						class="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-text-muted uppercase"
+						class="gap-1.5 font-bold tracking-wider flex items-center text-[10px] text-text-muted uppercase"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -198,13 +198,13 @@
 				<!-- Claim Action Button -->
 				<button
 					type="button"
-					class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-r-md bg-primary px-4 py-3.5 font-bold text-white shadow-md transition-all duration-180 select-none hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+					class="gap-2 px-4 py-3.5 font-bold text-white flex w-full cursor-pointer items-center justify-center rounded-r-md bg-primary shadow-md transition-all duration-180 select-none hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
 					onclick={handleClaim}
 					disabled={claiming}
 				>
 					{#if claiming}
 						<span
-							class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+							class="h-4 w-4 animate-spin border-white rounded-full border-2 border-t-transparent"
 						></span>
 						Adding to your courses...
 					{:else}
@@ -216,7 +216,7 @@
 			<!-- Decline link -->
 			<a
 				href={resolve('/app')}
-				class="cursor-pointer rounded py-1 text-center text-xs font-semibold text-text-muted select-none hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
+				class="rounded py-1 text-xs font-semibold cursor-pointer text-center text-text-muted select-none hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
 			>
 				Decline invitation
 			</a>

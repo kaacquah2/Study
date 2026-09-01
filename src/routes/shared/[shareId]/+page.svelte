@@ -81,11 +81,11 @@
 	<title>{sharedCourse?.snapshot.title || 'Shared Course'} &mdash; AI Study Buddy</title>
 </svelte:head>
 
-<div class="flex min-h-screen flex-col justify-between bg-bg p-6 text-text sm:p-12">
+<div class="p-6 sm:p-12 flex min-h-screen flex-col justify-between bg-bg text-text">
 	<!-- Top Navigation -->
-	<header class="mx-auto flex w-full max-w-4xl items-center justify-between">
-		<a href={resolve('/')} class="flex items-center gap-2.5 font-display text-lg font-bold">
-			<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
+	<header class="max-w-4xl mx-auto flex w-full items-center justify-between">
+		<a href={resolve('/')} class="gap-2.5 font-display text-lg font-bold flex items-center">
+			<div class="h-8 w-8 text-white flex items-center justify-center rounded-lg bg-primary">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox="0 0 24 24"
@@ -104,14 +104,14 @@
 		{#if authStore.user}
 			<a
 				href={resolve('/app')}
-				class="rounded-xl bg-primary-soft px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20"
+				class="px-4 py-2 text-xs font-bold rounded-xl bg-primary-soft text-primary hover:bg-primary/20"
 			>
 				Go to Dashboard &rarr;
 			</a>
 		{:else}
 			<a
 				href={resolve('/')}
-				class="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-primary-hover"
+				class="px-4 py-2 text-xs font-bold text-white shadow-xs rounded-xl bg-primary hover:bg-primary-hover"
 			>
 				Sign In / Register
 			</a>
@@ -119,58 +119,58 @@
 	</header>
 
 	<!-- Main Preview Container -->
-	<main class="mx-auto my-auto flex w-full max-w-3xl flex-col gap-6 py-8">
+	<main class="max-w-3xl gap-6 py-8 mx-auto my-auto flex w-full flex-col">
 		{#if loading}
 			<Skeleton variant="card" height="h-64" />
 		{:else if loadError || !sharedCourse}
 			<div
-				class="rounded-2xl border border-danger/20 bg-danger-soft p-8 text-center text-xs font-bold text-danger"
+				class="rounded-2xl p-8 text-xs font-bold border border-danger/20 bg-danger-soft text-center text-danger"
 			>
 				{loadError || 'Shared course link not found.'}
 			</div>
 		{:else}
-			<div class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-8 shadow-xl">
+			<div class="gap-6 rounded-3xl p-8 shadow-xl flex flex-col border border-border bg-surface">
 				<!-- Badges -->
-				<div class="flex flex-wrap items-center gap-2">
+				<div class="gap-2 flex flex-wrap items-center">
 					<span
-						class="rounded-lg border border-primary/20 bg-primary-soft px-2.5 py-1 text-[10px] font-bold text-primary uppercase"
+						class="px-2.5 py-1 font-bold rounded-lg border border-primary/20 bg-primary-soft text-[10px] text-primary uppercase"
 					>
 						{sharedCourse.level || 'Intermediate'}
 					</span>
 					<span
-						class="rounded-lg border border-border/40 bg-surface-muted px-2.5 py-1 text-[10px] font-bold text-text-muted"
+						class="px-2.5 py-1 font-bold rounded-lg border border-border/40 bg-surface-muted text-[10px] text-text-muted"
 					>
 						Shared by {sharedCourse.sharedByName}
 					</span>
 				</div>
 
 				<div>
-					<h1 class="font-display text-2xl font-bold text-text sm:text-3xl">
+					<h1 class="font-display text-2xl font-bold sm:text-3xl text-text">
 						{sharedCourse.snapshot.title}
 					</h1>
-					<p class="mt-2 text-xs leading-relaxed text-text-muted sm:text-sm">
+					<p class="mt-2 text-xs leading-relaxed sm:text-sm text-text-muted">
 						{sharedCourse.snapshot.description}
 					</p>
 				</div>
 
 				<!-- Module Titles Preview List -->
-				<div class="flex flex-col gap-2 border-t border-border/40 pt-4">
+				<div class="gap-2 pt-4 flex flex-col border-t border-border/40">
 					<h3 class="font-display text-xs font-bold tracking-wider text-text uppercase">
 						Course Modules ({sharedCourse.snapshot.modules.length})
 					</h3>
-					<div class="flex flex-col gap-2">
+					<div class="gap-2 flex flex-col">
 						{#each sharedCourse.snapshot.modules as mod, idx (mod.title || idx)}
 							<div
-								class="flex items-center gap-3 rounded-xl border border-border/60 bg-surface-muted/40 p-3 text-xs"
+								class="gap-3 p-3 text-xs flex items-center rounded-xl border border-border/60 bg-surface-muted/40"
 							>
 								<span
-									class="flex h-6 w-6 items-center justify-center rounded-lg bg-primary-soft text-[10px] font-bold text-primary"
+									class="h-6 w-6 font-bold flex items-center justify-center rounded-lg bg-primary-soft text-[10px] text-primary"
 								>
 									{idx + 1}
 								</span>
 								<span class="font-semibold text-text">{mod.title}</span>
 								<span
-									class="ml-auto rounded bg-surface px-2 py-0.5 text-[9px] font-bold text-text-muted uppercase"
+									class="rounded px-2 py-0.5 font-bold ml-auto bg-surface text-[9px] text-text-muted uppercase"
 								>
 									{mod.type}
 								</span>
@@ -180,12 +180,12 @@
 				</div>
 
 				<!-- Import CTA Button -->
-				<div class="flex flex-col gap-2 pt-4">
+				<div class="gap-2 pt-4 flex flex-col">
 					<button
 						type="button"
 						onclick={handleImportCTA}
 						disabled={actionLoading}
-						class="w-full cursor-pointer rounded-xl bg-primary py-4 font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-99 disabled:opacity-50"
+						class="py-4 font-bold text-white w-full cursor-pointer rounded-xl bg-primary shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-99 disabled:opacity-50"
 					>
 						{#if actionLoading}
 							Importing course...
@@ -201,7 +201,7 @@
 	</main>
 
 	<!-- Footer -->
-	<footer class="mx-auto text-center text-xs font-semibold text-text-muted">
+	<footer class="text-xs font-semibold mx-auto text-center text-text-muted">
 		&copy; 2026 AI Study Buddy &bull; Smart Learning Companion
 	</footer>
 

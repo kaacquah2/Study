@@ -247,11 +247,11 @@
 </svelte:head>
 
 <AppShell requireAuth={true}>
-	<div class="mx-auto flex w-full max-w-3xl grow flex-col gap-6 px-6 py-8">
+	<div class="max-w-3xl gap-6 px-6 py-8 mx-auto flex w-full grow flex-col">
 		<!-- Header Navigation Back Link -->
 		<a
 			href={resolve(`/courses/${courseId}`)}
-			class="inline-flex items-center gap-1.5 rounded-md p-1.5 text-xs font-bold tracking-wider text-text-muted uppercase transition-all duration-180 select-none hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
+			class="gap-1.5 p-1.5 text-xs font-bold tracking-wider inline-flex items-center rounded-md text-text-muted uppercase transition-all duration-180 select-none hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -268,9 +268,9 @@
 		</a>
 
 		{#if loadError}
-			<div class="my-6 rounded-lg border border-border bg-surface p-10 text-center shadow-md">
+			<div class="my-6 p-10 rounded-lg border border-border bg-surface text-center shadow-md">
 				<div
-					class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-md bg-danger-soft text-danger"
+					class="mb-4 h-12 w-12 inline-flex items-center justify-center rounded-md bg-danger-soft text-danger"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -293,16 +293,16 @@
 				<p class="mb-6 text-sm text-text-muted">
 					{loadError}
 				</p>
-				<div class="flex justify-center gap-3">
+				<div class="gap-3 flex justify-center">
 					<a
 						href={resolve(`/courses/${courseId}`)}
-						class="rounded-r-md border border-border bg-surface px-6 py-3 text-xs font-bold text-text shadow-sm hover:bg-surface-muted"
+						class="px-6 py-3 text-xs font-bold rounded-r-md border border-border bg-surface text-text shadow-sm hover:bg-surface-muted"
 					>
 						Back to course
 					</a>
 					<button
 						type="button"
-						class="rounded-r-md bg-primary px-6 py-3 text-xs font-bold text-white shadow-sm hover:bg-primary-hover active:scale-[0.98]"
+						class="px-6 py-3 text-xs font-bold text-white rounded-r-md bg-primary shadow-sm hover:bg-primary-hover active:scale-[0.98]"
 						onclick={() => {
 							loading = true;
 							loadError = '';
@@ -316,26 +316,26 @@
 		{:else if loading || !moduleData}
 			<!-- Shimmer loading state -->
 			<div
-				class="flex grow animate-pulse flex-col gap-5 rounded-lg border border-border bg-surface p-6 shadow-md sm:p-10"
+				class="animate-pulse gap-5 p-6 sm:p-10 flex grow flex-col rounded-lg border border-border bg-surface shadow-md"
 			>
 				<div class="mb-2 h-4 w-24 rounded bg-surface-muted"></div>
-				<div class="mb-3 h-8 w-2/3 rounded bg-surface-muted"></div>
-				<div class="mb-2 h-4 w-full rounded bg-surface-muted"></div>
-				<div class="mb-2 h-4 w-full rounded bg-surface-muted"></div>
-				<div class="h-4 w-5/6 rounded bg-surface-muted"></div>
+				<div class="mb-3 h-8 rounded w-2/3 bg-surface-muted"></div>
+				<div class="mb-2 h-4 rounded w-full bg-surface-muted"></div>
+				<div class="mb-2 h-4 rounded w-full bg-surface-muted"></div>
+				<div class="h-4 rounded w-5/6 bg-surface-muted"></div>
 			</div>
 		{:else}
 			<!-- Breadcrumb Header Row (as specified in PDF Page 04) -->
 			<div
-				class="flex items-center gap-4 rounded-lg border border-border bg-surface p-4 shadow-sm select-none"
+				class="gap-4 p-4 flex items-center rounded-lg border border-border bg-surface shadow-sm select-none"
 			>
 				<div
-					class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-soft text-sm font-bold text-primary shadow-sm"
+					class="h-10 w-10 text-sm font-bold flex items-center justify-center rounded-lg bg-primary-soft text-primary shadow-sm"
 				>
 					L
 				</div>
 				<div>
-					<span class="mb-0.5 block text-[9px] font-bold tracking-widest text-text-muted uppercase">
+					<span class="mb-0.5 font-bold tracking-widest block text-[9px] text-text-muted uppercase">
 						{course ? course.title : 'Course'}
 					</span>
 					<h2 class="font-display text-base leading-tight font-bold text-text">
@@ -354,17 +354,17 @@
 
 			<!-- Lesson Page Content Card -->
 			<div
-				class="flex min-h-87.5 grow flex-col justify-between rounded-lg border border-border bg-surface p-6 shadow-md sm:p-10"
+				class="min-h-87.5 p-6 sm:p-10 flex grow flex-col justify-between rounded-lg border border-border bg-surface shadow-md"
 			>
 				<!-- Page Top Caption -->
 				<div
-					class="mb-6 text-[10px] font-bold tracking-widest text-text-muted uppercase select-none"
+					class="mb-6 font-bold tracking-widest text-[10px] text-text-muted uppercase select-none"
 				>
 					Page {currentPage + 1} of {totalPages}
 				</div>
 
 				<!-- Page Text Content -->
-				<div class="flex grow flex-col gap-3">
+				<div class="gap-3 flex grow flex-col">
 					<h3 class="font-display text-2xl leading-tight font-bold tracking-tight text-text">
 						{activePage.heading}
 					</h3>
@@ -376,7 +376,7 @@
 
 					<!-- Markdown rendered body -->
 					<div
-						class="prose mt-3 max-w-none space-y-4 font-sans text-sm leading-relaxed text-text-muted"
+						class="prose mt-3 space-y-4 font-sans text-sm leading-relaxed max-w-none text-text-muted"
 					>
 						<!-- Render markdown body securely -->
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -385,11 +385,11 @@
 				</div>
 
 				<!-- Bottom Controls Row -->
-				<div class="mt-8 flex items-center justify-between border-t border-border pt-6 select-none">
+				<div class="mt-8 pt-6 flex items-center justify-between border-t border-border select-none">
 					<!-- Previous Button -->
 					<button
 						type="button"
-						class="cursor-pointer rounded-r-md border border-border bg-surface px-4.5 py-2.5 text-xs font-bold text-text shadow-sm transition-all duration-180 hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+						class="px-4.5 py-2.5 text-xs font-bold cursor-pointer rounded-r-md border border-border bg-surface text-text shadow-sm transition-all duration-180 hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
 						onclick={prevPage}
 						disabled={currentPage === 0 || loading}
 					>
@@ -397,11 +397,11 @@
 					</button>
 
 					<!-- Navigation Page Dots (44x44px touch targets) -->
-					<div class="flex items-center gap-1">
+					<div class="gap-1 flex items-center">
 						{#each Array.from({ length: totalPages }, (_, i) => i) as idx (idx)}
 							<button
 								type="button"
-								class="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+								class="h-11 w-11 flex cursor-pointer items-center justify-center rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 								onclick={() => {
 									if (!loading) currentPage = idx;
 								}}
@@ -419,7 +419,7 @@
 					<!-- Next / Complete Button -->
 					<button
 						type="button"
-						class="cursor-pointer rounded-r-md bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all duration-180 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
+						class="px-5 py-2.5 text-xs font-bold text-white cursor-pointer rounded-r-md bg-primary shadow-sm transition-all duration-180 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
 						onclick={nextPage}
 						disabled={loading}
 					>
@@ -434,9 +434,9 @@
 
 			<!-- Supplementary Videos Section -->
 			{#if videosLoading}
-				<div class="mt-4 flex flex-col gap-3">
+				<div class="mt-4 gap-3 flex flex-col">
 					<div class="h-4 w-44 animate-pulse rounded bg-surface-muted"></div>
-					<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+					<div class="gap-4 sm:grid-cols-3 grid grid-cols-1">
 						{#each [0, 1, 2] as idx (idx)}
 							<div
 								class="h-44 animate-pulse rounded-lg border border-border bg-surface shadow-sm"
@@ -445,11 +445,11 @@
 					</div>
 				</div>
 			{:else if videos.length > 0}
-				<section class="mt-4 flex flex-col gap-3" aria-labelledby="supplementary-videos-heading">
-					<div class="flex items-center justify-between px-1 select-none">
+				<section class="mt-4 gap-3 flex flex-col" aria-labelledby="supplementary-videos-heading">
+					<div class="px-1 flex items-center justify-between select-none">
 						<h3
 							id="supplementary-videos-heading"
-							class="flex items-center gap-2 font-display text-xs font-bold tracking-wider text-text-muted uppercase"
+							class="gap-2 font-display text-xs font-bold tracking-wider flex items-center text-text-muted uppercase"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -473,7 +473,7 @@
 						</h3>
 						<button
 							type="button"
-							class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1 text-[11px] font-bold text-text-muted shadow-sm transition-all hover:bg-surface-muted hover:text-text disabled:opacity-50"
+							class="gap-1.5 px-2.5 py-1 font-bold inline-flex cursor-pointer items-center rounded-md border border-border bg-surface text-[11px] text-text-muted shadow-sm transition-all hover:bg-surface-muted hover:text-text disabled:opacity-50"
 							onclick={() => loadVideos(true)}
 							disabled={videosRefreshing}
 							title="Fetch different videos for this lesson topic"
@@ -493,17 +493,17 @@
 						</button>
 					</div>
 
-					<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+					<div class="gap-4 sm:grid-cols-3 grid grid-cols-1">
 						{#each videos as video (video.videoId)}
 							<div
 								class="flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm transition-all duration-180 hover:border-text-muted"
 							>
 								{#if expandedVideoId === video.videoId}
-									<div class="relative aspect-video w-full bg-black">
+									<div class="aspect-video bg-black relative w-full">
 										<iframe
 											src="https://www.youtube-nocookie.com/embed/{video.videoId}?autoplay=1"
 											title="{video.title} — YouTube video player"
-											class="absolute inset-0 h-full w-full border-0"
+											class="inset-0 absolute h-full w-full border-0"
 											allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 											allowfullscreen
 											loading="lazy"
@@ -512,7 +512,7 @@
 								{:else}
 									<button
 										type="button"
-										class="group relative aspect-video w-full cursor-pointer overflow-hidden border-0 bg-surface-muted p-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+										class="group aspect-video p-0 relative w-full cursor-pointer overflow-hidden border-0 bg-surface-muted text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 										onclick={() => (expandedVideoId = video.videoId)}
 										aria-label="Play video: {video.title}"
 									>
@@ -522,10 +522,10 @@
 											class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
 										/>
 										<div
-											class="absolute inset-0 flex items-center justify-center bg-black/25 transition-colors group-hover:bg-black/40"
+											class="inset-0 bg-black/25 group-hover:bg-black/40 absolute flex items-center justify-center transition-colors"
 										>
 											<div
-												class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform group-hover:scale-110"
+												class="h-10 w-10 text-white flex items-center justify-center rounded-full bg-primary shadow-lg transition-transform group-hover:scale-110"
 											>
 												<svg
 													xmlns="http://www.w3.org/2000/svg"
@@ -538,15 +538,15 @@
 									</button>
 								{/if}
 
-								<div class="flex grow flex-col justify-between p-3.5">
+								<div class="p-3.5 flex grow flex-col justify-between">
 									<div>
 										<h4
-											class="line-clamp-2 text-xs leading-snug font-bold text-text"
+											class="text-xs leading-snug font-bold line-clamp-2 text-text"
 											title={video.title}
 										>
 											{video.title}
 										</h4>
-										<p class="mt-1 text-[11px] font-medium text-text-muted">
+										<p class="mt-1 font-medium text-[11px] text-text-muted">
 											{video.channelTitle}
 										</p>
 									</div>
@@ -554,7 +554,7 @@
 									{#if expandedVideoId !== video.videoId}
 										<button
 											type="button"
-											class="mt-3 w-full cursor-pointer rounded-r-md bg-primary-soft py-1.5 text-center text-xs font-bold text-primary transition-all hover:bg-primary hover:text-white active:scale-[0.97]"
+											class="mt-3 py-1.5 text-xs font-bold hover:text-white w-full cursor-pointer rounded-r-md bg-primary-soft text-center text-primary transition-all hover:bg-primary active:scale-[0.97]"
 											onclick={() => (expandedVideoId = video.videoId)}
 										>
 											Watch Video

@@ -53,33 +53,33 @@
 </script>
 
 <div
-	class="my-4 overflow-hidden rounded-2xl border border-border bg-slate-950 text-slate-100 shadow-md"
+	class="my-4 rounded-2xl bg-slate-950 text-slate-100 overflow-hidden border border-border shadow-md"
 >
 	<!-- Header bar -->
 	<div
-		class="flex items-center justify-between border-b border-slate-800 bg-slate-900/80 px-4 py-2 text-xs"
+		class="border-slate-800 bg-slate-900/80 px-4 py-2 text-xs flex items-center justify-between border-b"
 	>
-		<div class="flex items-center gap-2">
+		<div class="gap-2 flex items-center">
 			<!-- traffic lights -->
-			<span class="h-2.5 w-2.5 rounded-full bg-rose-500/70"></span>
-			<span class="h-2.5 w-2.5 rounded-full bg-amber-500/70"></span>
-			<span class="h-2.5 w-2.5 rounded-full bg-emerald-500/70"></span>
-			<span class="ml-2 font-mono text-[11px] font-bold text-slate-400 uppercase"
+			<span class="h-2.5 w-2.5 bg-rose-500/70 rounded-full"></span>
+			<span class="h-2.5 w-2.5 bg-amber-500/70 rounded-full"></span>
+			<span class="h-2.5 w-2.5 bg-emerald-500/70 rounded-full"></span>
+			<span class="ml-2 font-mono font-bold text-slate-400 text-[11px] uppercase"
 				>{language || 'code'}</span
 			>
 		</div>
 
-		<div class="flex items-center gap-2">
+		<div class="gap-2 flex items-center">
 			{#if runnable}
 				<button
 					type="button"
 					onclick={handleRun}
 					disabled={isRunning}
-					class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-emerald-700/60 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold text-emerald-400 transition-all hover:bg-emerald-500/25 active:scale-95 disabled:opacity-50"
+					class="gap-1.5 border-emerald-700/60 bg-emerald-500/15 px-2.5 py-1 font-bold text-emerald-400 hover:bg-emerald-500/25 inline-flex cursor-pointer items-center rounded-md border text-[11px] transition-all active:scale-95 disabled:opacity-50"
 				>
 					{#if isRunning}
 						<span
-							class="h-2.5 w-2.5 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent"
+							class="h-2.5 w-2.5 animate-spin border-emerald-400 rounded-full border-2 border-t-transparent"
 						></span>
 						<span>Running...</span>
 					{:else}
@@ -91,7 +91,7 @@
 			<button
 				type="button"
 				onclick={handleCopy}
-				class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-[11px] font-medium transition-all hover:bg-slate-700 hover:text-white active:scale-95 {copied
+				class="gap-1 border-slate-700 bg-slate-800 px-2.5 py-1 font-medium hover:bg-slate-700 hover:text-white inline-flex cursor-pointer items-center rounded-md border text-[11px] transition-all active:scale-95 {copied
 					? 'border-emerald-700/60 bg-emerald-500/15 text-emerald-400'
 					: 'text-slate-300'}"
 			>
@@ -113,12 +113,12 @@
 	</div>
 
 	<!-- Code -->
-	<pre class="overflow-x-auto p-4 font-mono text-xs leading-relaxed"><code>{code}</code></pre>
+	<pre class="p-4 font-mono text-xs leading-relaxed overflow-x-auto"><code>{code}</code></pre>
 
 	<!-- Output panel -->
 	{#if showOutput}
-		<div class="anim-slide-up border-t border-slate-800 bg-slate-900/60 px-4 py-3">
-			<div class="flex items-center justify-between pb-2 text-[10px] font-bold text-slate-400">
+		<div class="anim-slide-up border-slate-800 bg-slate-900/60 px-4 py-3 border-t">
+			<div class="pb-2 font-bold text-slate-400 flex items-center justify-between text-[10px]">
 				<span>Output</span>
 				<button
 					type="button"
@@ -126,11 +126,11 @@
 						showOutput = false;
 						output = '';
 					}}
-					class="cursor-pointer text-slate-500 hover:text-slate-300">✕ Close</button
+					class="text-slate-500 hover:text-slate-300 cursor-pointer">✕ Close</button
 				>
 			</div>
 			<pre
-				class="font-mono text-[11px] leading-relaxed whitespace-pre-wrap {outputError
+				class="font-mono leading-relaxed text-[11px] whitespace-pre-wrap {outputError
 					? 'text-rose-400'
 					: 'text-emerald-300'}">{output}</pre>
 		</div>

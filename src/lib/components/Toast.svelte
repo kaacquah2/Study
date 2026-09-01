@@ -4,11 +4,11 @@
 
 {#if toastStore.toasts.length > 0}
 	<div
-		class="pointer-events-none fixed right-6 bottom-6 z-50 flex w-full max-w-sm flex-col gap-2.5 px-4"
+		class="right-6 bottom-6 max-w-sm gap-2.5 px-4 pointer-events-none fixed z-50 flex w-full flex-col"
 	>
 		{#each toastStore.toasts as toast (toast.id)}
 			<div
-				class="animate-slide-in pointer-events-auto flex items-center justify-between gap-3 rounded-xl border p-4 text-xs font-semibold shadow-xl transition-all duration-200 {toast.type ===
+				class="animate-slide-in gap-3 p-4 text-xs font-semibold shadow-xl pointer-events-auto flex items-center justify-between rounded-xl border transition-all duration-200 {toast.type ===
 				'success'
 					? 'border-emerald-500/30 bg-emerald-950/90 text-emerald-200'
 					: toast.type === 'error'
@@ -17,10 +17,10 @@
 							? 'border-amber-500/30 bg-amber-950/90 text-amber-200'
 							: 'border-indigo-500/30 bg-indigo-950/90 text-indigo-200'}"
 			>
-				<div class="flex items-center gap-2.5">
+				<div class="gap-2.5 flex items-center">
 					{#if toast.type === 'success'}
 						<svg
-							class="h-4 w-4 shrink-0 text-emerald-400"
+							class="h-4 w-4 text-emerald-400 shrink-0"
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
@@ -34,7 +34,7 @@
 						</svg>
 					{:else if toast.type === 'error'}
 						<svg
-							class="h-4 w-4 shrink-0 text-rose-400"
+							class="h-4 w-4 text-rose-400 shrink-0"
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
@@ -48,7 +48,7 @@
 						</svg>
 					{:else}
 						<svg
-							class="h-4 w-4 shrink-0 text-indigo-400"
+							class="h-4 w-4 text-indigo-400 shrink-0"
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
@@ -66,7 +66,7 @@
 				<button
 					type="button"
 					onclick={() => toastStore.remove(toast.id)}
-					class="cursor-pointer rounded-md p-1 opacity-70 hover:opacity-100"
+					class="p-1 cursor-pointer rounded-md opacity-70 hover:opacity-100"
 				>
 					&times;
 				</button>

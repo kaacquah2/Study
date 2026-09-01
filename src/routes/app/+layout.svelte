@@ -116,7 +116,7 @@
 		<button
 			type="button"
 			aria-label="Close popover menu"
-			class="fixed inset-0 z-40 cursor-default border-none bg-transparent"
+			class="inset-0 fixed z-40 cursor-default border-none bg-transparent"
 			onclick={() => {
 				userMenuOpen = false;
 			}}
@@ -126,17 +126,17 @@
 	<DesktopSidebar {currentPath} {navItems} />
 
 	<!-- Main Content Area -->
-	<div class="flex min-w-0 grow flex-col">
+	<div class="min-w-0 flex grow flex-col">
 		<!-- Header -->
 		<header
-			class="relative z-30 flex items-center justify-between border-b border-border bg-surface px-6 py-4"
+			class="px-6 py-4 relative z-30 flex items-center justify-between border-b border-border bg-surface"
 		>
-			<div class="flex items-center gap-3 md:hidden">
+			<div class="gap-3 md:hidden flex items-center">
 				<button
 					type="button"
 					onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
 					aria-label="Toggle menu"
-					class="cursor-pointer rounded-xl border border-border p-2 text-text-muted hover:text-text"
+					class="p-2 cursor-pointer rounded-xl border border-border text-text-muted hover:text-text"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -157,9 +157,9 @@
 			</div>
 
 			<div
-				class="hidden items-center gap-2 rounded-full border border-border/80 bg-surface-muted/60 px-3.5 py-1.5 text-xs font-semibold text-text-muted shadow-2xs md:flex"
+				class="gap-2 px-3.5 py-1.5 text-xs font-semibold shadow-2xs md:flex hidden items-center rounded-full border border-border/80 bg-surface-muted/60 text-text-muted"
 			>
-				<span class="flex items-center gap-1.5 text-primary">
+				<span class="gap-1.5 flex items-center text-primary">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						class="h-3.5 w-3.5"
@@ -186,7 +186,7 @@
 				<span class="font-bold text-text">{pageBreadcrumb.current}</span>
 			</div>
 
-			<div class="relative z-40 flex items-center gap-3">
+			<div class="gap-3 relative z-40 flex items-center">
 				<StreakChip />
 
 				{#if authStore.user}
@@ -194,7 +194,7 @@
 						<button
 							type="button"
 							onclick={() => (userMenuOpen = !userMenuOpen)}
-							class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-border bg-surface-muted transition-all duration-180 hover:border-primary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+							class="h-9 w-9 flex cursor-pointer items-center justify-center rounded-full border border-border bg-surface-muted transition-all duration-180 hover:border-primary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 							aria-label="User account menu"
 							aria-expanded={userMenuOpen}
 						>
@@ -206,7 +206,7 @@
 								/>
 							{:else}
 								<div
-									class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary"
+									class="h-8 w-8 text-xs font-bold flex items-center justify-center rounded-full bg-primary-soft text-primary"
 								>
 									{userInitials}
 								</div>
@@ -215,9 +215,9 @@
 
 						{#if userMenuOpen}
 							<div
-								class="absolute top-full right-0 z-50 mt-2 flex w-64 flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-2xl"
+								class="right-0 mt-2 w-64 gap-3 rounded-2xl p-4 shadow-2xl absolute top-full z-50 flex flex-col border border-border bg-surface"
 							>
-								<div class="flex items-center gap-3 border-b border-border/60 pb-3">
+								<div class="gap-3 pb-3 flex items-center border-b border-border/60">
 									{#if authStore.user.photoURL}
 										<img
 											src={authStore.user.photoURL}
@@ -226,13 +226,13 @@
 										/>
 									{:else}
 										<div
-											class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-bold text-primary"
+											class="h-10 w-10 text-sm font-bold flex shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"
 										>
 											{userInitials}
 										</div>
 									{/if}
 									<div class="truncate">
-										<span class="block truncate text-xs font-bold text-text">
+										<span class="text-xs font-bold block truncate text-text">
 											{authStore.user.displayName || 'Student'}
 										</span>
 										<span class="block truncate text-[11px] text-text-muted">
@@ -241,11 +241,11 @@
 									</div>
 								</div>
 
-								<div class="flex flex-col gap-1 text-xs font-semibold">
+								<div class="gap-1 text-xs font-semibold flex flex-col">
 									<a
 										href="/app"
 										onclick={() => (userMenuOpen = false)}
-										class="flex items-center gap-2 rounded-xl px-3 py-2 text-text hover:bg-surface-muted"
+										class="gap-2 px-3 py-2 flex items-center rounded-xl text-text hover:bg-surface-muted"
 									>
 										<span>📊</span>
 										<span>Dashboard</span>
@@ -253,7 +253,7 @@
 									<a
 										href="/app/explore"
 										onclick={() => (userMenuOpen = false)}
-										class="flex items-center gap-2 rounded-xl px-3 py-2 text-text hover:bg-surface-muted"
+										class="gap-2 px-3 py-2 flex items-center rounded-xl text-text hover:bg-surface-muted"
 									>
 										<span>🔍</span>
 										<span>Explore Courses</span>
@@ -262,7 +262,7 @@
 										<a
 											href="/superadmin"
 											onclick={() => (userMenuOpen = false)}
-											class="flex items-center gap-2 rounded-xl bg-violet-500/10 px-3 py-2 font-bold text-violet-500 hover:bg-violet-500/20"
+											class="gap-2 bg-violet-500/10 px-3 py-2 font-bold text-violet-500 hover:bg-violet-500/20 flex items-center rounded-xl"
 										>
 											<span>👑</span>
 											<span>Super Admin Console</span>
@@ -271,14 +271,14 @@
 									<a
 										href="/app/settings"
 										onclick={() => (userMenuOpen = false)}
-										class="flex items-center gap-2 rounded-xl px-3 py-2 text-text hover:bg-surface-muted"
+										class="gap-2 px-3 py-2 flex items-center rounded-xl text-text hover:bg-surface-muted"
 									>
 										<span>⚙️</span>
 										<span>Profile & Settings</span>
 									</a>
 								</div>
 
-								<div class="flex items-center justify-between border-t border-border/60 pt-2">
+								<div class="pt-2 flex items-center justify-between border-t border-border/60">
 									<span class="text-xs font-bold text-text-muted">Theme</span>
 									<ThemeSwitcher />
 								</div>
@@ -289,7 +289,7 @@
 										userMenuOpen = false;
 										authStore.logout();
 									}}
-									class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-danger-soft py-2.5 text-xs font-bold text-danger transition-colors hover:bg-danger/15"
+									class="gap-2 py-2.5 text-xs font-bold flex w-full cursor-pointer items-center justify-center rounded-xl bg-danger-soft text-danger transition-colors hover:bg-danger/15"
 								>
 									<span>Log out</span>
 								</button>
@@ -312,9 +312,9 @@
 		/>
 
 		<!-- Body View Render -->
-		<div class="flex min-h-0 grow overflow-hidden">
+		<div class="min-h-0 flex grow overflow-hidden">
 			<main
-				class="mx-auto flex w-full max-w-7xl grow flex-col overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8"
+				class="max-w-7xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8 mx-auto flex w-full grow flex-col overflow-y-auto"
 			>
 				{@render children()}
 			</main>

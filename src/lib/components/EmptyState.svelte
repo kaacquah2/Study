@@ -34,10 +34,10 @@
 </script>
 
 <div
-	class="flex min-h-75 w-full flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-surface/50 p-8 text-center shadow-xs"
+	class="min-h-75 rounded-2xl p-8 shadow-xs flex w-full flex-col items-center justify-center border border-dashed border-border bg-surface/50 text-center"
 >
 	<div
-		class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-soft text-primary shadow-xs"
+		class="mb-4 h-14 w-14 rounded-2xl shadow-xs flex items-center justify-center bg-primary-soft text-primary"
 		aria-hidden="true"
 	>
 		{#if icon}
@@ -64,16 +64,16 @@
 	<p class="mb-5 max-w-md text-xs leading-relaxed text-text-muted">{description}</p>
 
 	{#if suggestions.length > 0}
-		<div class="mb-6 flex flex-col items-center gap-2">
-			<span class="text-[11px] font-bold tracking-wider text-text-muted uppercase"
+		<div class="mb-6 gap-2 flex flex-col items-center">
+			<span class="font-bold tracking-wider text-[11px] text-text-muted uppercase"
 				>Need inspiration? Try:</span
 			>
-			<div class="flex flex-wrap items-center justify-center gap-2">
+			<div class="gap-2 flex flex-wrap items-center justify-center">
 				{#each suggestions as s (s.topic)}
 					<button
 						type="button"
 						onclick={() => (onSelectSuggestion ? onSelectSuggestion(s.topic) : null)}
-						class="cursor-pointer rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text shadow-2xs transition-all hover:border-primary hover:bg-primary-soft/40 hover:text-primary active:scale-95"
+						class="px-3 py-1.5 text-xs font-semibold shadow-2xs cursor-pointer rounded-xl border border-border bg-surface text-text transition-all hover:border-primary hover:bg-primary-soft/40 hover:text-primary active:scale-95"
 					>
 						✨ {s.label}
 					</button>
@@ -82,12 +82,12 @@
 		</div>
 	{/if}
 
-	<div class="flex flex-col items-center gap-3 sm:flex-row">
+	<div class="gap-3 sm:flex-row flex flex-col items-center">
 		{#if actionLabel && onAction}
 			<button
 				type="button"
 				onclick={onAction}
-				class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all duration-180 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
+				class="gap-2 px-5 py-2.5 text-xs font-bold text-white inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/20 transition-all duration-180 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
 			>
 				{actionLabel}
 			</button>
@@ -97,7 +97,7 @@
 			{#if secondaryActionHref}
 				<a
 					href={secondaryActionHref}
-					class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text shadow-2xs transition-all duration-180 hover:border-primary/40 hover:bg-primary-soft/30 hover:text-primary active:scale-[0.98]"
+					class="gap-1.5 px-4 py-2.5 text-xs font-bold shadow-2xs inline-flex items-center justify-center rounded-xl border border-border bg-surface text-text transition-all duration-180 hover:border-primary/40 hover:bg-primary-soft/30 hover:text-primary active:scale-[0.98]"
 				>
 					<span>🔍</span>
 					<span>{secondaryActionLabel}</span>
@@ -106,7 +106,7 @@
 				<button
 					type="button"
 					onclick={onSecondaryAction}
-					class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text shadow-2xs transition-all duration-180 hover:border-primary/40 hover:bg-primary-soft/30 hover:text-primary active:scale-[0.98]"
+					class="gap-1.5 px-4 py-2.5 text-xs font-bold shadow-2xs inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-surface text-text transition-all duration-180 hover:border-primary/40 hover:bg-primary-soft/30 hover:text-primary active:scale-[0.98]"
 				>
 					<span>🔍</span>
 					<span>{secondaryActionLabel}</span>

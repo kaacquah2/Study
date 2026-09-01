@@ -1,0 +1,158 @@
+/* src/lib/styles/design-tokens.css */
+/* Import expressive fonts */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;700&display=swap');
+
+:root {
+	/* Font families */
+	--font-sans: 'Plus Jakarta Sans', sans-serif;
+	--font-display: 'Fraunces', serif;
+
+	/* Light theme tokens */
+	--bg: #eef1f7; /* page background */
+	--surface: rgba(255, 255, 255, 0.85); /* card background */
+	--surface-muted: #f5f7fb; /* inset panels */
+	--border: #e3e7f0;
+	--text: #1d2340;
+	--text-muted: #5c6287;
+	--primary: #574fd6;
+	--primary-soft: #eeedfb;
+	--primary-hover: #4740be;
+	--accent: #f5a524;
+	--accent-soft: #fef1dc;
+	--accent-text: #b25e00;
+	--success: #166534;
+	--success-soft: #e6f7ee;
+	--danger: #dc2626;
+	--danger-soft: #fdecec;
+	--hero-from: #6c63e8;
+	--hero-to: #574fd6;
+
+	/* Dark theme tokens */
+	--bg-dark: #12141c;
+	--surface-dark: #1a1d28;
+	--surface-muted-dark: #222634;
+	--border-dark: #2c3142;
+	--text-dark: #eef0f7;
+	--text-muted-dark: #9aa0bc;
+	--primary-dark: #7c74f0;
+	--primary-soft-dark: #262445;
+	--primary-hover-dark: #8f88f5;
+	--accent-dark: #f5a524;
+	--accent-soft-dark: #3a2b10;
+	--accent-text-dark: #f5a524;
+	--success-dark: #34d399;
+	--success-soft-dark: #10291f;
+	--danger-dark: #f87171;
+	--danger-soft-dark: #2e1414;
+	--hero-from-dark: #4a43b8;
+	--hero-to-dark: #322c8c;
+
+	/* Radius */
+	--radius-sm: 8px;
+	--radius-md: 12px;
+	--radius-lg: 16px;
+	--radius-xl: 24px;
+
+	/* Shadows */
+	--shadow-sm: 0 1px 2px rgb(29 35 64 / 0.04);
+	--shadow-md: 0 4px 16px rgb(29 35 64 / 0.06);
+	--shadow-lg: 0 12px 32px rgb(29 35 64 / 0.1);
+}
+
+[data-theme='dark'] {
+	--bg: var(--bg-dark);
+	--surface: var(--surface-dark);
+	--surface-muted: var(--surface-muted-dark);
+	--border: var(--border-dark);
+	--text: var(--text-dark);
+	--text-muted: var(--text-muted-dark);
+	--primary: var(--primary-dark);
+	--primary-soft: var(--primary-soft-dark);
+	--primary-hover: var(--primary-hover-dark);
+	--accent: var(--accent-dark);
+	--accent-soft: var(--accent-soft-dark);
+	--accent-text: var(--accent-text-dark);
+	--success: var(--success-dark);
+	--success-soft: var(--success-soft-dark);
+	--danger: var(--danger-dark);
+	--danger-soft: var(--danger-soft-dark);
+	--hero-from: var(--hero-from-dark);
+	--hero-to: var(--hero-to-dark);
+}
+
+/* Global body styles */
+body {
+	font-family: var(--font-sans);
+	background-color: var(--bg);
+	color: var(--text);
+	transition:
+		background-color 0.3s ease,
+		color 0.3s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-family: var(--font-display);
+}
+
+/* Glass surface utility – only for sticky header, modal, floating CTA */
+.glass-surface {
+	background: var(--surface);
+	backdrop-filter: blur(20px);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-md);
+}
+
+/* Semi‑opaque card for list items – limited blur for performance */
+.card-surface {
+	background: rgba(255, 255, 255, 0.9);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-sm);
+}
+
+/* Button utilities */
+.btn-primary {
+	background: var(--primary);
+	color: #fff;
+	border-radius: var(--radius-sm);
+	padding: 0.5rem 1rem;
+	font-weight: 600;
+	transition:
+		transform 0.2s,
+		background 0.2s;
+}
+.btn-primary:hover {
+	transform: scale(1.02);
+	background: var(--primary-hover);
+}
+
+/* Tooltip pill */
+.tooltip-pill {
+	background: var(--surface);
+	color: var(--text);
+	padding: 0.25rem 0.5rem;
+	border-radius: var(--radius-sm);
+	box-shadow: var(--shadow-sm);
+	font-size: 0.75rem;
+}
+
+/* Cursor aura – placed at root level */
+.cursor-aura {
+	position: fixed;
+	width: 200px;
+	height: 200px;
+	pointer-events: none;
+	border-radius: 50%;
+	background: radial-gradient(circle at center, var(--primary) 0%, transparent 70%);
+	mix-blend-mode: screen;
+	opacity: 0.15;
+	transform: translate(-50%, -50%);
+	transition: transform 0.1s linear;
+}

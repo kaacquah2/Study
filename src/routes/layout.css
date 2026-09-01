@@ -1,11 +1,5 @@
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/500.css';
-@import '@fontsource/inter/600.css';
-@import '@fontsource/jetbrains-mono/400.css';
-@import '@fontsource/poppins/600.css';
-@import '@fontsource/poppins/700.css';
-@import 'tailwindcss';
-
+/* Font imports moved to design-tokens.css */
+@import '../lib/styles/design-tokens.css';
 @theme {
 	--color-bg: var(--bg);
 	--color-surface: var(--surface);
@@ -48,10 +42,7 @@
 	--color-course-emerald: var(--c-emerald);
 	--color-course-emerald-soft: var(--c-emerald-soft);
 
-	/* Fonts */
-	--font-display: 'General Sans', 'Poppins', sans-serif;
-	--font-sans: 'Inter', sans-serif;
-	--font-mono: 'JetBrains Mono', monospace;
+	/* Font definitions moved to design-tokens.css */
 
 	/* Border Radii */
 	--radius-sm: 8px;

@@ -165,12 +165,12 @@
 	};
 </script>
 
-<div class="flex w-full flex-col gap-6">
+<div class="gap-6 flex w-full flex-col">
 	<!-- Editable Course Title and Description -->
-	<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+	<div class="gap-4 rounded-2xl p-6 flex flex-col border border-border bg-surface shadow-sm">
 		<h3 class="font-display text-lg font-bold text-text">Review Course Details</h3>
 
-		<div class="flex flex-col gap-1.5">
+		<div class="gap-1.5 flex flex-col">
 			<label for="course-title" class="text-xs font-bold tracking-wider text-text-muted uppercase"
 				>Course Title</label
 			>
@@ -178,11 +178,11 @@
 				id="course-title"
 				type="text"
 				bind:value={title}
-				class="w-full rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text focus:border-primary focus:outline-none"
+				class="px-4 py-2.5 text-sm font-semibold w-full rounded-xl border border-border bg-surface text-text focus:border-primary focus:outline-none"
 			/>
 		</div>
 
-		<div class="flex flex-col gap-1.5">
+		<div class="gap-1.5 flex flex-col">
 			<label for="course-desc" class="text-xs font-bold tracking-wider text-text-muted uppercase"
 				>Course Summary / Goal</label
 			>
@@ -190,14 +190,14 @@
 				id="course-desc"
 				bind:value={description}
 				rows="3"
-				class="w-full resize-none rounded-xl border border-border bg-surface px-4 py-2.5 text-xs leading-relaxed text-text focus:border-primary focus:outline-none"
+				class="px-4 py-2.5 text-xs leading-relaxed w-full resize-none rounded-xl border border-border bg-surface text-text focus:border-primary focus:outline-none"
 			></textarea>
 		</div>
 
 		<!-- Item #4: Steering Hint & Whole Outline Regeneration Banner -->
 		{#if courseId}
 			<div
-				class="mt-2 flex flex-col gap-2.5 rounded-xl border border-primary/20 bg-primary-soft/30 p-4"
+				class="mt-2 gap-2.5 p-4 flex flex-col rounded-xl border border-primary/20 bg-primary-soft/30"
 			>
 				<div class="flex items-center justify-between">
 					<span class="text-xs font-bold text-primary">✨ Steering Direction (Optional)</span>
@@ -205,22 +205,22 @@
 						>Direct the AI to adjust tone, depth, or focus</span
 					>
 				</div>
-				<div class="flex gap-2">
+				<div class="gap-2 flex">
 					<input
 						type="text"
 						bind:value={steeringHint}
 						placeholder="e.g., Make it more beginner-friendly, focus heavily on hands-on practical examples..."
-						class="grow rounded-lg border border-border/60 bg-surface px-3 py-1.5 text-xs text-text focus:border-primary focus:outline-none"
+						class="px-3 py-1.5 text-xs grow rounded-lg border border-border/60 bg-surface text-text focus:border-primary focus:outline-none"
 					/>
 					<button
 						type="button"
 						onclick={handleRegenerateOutlineWithSteering}
 						disabled={isRegeneratingOutline}
-						class="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-primary-hover active:scale-95 disabled:opacity-40"
+						class="gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs inline-flex shrink-0 cursor-pointer items-center rounded-lg bg-primary hover:bg-primary-hover active:scale-95 disabled:opacity-40"
 					>
 						{#if isRegeneratingOutline}
 							<span
-								class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent"
+								class="h-3.5 w-3.5 animate-spin border-white rounded-full border-2 border-t-transparent"
 							></span>
 							<span>Regenerating...</span>
 						{:else}
@@ -233,15 +233,15 @@
 	</div>
 
 	<!-- Module List with Drag & Reorder -->
-	<div class="flex flex-col gap-3">
+	<div class="gap-3 flex flex-col">
 		<div class="flex items-center justify-between">
 			<h3 class="font-display text-base font-bold text-text">Modules ({modules.length})</h3>
-			<span class="text-[11px] font-semibold text-text-muted"
+			<span class="font-semibold text-[11px] text-text-muted"
 				>Drag to reorder, edit titles, or regenerate single modules</span
 			>
 		</div>
 
-		<div class="flex flex-col gap-3">
+		<div class="gap-3 flex flex-col">
 			{#each modules as mod, idx (mod.id || idx)}
 				<div
 					role="listitem"
@@ -249,12 +249,12 @@
 					ondragstart={() => handleDragStart(idx)}
 					ondragover={(e) => handleDragOver(e, idx)}
 					ondragend={handleDragEnd}
-					class="group relative flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xs transition-all duration-180 hover:border-primary/40 sm:flex-row sm:items-start {draggedIndex ===
+					class="card-surface group gap-3 rounded-2xl sm:flex-row sm:items-start relative flex flex-col transition-all duration-180 hover:border-primary/40 {draggedIndex ===
 					idx
 						? 'border-primary opacity-50'
 						: ''}"
 				>
-					<div class="flex items-center gap-3">
+					<div class="gap-3 flex items-center">
 						<!-- Drag Handle -->
 						<div
 							class="flex cursor-grab items-center text-text-muted hover:text-text active:cursor-grabbing"
@@ -277,31 +277,31 @@
 
 						<!-- Order Badge -->
 						<div
-							class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-xs font-bold text-primary"
+							class="h-8 w-8 text-xs font-bold flex shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary"
 						>
 							{idx + 1}
 						</div>
 					</div>
 
 					<!-- Module Content Inputs -->
-					<div class="flex grow flex-col gap-2">
-						<div class="flex flex-wrap items-center gap-2">
+					<div class="gap-2 flex grow flex-col">
+						<div class="gap-2 flex flex-wrap items-center">
 							<input
 								type="text"
 								bind:value={mod.title}
-								class="min-w-44 grow rounded-lg border border-border/60 bg-surface-muted/50 px-3 py-1.5 text-xs font-bold text-text focus:border-primary focus:outline-none"
+								class="min-w-44 px-3 py-1.5 text-xs font-bold grow rounded-lg border border-border/60 bg-surface-muted/50 text-text focus:border-primary focus:outline-none"
 							/>
 
 							<!-- Module Type Icon + Badge -->
 							<span
-								class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border/40 px-2 py-0.5 text-[10px] font-bold text-text-muted uppercase"
+								class="gap-1 px-2 py-0.5 font-bold inline-flex shrink-0 items-center rounded-md border border-border/40 text-[10px] text-text-muted uppercase"
 							>
 								<span>{mod.type === 'lesson' ? '📖 Lesson' : '🧩 Quiz'}</span>
 							</span>
 
 							<!-- Module Estimated Duration Tag -->
 							<span
-								class="shrink-0 rounded-md border border-border/40 bg-surface-muted px-2 py-0.5 text-[10px] font-bold text-text-muted"
+								class="px-2 py-0.5 font-bold shrink-0 rounded-md border border-border/40 bg-surface-muted text-[10px] text-text-muted"
 							>
 								⏱️ ~{mod.estimatedMinutes || 12} mins
 							</span>
@@ -309,19 +309,19 @@
 						<textarea
 							bind:value={mod.summary}
 							rows="2"
-							class="w-full resize-none rounded-lg border border-border/40 bg-surface-muted/30 px-3 py-1.5 text-[11px] leading-relaxed text-text-muted focus:border-primary focus:outline-none"
+							class="px-3 py-1.5 leading-relaxed w-full resize-none rounded-lg border border-border/40 bg-surface-muted/30 text-[11px] text-text-muted focus:border-primary focus:outline-none"
 						></textarea>
 					</div>
 
 					<!-- Action Buttons (Single Regenerate, Move up, Move down, Delete) -->
-					<div class="flex shrink-0 items-center gap-1 self-end sm:self-start">
+					<div class="gap-1 sm:self-start flex shrink-0 items-center self-end">
 						{#if courseId}
 							<button
 								type="button"
 								title="Regenerate this specific module with AI"
 								disabled={regeneratingModuleIndex !== null}
 								onclick={() => handleRegenerateSingleModule(idx)}
-								class="cursor-pointer rounded-lg px-2 py-1 text-[11px] font-bold text-primary hover:bg-primary-soft/80 disabled:opacity-30"
+								class="px-2 py-1 font-bold cursor-pointer rounded-lg text-[11px] text-primary hover:bg-primary-soft/80 disabled:opacity-30"
 							>
 								{#if regeneratingModuleIndex === idx}
 									<span
@@ -337,7 +337,7 @@
 							title="Move up"
 							disabled={idx === 0}
 							onclick={() => moveModule(idx, idx - 1)}
-							class="cursor-pointer rounded-lg p-1.5 text-text-muted hover:bg-surface-muted hover:text-text disabled:opacity-30"
+							class="p-1.5 cursor-pointer rounded-lg text-text-muted hover:bg-surface-muted hover:text-text disabled:opacity-30"
 						>
 							&uarr;
 						</button>
@@ -346,7 +346,7 @@
 							title="Move down"
 							disabled={idx === modules.length - 1}
 							onclick={() => moveModule(idx, idx + 1)}
-							class="cursor-pointer rounded-lg p-1.5 text-text-muted hover:bg-surface-muted hover:text-text disabled:opacity-30"
+							class="p-1.5 cursor-pointer rounded-lg text-text-muted hover:bg-surface-muted hover:text-text disabled:opacity-30"
 						>
 							&darr;
 						</button>
@@ -355,7 +355,7 @@
 							title="Delete module"
 							disabled={modules.length <= 1}
 							onclick={() => deleteModule(idx)}
-							class="cursor-pointer rounded-lg p-1.5 text-text-muted hover:bg-danger-soft hover:text-danger disabled:opacity-30"
+							class="p-1.5 cursor-pointer rounded-lg text-text-muted hover:bg-danger-soft hover:text-danger disabled:opacity-30"
 						>
 							&times;
 						</button>
@@ -368,7 +368,7 @@
 		<button
 			type="button"
 			onclick={addBlankModule}
-			class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-surface/40 px-4 py-3 text-xs font-bold text-text-muted transition-all duration-180 hover:border-primary hover:bg-primary-soft/20 hover:text-primary active:scale-[0.99]"
+			class="gap-2 px-4 py-3 text-xs font-bold flex w-full cursor-pointer items-center justify-center rounded-xl border border-dashed border-border bg-surface/40 text-text-muted transition-all duration-180 hover:border-primary hover:bg-primary-soft/20 hover:text-primary active:scale-[0.99]"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -389,15 +389,15 @@
 	</div>
 
 	<!-- Confirm and Generate Full Course CTA -->
-	<div class="flex items-center justify-end gap-3 pt-4">
+	<div class="gap-3 pt-4 flex items-center justify-end">
 		<button
 			type="button"
 			onclick={handleSaveAndConfirm}
 			disabled={loading || isSaving}
-			class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-bold text-white shadow-md shadow-primary/20 transition-all duration-180 hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50 sm:w-auto"
+			class="gap-2 px-8 py-3.5 text-sm font-bold text-white sm:w-auto flex w-full cursor-pointer items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/20 transition-all duration-180 hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50"
 		>
 			{#if loading || isSaving}
-				<span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+				<span class="h-4 w-4 animate-spin border-white rounded-full border-2 border-t-transparent"
 				></span>
 				Building course modules...
 			{:else}

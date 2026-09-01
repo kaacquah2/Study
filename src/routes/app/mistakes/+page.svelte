@@ -9,6 +9,6 @@
 	<title>Mistake Notebook & Error Bank — Study AI</title>
 </svelte:head>
 
-<div class="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+<div class="max-w-4xl px-4 py-8 sm:px-6 mx-auto">
 	<MistakeNotebook {moduleId} />
 </div>

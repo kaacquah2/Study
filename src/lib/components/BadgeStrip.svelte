@@ -58,10 +58,10 @@
 	});
 </script>
 
-<div class="flex flex-col gap-3">
+<div class="gap-3 flex flex-col">
 	{#if nextBadgeTarget}
 		<div
-			class="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs font-semibold text-amber-700 dark:text-amber-300"
+			class="gap-2 border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center rounded-xl border"
 		>
 			<span class="text-sm">🎯</span>
 			<span
@@ -71,7 +71,7 @@
 	{/if}
 
 	<div
-		class="flex flex-wrap items-center gap-2.5 select-none"
+		class="gap-2.5 flex flex-wrap items-center select-none"
 		role="list"
 		aria-label="Achievements badges"
 	>
@@ -87,20 +87,20 @@
 			<button
 				type="button"
 				aria-label={badgeAriaLabel}
-				class="group relative inline-flex cursor-help items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all duration-180 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary {unlocked
-					? 'border-primary/40 bg-primary-soft/60 text-text shadow-xs'
+				class="group gap-1.5 px-3.5 py-2 text-xs font-bold relative inline-flex cursor-help items-center rounded-xl border transition-all duration-180 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary {unlocked
+					? 'shadow-xs border-primary/40 bg-primary-soft/60 text-text'
 					: isNext
-						? 'border-amber-500/60 bg-amber-500/10 text-text shadow-md ring-2 shadow-amber-500/10 ring-amber-500/20'
+						? 'border-amber-500/60 bg-amber-500/10 shadow-amber-500/10 ring-amber-500/20 text-text shadow-md ring-2'
 						: 'border-border/80 bg-surface-muted text-text-muted hover:border-border hover:text-text'}"
 			>
 				<span>{b.icon}</span>
 				<span>{b.name}</span>
 
 				{#if unlocked}
-					<span class="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400">✓</span>
+					<span class="font-extrabold text-emerald-600 dark:text-emerald-400 text-[10px]">✓</span>
 				{:else if isNext}
 					<span
-						class="py-0.2 rounded-full bg-amber-500 px-1.5 text-[9px] font-black text-slate-950 uppercase"
+						class="py-0.2 bg-amber-500 px-1.5 font-black text-slate-950 rounded-full text-[9px] uppercase"
 					>
 						NEXT
 					</span>
@@ -110,20 +110,20 @@
 
 				<!-- Accessible Hover & Focus Tooltip -->
 				<div
-					class="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 hidden -translate-x-1/2 rounded-xl border border-slate-700/60 bg-slate-900 px-3 py-1.5 text-[11px] font-semibold whitespace-nowrap text-white shadow-xl transition-all group-hover:block group-focus-visible:block"
+					class="mb-2 border-slate-700/60 bg-slate-900 px-3 py-1.5 font-semibold text-white shadow-xl pointer-events-none absolute bottom-full left-1/2 z-30 hidden -translate-x-1/2 rounded-xl border text-[11px] whitespace-nowrap transition-all group-hover:block group-focus-visible:block"
 				>
 					{#if unlocked}
-						<div class="flex items-center gap-1 text-emerald-400">
+						<div class="gap-1 text-emerald-400 flex items-center">
 							<span>✓</span>
 							<span>Unlocked! ({b.name})</span>
 						</div>
 					{:else if isNext}
-						<div class="flex items-center gap-1 text-amber-300">
+						<div class="gap-1 text-amber-300 flex items-center">
 							<span>🎯</span>
 							<span>Next Target: {nextBadgeTarget?.hint}</span>
 						</div>
 					{:else}
-						<div class="flex items-center gap-1 text-slate-300">
+						<div class="gap-1 text-slate-300 flex items-center">
 							<span>🔒</span>
 							<span>{b.requirement}</span>
 						</div>

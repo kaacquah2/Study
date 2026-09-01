@@ -311,13 +311,13 @@
 	<title>Knowledge Base — AI Study Buddy</title>
 </svelte:head>
 
-<div class="mx-auto flex w-full max-w-3xl flex-col gap-6 py-4">
+<div class="max-w-3xl gap-6 py-4 mx-auto flex w-full flex-col">
 	<!-- Header -->
-	<div class="flex items-center justify-between border-b border-border pb-4">
+	<div class="pb-4 flex items-center justify-between border-b border-border">
 		<div>
 			<a
 				href={resolve('/app')}
-				class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
+				class="gap-1.5 text-xs font-bold inline-flex items-center text-text-muted transition-colors hover:text-primary"
 			>
 				&larr; Return to Dashboard
 			</a>
@@ -329,9 +329,9 @@
 	</div>
 
 	<!-- Stats Bar -->
-	<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-		<div class="rounded-2xl border border-border bg-surface p-4">
-			<p class="text-[11px] font-bold tracking-wider text-text-muted uppercase">Indexed Chunks</p>
+	<div class="gap-3 sm:grid-cols-3 grid grid-cols-2">
+		<div class="rounded-2xl p-4 border border-border bg-surface">
+			<p class="font-bold tracking-wider text-[11px] text-text-muted uppercase">Indexed Chunks</p>
 			{#if statsLoading}
 				<div class="mt-1 h-6 w-16 animate-pulse rounded-lg bg-surface-muted"></div>
 			{:else}
@@ -340,8 +340,8 @@
 				</p>
 			{/if}
 		</div>
-		<div class="rounded-2xl border border-border bg-surface p-4">
-			<p class="text-[11px] font-bold tracking-wider text-text-muted uppercase">RAG Status</p>
+		<div class="rounded-2xl p-4 border border-border bg-surface">
+			<p class="font-bold tracking-wider text-[11px] text-text-muted uppercase">RAG Status</p>
 			{#if statsLoading}
 				<div class="mt-1 h-6 w-20 animate-pulse rounded-lg bg-surface-muted"></div>
 			{:else}
@@ -354,20 +354,20 @@
 				</p>
 			{/if}
 		</div>
-		<div class="col-span-2 rounded-2xl border border-border bg-surface p-4 sm:col-span-1">
-			<p class="text-[11px] font-bold tracking-wider text-text-muted uppercase">Chunk Size</p>
+		<div class="rounded-2xl p-4 sm:col-span-1 col-span-2 border border-border bg-surface">
+			<p class="font-bold tracking-wider text-[11px] text-text-muted uppercase">Chunk Size</p>
 			<p class="mt-1 font-display text-sm font-bold text-text">400 chars / 50 overlap</p>
 		</div>
 	</div>
 
 	<!-- Tab Bar Navigation -->
-	<div class="flex flex-wrap items-center gap-2 border-b border-border pb-3">
+	<div class="gap-2 pb-3 flex flex-wrap items-center border-b border-border">
 		<button
 			type="button"
 			onclick={() => (activeTab = 'documents')}
-			class="cursor-pointer rounded-xl px-4 py-2 text-xs font-bold transition-all {activeTab ===
+			class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl transition-all {activeTab ===
 			'documents'
-				? 'bg-primary text-white shadow-xs'
+				? 'text-white shadow-xs bg-primary'
 				: 'border border-border bg-surface text-text-muted hover:text-text'}"
 		>
 			📚 RAG Knowledge Base
@@ -375,9 +375,9 @@
 		<button
 			type="button"
 			onclick={() => (activeTab = 'summarizer')}
-			class="cursor-pointer rounded-xl px-4 py-2 text-xs font-bold transition-all {activeTab ===
+			class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl transition-all {activeTab ===
 			'summarizer'
-				? 'bg-primary text-white shadow-xs'
+				? 'text-white shadow-xs bg-primary'
 				: 'border border-border bg-surface text-text-muted hover:text-text'}"
 		>
 			⚡ Summarizer
@@ -385,9 +385,9 @@
 		<button
 			type="button"
 			onclick={() => (activeTab = 'paraphraser')}
-			class="cursor-pointer rounded-xl px-4 py-2 text-xs font-bold transition-all {activeTab ===
+			class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl transition-all {activeTab ===
 			'paraphraser'
-				? 'bg-primary text-white shadow-xs'
+				? 'text-white shadow-xs bg-primary'
 				: 'border border-border bg-surface text-text-muted hover:text-text'}"
 		>
 			✍️ Paraphraser
@@ -395,9 +395,9 @@
 		<button
 			type="button"
 			onclick={() => (activeTab = 'flashcards')}
-			class="cursor-pointer rounded-xl px-4 py-2 text-xs font-bold transition-all {activeTab ===
+			class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl transition-all {activeTab ===
 			'flashcards'
-				? 'bg-primary text-white shadow-xs'
+				? 'text-white shadow-xs bg-primary'
 				: 'border border-border bg-surface text-text-muted hover:text-text'}"
 		>
 			🎴 Flashcard Generator
@@ -407,7 +407,7 @@
 	{#if activeTab === 'documents'}
 		<!-- How it works banner -->
 		<div
-			class="rounded-2xl border border-primary/20 bg-primary-soft/40 p-4 text-xs leading-relaxed text-primary"
+			class="rounded-2xl p-4 text-xs leading-relaxed border border-primary/20 bg-primary-soft/40 text-primary"
 		>
 			<span class="font-bold">How it works:</span> Documents you upload are split into chunks, embedded
 			with a semantic model, and stored in a FAISS index on disk. When you generate lessons or quizzes,
@@ -416,13 +416,13 @@
 		</div>
 
 		<!-- Upload Section -->
-		<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+		<div class="gap-4 rounded-2xl p-6 flex flex-col border border-border bg-surface shadow-sm">
 			<h2 class="font-display text-base font-bold text-text">Add Documents</h2>
 
 			<!-- Drag & Drop Zone -->
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div
-				class="relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 text-center transition-colors
+				class="gap-3 p-8 relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition-colors
 				{dragOver
 					? 'border-primary bg-primary-soft/30'
 					: 'border-border bg-surface-muted/50 hover:border-primary/50'}"
@@ -435,7 +435,7 @@
 				}}
 				ondrop={handleDrop}
 			>
-				<div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft">
+				<div class="h-12 w-12 rounded-2xl flex items-center justify-center bg-primary-soft">
 					<svg
 						class="h-6 w-6 text-primary"
 						fill="none"
@@ -453,15 +453,15 @@
 				<div>
 					<p class="text-sm font-bold text-text">Drag &amp; drop files here</p>
 					<p class="text-xs text-text-muted">
-						Supports <code class="rounded bg-surface-muted px-1 font-mono">.pdf</code>,
-						<code class="rounded bg-surface-muted px-1 font-mono">.txt</code>,
-						<code class="rounded bg-surface-muted px-1 font-mono">.md</code>,
-						<code class="rounded bg-surface-muted px-1 font-mono">.json</code>, and
-						<code class="rounded bg-surface-muted px-1 font-mono">.csv</code> files
+						Supports <code class="rounded px-1 font-mono bg-surface-muted">.pdf</code>,
+						<code class="rounded px-1 font-mono bg-surface-muted">.txt</code>,
+						<code class="rounded px-1 font-mono bg-surface-muted">.md</code>,
+						<code class="rounded px-1 font-mono bg-surface-muted">.json</code>, and
+						<code class="rounded px-1 font-mono bg-surface-muted">.csv</code> files
 					</p>
 				</div>
 				<label
-					class="cursor-pointer rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text transition-colors hover:border-primary hover:text-primary"
+					class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl border border-border bg-surface text-text transition-colors hover:border-primary hover:text-primary"
 				>
 					Browse Files
 					<input
@@ -475,7 +475,7 @@
 			</div>
 
 			<!-- Paste Text -->
-			<div class="flex flex-col gap-2 border-t border-border/40 pt-4">
+			<div class="gap-2 pt-4 flex flex-col border-t border-border/40">
 				<label for="paste-input" class="text-xs font-bold tracking-wider text-text-muted uppercase">
 					Or paste text directly
 				</label>
@@ -484,17 +484,17 @@
 					bind:value={pasteText}
 					rows="4"
 					placeholder="Paste lecture notes, textbook excerpts, or any study material here..."
-					class="w-full resize-none rounded-xl border border-border bg-surface-muted/50 px-4 py-3 text-xs leading-relaxed text-text focus:border-primary focus:outline-none"
+					class="px-4 py-3 text-xs leading-relaxed w-full resize-none rounded-xl border border-border bg-surface-muted/50 text-text focus:border-primary focus:outline-none"
 				></textarea>
 				{#if uploadError}
-					<p class="text-[11px] font-semibold text-danger">{uploadError}</p>
+					<p class="font-semibold text-[11px] text-danger">{uploadError}</p>
 				{/if}
 				<div class="flex justify-end">
 					<button
 						type="button"
 						onclick={addPasteText}
 						disabled={pasteText.trim().length < 20}
-						class="cursor-pointer rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+						class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl border border-border bg-surface text-text transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						+ Stage Text
 					</button>
@@ -504,12 +504,12 @@
 
 		<!-- Staged Files Queue -->
 		{#if stagedFiles.length > 0}
-			<div class="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+			<div class="gap-3 rounded-2xl p-6 flex flex-col border border-border bg-surface shadow-sm">
 				<div class="flex items-center justify-between">
 					<h2 class="font-display text-base font-bold text-text">
 						Staged for Upload
 						<span
-							class="ml-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white"
+							class="ml-1.5 h-5 w-5 font-bold text-white inline-flex items-center justify-center rounded-full bg-primary text-[10px]"
 						>
 							{stagedFiles.length}
 						</span>
@@ -525,12 +525,12 @@
 					</button>
 				</div>
 
-				<ul class="flex flex-col gap-2">
+				<ul class="gap-2 flex flex-col">
 					{#each stagedFiles as file, i (file.name + i)}
 						<li
-							class="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-muted/50 px-4 py-2.5"
+							class="gap-3 px-4 py-2.5 flex items-center justify-between rounded-xl border border-border bg-surface-muted/50"
 						>
-							<div class="flex min-w-0 items-center gap-2">
+							<div class="min-w-0 gap-2 flex items-center">
 								<svg
 									class="h-4 w-4 shrink-0 text-primary"
 									fill="none"
@@ -544,9 +544,9 @@
 										d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
 									/>
 								</svg>
-								<span class="truncate text-xs font-semibold text-text">{file.name}</span>
+								<span class="text-xs font-semibold truncate text-text">{file.name}</span>
 							</div>
-							<div class="flex shrink-0 items-center gap-3">
+							<div class="gap-3 flex shrink-0 items-center">
 								<span class="text-[11px] text-text-muted"
 									>{(file.content.length / 1000).toFixed(1)}k chars</span
 								>
@@ -575,11 +575,11 @@
 					type="button"
 					onclick={uploadAll}
 					disabled={uploading}
-					class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50"
+					class="gap-2 px-6 py-3 text-xs font-bold text-white inline-flex w-full items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50"
 				>
 					{#if uploading}
 						<span
-							class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+							class="h-4 w-4 animate-spin border-white rounded-full border-2 border-t-transparent"
 						></span>
 						Indexing documents...
 					{:else}
@@ -603,7 +603,7 @@
 		{/if}
 
 		<!-- Danger Zone — Clear Store -->
-		<div class="flex flex-col gap-3 rounded-2xl border border-danger/20 bg-danger-soft/30 p-6">
+		<div class="gap-3 rounded-2xl p-6 flex flex-col border border-danger/20 bg-danger-soft/30">
 			<div>
 				<h2 class="font-display text-base font-bold text-danger">Danger Zone</h2>
 				<p class="mt-0.5 text-xs text-text-muted">
@@ -619,7 +619,7 @@
 						showClearConfirm = true;
 					}}
 					disabled={!hasDocuments}
-					class="inline-flex items-center gap-2 self-start rounded-xl border border-danger/40 bg-danger-soft px-4 py-2 text-xs font-bold text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-40"
+					class="gap-2 px-4 py-2 text-xs font-bold inline-flex items-center self-start rounded-xl border border-danger/40 bg-danger-soft text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-40"
 				>
 					<svg
 						class="h-4 w-4"
@@ -637,20 +637,20 @@
 					Clear Knowledge Base
 				</button>
 			{:else}
-				<div class="flex flex-col gap-2">
+				<div class="gap-2 flex flex-col">
 					<p class="text-xs font-bold text-danger">
 						Are you sure? This will delete all {chunkCount.toLocaleString()} indexed chunks.
 					</p>
-					<div class="flex gap-2">
+					<div class="gap-2 flex">
 						<button
 							type="button"
 							onclick={clearStore}
 							disabled={clearing}
-							class="inline-flex items-center gap-2 rounded-xl bg-danger px-4 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
+							class="gap-2 px-4 py-2 text-xs font-bold text-white inline-flex items-center rounded-xl bg-danger transition-colors hover:opacity-90 disabled:opacity-60"
 						>
 							{#if clearing}
 								<span
-									class="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"
+									class="h-3 w-3 animate-spin border-white rounded-full border-2 border-t-transparent"
 								></span>
 								Clearing...
 							{:else}
@@ -662,7 +662,7 @@
 							onclick={() => {
 								showClearConfirm = false;
 							}}
-							class="rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted transition-colors hover:text-text"
+							class="px-4 py-2 text-xs font-bold rounded-xl border border-border text-text-muted transition-colors hover:text-text"
 						>
 							Cancel
 						</button>
@@ -673,10 +673,10 @@
 
 		<!-- Tips -->
 		<div
-			class="rounded-2xl border border-border bg-surface p-5 text-xs leading-relaxed text-text-muted"
+			class="rounded-2xl p-5 text-xs leading-relaxed border border-border bg-surface text-text-muted"
 		>
 			<p class="mb-2 font-bold text-text">Tips for best results</p>
-			<ul class="flex list-inside list-disc flex-col gap-1.5">
+			<ul class="gap-1.5 flex list-inside list-disc flex-col">
 				<li>Upload topic-specific materials that match what you'll be generating courses about</li>
 				<li>
 					Longer, well-structured documents (textbook chapters, lecture notes) produce the best
@@ -689,7 +689,7 @@
 				</li>
 				<li>Documents persist on disk across ML backend restarts</li>
 				<li>
-					You can also use the <code class="rounded bg-surface-muted px-1 font-mono"
+					You can also use the <code class="rounded px-1 font-mono bg-surface-muted"
 						>build_index.py</code
 					> script to bulk-index a folder of files
 				</li>
@@ -697,7 +697,7 @@
 		</div>
 	{:else if activeTab === 'summarizer'}
 		<!-- Summarizer Panel -->
-		<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-xs">
+		<div class="gap-4 rounded-2xl p-6 shadow-xs flex flex-col border border-border bg-surface">
 			<div>
 				<h2 class="font-display text-lg font-bold text-text">Text Summarizer</h2>
 				<p class="text-xs text-text-muted">
@@ -707,7 +707,7 @@
 			<textarea
 				bind:value={summarizeText}
 				placeholder="Paste text to summarize (minimum 50 characters)..."
-				class="min-h-36 w-full rounded-xl border border-border bg-surface-muted p-4 font-sans text-xs text-text focus:ring-2 focus:ring-primary focus:outline-none"
+				class="min-h-36 p-4 font-sans text-xs w-full rounded-xl border border-border bg-surface-muted text-text focus:ring-2 focus:ring-primary focus:outline-none"
 			></textarea>
 			<div class="flex items-center justify-between">
 				<span class="text-[11px] text-text-muted">{summarizeText.length} characters</span>
@@ -715,15 +715,15 @@
 					type="button"
 					onclick={handleSummarize}
 					disabled={summarizing || summarizeText.trim().length < 50}
-					class="cursor-pointer rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-primary-hover disabled:opacity-50"
+					class="px-5 py-2.5 text-xs font-bold text-white cursor-pointer rounded-xl bg-primary transition-all hover:bg-primary-hover disabled:opacity-50"
 				>
 					{summarizing ? 'Summarizing...' : 'Generate Summary'}
 				</button>
 			</div>
 			{#if summaryResult}
-				<div class="mt-4 rounded-xl border border-primary/20 bg-primary-soft/30 p-4">
+				<div class="mt-4 p-4 rounded-xl border border-primary/20 bg-primary-soft/30">
 					<div class="mb-2 flex items-center justify-between">
-						<span class="text-[11px] font-bold text-primary uppercase">Summary Output</span>
+						<span class="font-bold text-[11px] text-primary uppercase">Summary Output</span>
 						{#if summaryProvider}
 							<span class="text-[10px] text-text-muted">Powered by {summaryProvider}</span>
 						{/if}
@@ -734,22 +734,22 @@
 		</div>
 	{:else if activeTab === 'paraphraser'}
 		<!-- Paraphraser Panel -->
-		<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-xs">
+		<div class="gap-4 rounded-2xl p-6 shadow-xs flex flex-col border border-border bg-surface">
 			<div>
 				<h2 class="font-display text-lg font-bold text-text">Text Paraphraser</h2>
 				<p class="text-xs text-text-muted">
 					Rewrite study notes into Academic, Simple, or Formal styles.
 				</p>
 			</div>
-			<div class="flex items-center gap-2">
+			<div class="gap-2 flex items-center">
 				<span class="text-xs font-bold text-text-muted">Select Tone:</span>
 				{#each ['academic', 'simple', 'formal'] as const as s (s)}
 					<button
 						type="button"
 						onclick={() => (paraphraseStyle = s)}
-						class="cursor-pointer rounded-lg px-3 py-1 text-xs font-bold capitalize transition-all {paraphraseStyle ===
+						class="px-3 py-1 text-xs font-bold cursor-pointer rounded-lg capitalize transition-all {paraphraseStyle ===
 						s
-							? 'bg-primary text-white'
+							? 'text-white bg-primary'
 							: 'border border-border bg-surface-muted text-text-muted'}"
 					>
 						{s}
@@ -759,7 +759,7 @@
 			<textarea
 				bind:value={paraphraseText}
 				placeholder="Paste text to paraphrase (minimum 10 characters)..."
-				class="min-h-32 w-full rounded-xl border border-border bg-surface-muted p-4 font-sans text-xs text-text focus:ring-2 focus:ring-primary focus:outline-none"
+				class="min-h-32 p-4 font-sans text-xs w-full rounded-xl border border-border bg-surface-muted text-text focus:ring-2 focus:ring-primary focus:outline-none"
 			></textarea>
 			<div class="flex items-center justify-between">
 				<span class="text-[11px] text-text-muted">{paraphraseText.length} characters</span>
@@ -767,15 +767,15 @@
 					type="button"
 					onclick={handleParaphrase}
 					disabled={paraphrasing || paraphraseText.trim().length < 10}
-					class="cursor-pointer rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-primary-hover disabled:opacity-50"
+					class="px-5 py-2.5 text-xs font-bold text-white cursor-pointer rounded-xl bg-primary transition-all hover:bg-primary-hover disabled:opacity-50"
 				>
 					{paraphrasing ? 'Paraphrasing...' : 'Paraphrase Text'}
 				</button>
 			</div>
 			{#if paraphraseResult}
-				<div class="mt-4 rounded-xl border border-primary/20 bg-primary-soft/30 p-4">
+				<div class="mt-4 p-4 rounded-xl border border-primary/20 bg-primary-soft/30">
 					<div class="mb-2 flex items-center justify-between">
-						<span class="text-[11px] font-bold text-primary uppercase"
+						<span class="font-bold text-[11px] text-primary uppercase"
 							>{paraphraseStyle} Paraphrase</span
 						>
 						{#if paraphraseProvider}
@@ -788,7 +788,7 @@
 		</div>
 	{:else if activeTab === 'flashcards'}
 		<!-- Flashcards Generator Panel -->
-		<div class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-xs">
+		<div class="gap-4 rounded-2xl p-6 shadow-xs flex flex-col border border-border bg-surface">
 			<div>
 				<h2 class="font-display text-lg font-bold text-text">AI Flashcard Generator</h2>
 				<p class="text-xs text-text-muted">
@@ -798,7 +798,7 @@
 			<textarea
 				bind:value={flashcardText}
 				placeholder="Paste textbook excerpt or notes to extract flashcards (minimum 50 characters)..."
-				class="min-h-36 w-full rounded-xl border border-border bg-surface-muted p-4 font-sans text-xs text-text focus:ring-2 focus:ring-primary focus:outline-none"
+				class="min-h-36 p-4 font-sans text-xs w-full rounded-xl border border-border bg-surface-muted text-text focus:ring-2 focus:ring-primary focus:outline-none"
 			></textarea>
 			<div class="flex items-center justify-between">
 				<span class="text-[11px] text-text-muted">{flashcardText.length} characters</span>
@@ -806,22 +806,22 @@
 					type="button"
 					onclick={handleGenerateFlashcards}
 					disabled={generatingCards || flashcardText.trim().length < 50}
-					class="cursor-pointer rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-primary-hover disabled:opacity-50"
+					class="px-5 py-2.5 text-xs font-bold text-white cursor-pointer rounded-xl bg-primary transition-all hover:bg-primary-hover disabled:opacity-50"
 				>
 					{generatingCards ? 'Generating Flashcards...' : 'Generate Flashcards'}
 				</button>
 			</div>
 			{#if generatedCards.length > 0}
-				<div class="mt-4 flex flex-col gap-3">
+				<div class="mt-4 gap-3 flex flex-col">
 					<span class="text-xs font-bold text-text"
 						>Generated Flashcards ({generatedCards.length})</span
 					>
-					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+					<div class="gap-3 sm:grid-cols-2 grid grid-cols-1">
 						{#each generatedCards as card, idx (idx)}
 							<div
-								class="flex flex-col gap-2 rounded-xl border border-border bg-surface-muted p-4 shadow-2xs"
+								class="gap-2 p-4 shadow-2xs flex flex-col rounded-xl border border-border bg-surface-muted"
 							>
-								<span class="text-[10px] font-bold text-primary uppercase">Card #{idx + 1}</span>
+								<span class="font-bold text-[10px] text-primary uppercase">Card #{idx + 1}</span>
 								<p class="text-xs font-bold text-text">Q: {card.front}</p>
 								<p class="text-xs text-text-muted">A: {card.back}</p>
 							</div>

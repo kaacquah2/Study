@@ -69,7 +69,7 @@
 </script>
 
 <div
-	class="my-4 overflow-x-auto rounded-2xl border border-border bg-surface-muted/60 p-4 text-center"
+	class="my-4 rounded-2xl p-4 overflow-x-auto border border-border bg-surface-muted/60 text-center"
 >
 	{#if svgContent}
 		<div bind:this={container} class="flex items-center justify-center">
@@ -77,12 +77,12 @@
 			{@html svgContent}
 		</div>
 	{:else if errorMsg}
-		<div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-600">
+		<div class="border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-600 rounded-xl border">
 			<p class="font-bold">Diagram Code:</p>
-			<pre class="mt-1 overflow-x-auto font-mono text-[11px]">{code}</pre>
+			<pre class="mt-1 font-mono overflow-x-auto text-[11px]">{code}</pre>
 		</div>
 	{:else}
-		<div class="flex items-center justify-center gap-2 py-6 text-xs font-semibold text-text-muted">
+		<div class="gap-2 py-6 text-xs font-semibold flex items-center justify-center text-text-muted">
 			<span class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"
 			></span>
 			Rendering diagram...

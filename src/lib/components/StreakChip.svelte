@@ -9,26 +9,26 @@
 </script>
 
 {#if authStore.user}
-	<div class="inline-flex items-center gap-2">
+	<div class="gap-2 inline-flex items-center">
 		<DailyGoalRing />
 
 		<div
-			class="group relative inline-flex cursor-help items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 py-1 pr-3 pl-2 shadow-xs select-none"
+			class="group gap-2 border-amber-500/30 bg-amber-500/10 py-1 pr-3 pl-2 shadow-xs relative inline-flex cursor-help items-center rounded-full border select-none"
 			role="status"
 			aria-label={`Current study streak: ${currentStreak} days`}
 		>
 			<div
-				class="flex h-6 min-w-6 items-center justify-center rounded-full bg-amber-500 px-1.5 text-center text-xs font-bold text-slate-950 shadow-inner"
+				class="h-6 min-w-6 bg-amber-500 px-1.5 text-xs font-bold text-slate-950 shadow-inner flex items-center justify-center rounded-full text-center"
 			>
 				🔥 {currentStreak}
 			</div>
-			<span class="text-[10px] font-bold tracking-wider text-amber-500 uppercase">
+			<span class="font-bold tracking-wider text-amber-500 text-[10px] uppercase">
 				{currentStreak === 1 ? 'day streak' : 'days streak'}
 			</span>
 
 			<!-- Hover Tooltip showing longest streak -->
 			<div
-				class="pointer-events-none absolute top-full left-1/2 z-30 mt-2 hidden -translate-x-1/2 rounded-xl border border-slate-700/60 bg-slate-900 px-3 py-1.5 text-[11px] font-semibold whitespace-nowrap text-white shadow-xl transition-all group-hover:block"
+				class="mt-2 border-slate-700/60 bg-slate-900 px-3 py-1.5 font-semibold text-white shadow-xl pointer-events-none absolute top-full left-1/2 z-30 hidden -translate-x-1/2 rounded-xl border text-[11px] whitespace-nowrap transition-all group-hover:block"
 			>
 				🏆 Longest Streak: {longestStreak} day{longestStreak === 1 ? '' : 's'}
 			</div>

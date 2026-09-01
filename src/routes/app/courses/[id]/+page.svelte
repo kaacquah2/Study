@@ -259,20 +259,20 @@
 	<title>{course?.title || 'Course Workspace'} &mdash; Study AI</title>
 </svelte:head>
 
-<div class="mx-auto flex w-full max-w-4xl flex-col gap-6 py-4">
+<div class="max-w-4xl gap-6 py-4 mx-auto flex w-full flex-col">
 	<!-- Top Bar -->
-	<div class="flex items-center justify-between gap-3 border-b border-border pb-3">
+	<div class="gap-3 pb-3 flex items-center justify-between border-b border-border">
 		<a
 			href="/app"
-			class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
+			class="gap-1.5 text-xs font-bold inline-flex items-center text-text-muted transition-colors hover:text-primary"
 		>
 			&larr; Return to Dashboard
 		</a>
 
-		<div class="flex items-center gap-2">
+		<div class="gap-2 flex items-center">
 			<a
 				href={`/app/review?courseId=${courseId}`}
-				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-300 shadow-xs transition-colors hover:border-amber-400"
+				class="gap-1.5 border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-300 shadow-xs hover:border-amber-400 inline-flex cursor-pointer items-center rounded-xl border transition-colors"
 				title="Drill course flashcards in Spaced Repetition (FSRS-4.5)"
 			>
 				<span>🧠 FSRS Drill</span>
@@ -281,7 +281,7 @@
 			<button
 				type="button"
 				onclick={handleOpenShare}
-				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text shadow-xs transition-colors hover:border-primary"
+				class="gap-1.5 px-3 py-1.5 text-xs font-bold shadow-xs inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-text transition-colors hover:border-primary"
 			>
 				<span>🔗 Share</span>
 			</button>
@@ -291,7 +291,7 @@
 				<button
 					type="button"
 					onclick={() => (showExportMenu = !showExportMenu)}
-					class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text-muted hover:border-primary hover:text-text"
+					class="gap-1 px-3 py-1.5 text-xs font-bold inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-text-muted hover:border-primary hover:text-text"
 					aria-label="Course actions and exports"
 				>
 					<span>⚙️ Export & Audit</span>
@@ -300,7 +300,7 @@
 
 				{#if showExportMenu}
 					<div
-						class="absolute right-0 z-30 mt-2 flex w-48 flex-col gap-1 rounded-2xl border border-border bg-surface p-2 shadow-xl"
+						class="right-0 mt-2 w-48 gap-1 rounded-2xl p-2 shadow-xl absolute z-30 flex flex-col border border-border bg-surface"
 					>
 						<button
 							type="button"
@@ -308,7 +308,7 @@
 								showExportMenu = false;
 								handleConsistencyCheck();
 							}}
-							class="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-text hover:bg-surface-muted"
+							class="gap-2 px-3 py-2 text-xs font-medium flex w-full cursor-pointer items-center rounded-xl text-left text-text hover:bg-surface-muted"
 						>
 							<span>🔍 Consistency Audit</span>
 						</button>
@@ -318,7 +318,7 @@
 								showExportMenu = false;
 								handleExportAnki();
 							}}
-							class="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-text hover:bg-surface-muted"
+							class="gap-2 px-3 py-2 text-xs font-medium flex w-full cursor-pointer items-center rounded-xl text-left text-text hover:bg-surface-muted"
 						>
 							<span>🗂️ Anki Deck (.txt)</span>
 						</button>
@@ -328,7 +328,7 @@
 								showExportMenu = false;
 								handleExportMarkdown();
 							}}
-							class="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-text hover:bg-surface-muted"
+							class="gap-2 px-3 py-2 text-xs font-medium flex w-full cursor-pointer items-center rounded-xl text-left text-text hover:bg-surface-muted"
 						>
 							<span>📄 Markdown File</span>
 						</button>
@@ -338,7 +338,7 @@
 								showExportMenu = false;
 								handleExportPDF();
 							}}
-							class="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-text hover:bg-surface-muted"
+							class="gap-2 px-3 py-2 text-xs font-medium flex w-full cursor-pointer items-center rounded-xl text-left text-text hover:bg-surface-muted"
 						>
 							<span>🖨️ Print / Save PDF</span>
 						</button>
@@ -353,30 +353,30 @@
 		<Skeleton variant="card" height="h-64" />
 	{:else if loadError || !course}
 		<div
-			class="rounded-2xl border border-danger/20 bg-danger-soft p-6 text-center text-xs font-bold text-danger"
+			class="rounded-2xl p-6 text-xs font-bold border border-danger/20 bg-danger-soft text-center text-danger"
 		>
 			{loadError || 'Course not found.'}
 		</div>
 	{:else}
 		<!-- Course Overview Header -->
 		<div
-			class="flex flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8"
+			class="gap-4 rounded-3xl p-6 sm:p-8 flex flex-col border border-border bg-surface shadow-sm"
 		>
 			<!-- Badges strip -->
-			<div class="flex flex-wrap items-center gap-2">
+			<div class="gap-2 flex flex-wrap items-center">
 				<span
-					class="rounded-lg border border-primary/20 bg-primary-soft px-2.5 py-1 text-[10px] font-bold text-primary uppercase"
+					class="px-2.5 py-1 font-bold rounded-lg border border-primary/20 bg-primary-soft text-[10px] text-primary uppercase"
 				>
 					{course.level || 'Intermediate'}
 				</span>
 				<span
-					class="rounded-lg border border-border/40 bg-surface-muted px-2.5 py-1 text-[10px] font-bold text-text-muted"
+					class="px-2.5 py-1 font-bold rounded-lg border border-border/40 bg-surface-muted text-[10px] text-text-muted"
 				>
 					⏱️ ~{course.estimatedMinutes || 45} mins
 				</span>
 				{#each course.tags || [] as tag (tag)}
 					<span
-						class="rounded-lg border border-border/40 bg-surface-muted px-2.5 py-1 text-[10px] font-semibold text-text-muted"
+						class="px-2.5 py-1 font-semibold rounded-lg border border-border/40 bg-surface-muted text-[10px] text-text-muted"
 					>
 						#{tag}
 					</span>
@@ -384,44 +384,44 @@
 			</div>
 
 			<div>
-				<h1 class="font-display text-2xl font-bold text-text sm:text-3xl">{course.title}</h1>
-				<p class="mt-2 text-xs leading-relaxed text-text-muted sm:text-sm">{course.description}</p>
+				<h1 class="font-display text-2xl font-bold sm:text-3xl text-text">{course.title}</h1>
+				<p class="mt-2 text-xs leading-relaxed sm:text-sm text-text-muted">{course.description}</p>
 			</div>
 
 			<!-- Status Banner if Building or Failed -->
 			{#if course.status === 'building' || generatingCount > 0}
 				<div
-					class="flex flex-col gap-3 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-5 text-xs text-indigo-200 shadow-inner"
+					class="gap-3 rounded-2xl border-indigo-500/30 bg-indigo-500/10 p-5 text-xs text-indigo-200 shadow-inner flex flex-col border"
 				>
-					<div class="flex flex-wrap items-center justify-between gap-2">
-						<div class="flex items-center gap-2.5 text-sm font-bold text-indigo-100">
-							<span class="relative flex h-3 w-3">
+					<div class="gap-2 flex flex-wrap items-center justify-between">
+						<div class="gap-2.5 text-sm font-bold text-indigo-100 flex items-center">
+							<span class="h-3 w-3 relative flex">
 								<span
-									class="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"
+									class="animate-ping bg-indigo-400 absolute inline-flex h-full w-full rounded-full opacity-75"
 								></span>
-								<span class="relative inline-flex h-3 w-3 rounded-full bg-indigo-500"></span>
+								<span class="h-3 w-3 bg-indigo-500 relative inline-flex rounded-full"></span>
 							</span>
 							<span>Generating AI Course Content ({readyCount}/{totalModules} ready)</span>
 						</div>
-						<span class="text-[11px] font-semibold text-indigo-300/80">
+						<span class="font-semibold text-indigo-300/80 text-[11px]">
 							🔔 Feel free to leave this tab &mdash; we'll alert you when complete!
 						</span>
 					</div>
 
 					<!-- Visual Generation Progress Bar -->
 					<div
-						class="h-2 w-full overflow-hidden rounded-full border border-indigo-500/20 bg-indigo-950/60"
+						class="h-2 border-indigo-500/20 bg-indigo-950/60 w-full overflow-hidden rounded-full border"
 					>
 						<div
-							class="h-full bg-linear-to-r from-indigo-500 to-sky-400 transition-all duration-500"
+							class="from-indigo-500 to-sky-400 h-full bg-linear-to-r transition-all duration-500"
 							style="width: {genProgressPct}%"
 						></div>
 					</div>
 
 					{#if activeBuildingModule}
-						<div class="flex items-center gap-2 text-[11px] font-medium text-indigo-300">
+						<div class="gap-2 font-medium text-indigo-300 flex items-center text-[11px]">
 							<span
-								class="h-3 w-3 animate-spin rounded-full border-2 border-indigo-300 border-t-transparent"
+								class="h-3 w-3 animate-spin border-indigo-300 rounded-full border-2 border-t-transparent"
 							></span>
 							<span>Building content for <strong>{activeBuildingModule.title}</strong>...</span>
 						</div>
@@ -430,9 +430,9 @@
 					<!-- Immediate Module 1 Start Banner -->
 					{#if modules.length > 0 && modules[0].status === 'ready'}
 						<div
-							class="mt-1 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/60 p-3 text-white shadow-sm"
+							class="mt-1 gap-3 border-emerald-500/30 bg-emerald-950/60 p-3 text-white flex flex-wrap items-center justify-between rounded-xl border shadow-sm"
 						>
-							<div class="flex items-center gap-2">
+							<div class="gap-2 flex items-center">
 								<span class="text-base">🚀</span>
 								<span class="text-xs font-bold text-emerald-200">
 									Module 1 is ready! Start learning now while remaining modules finish in the
@@ -441,7 +441,7 @@
 							</div>
 							<a
 								href={`/app/courses/${courseId}/${modules[0].id}`}
-								class="rounded-lg bg-emerald-500 px-3.5 py-1.5 text-xs font-bold text-slate-950 shadow-xs transition-all hover:bg-emerald-400 active:scale-95"
+								class="bg-emerald-500 px-3.5 py-1.5 text-xs font-bold text-slate-950 shadow-xs hover:bg-emerald-400 rounded-lg transition-all active:scale-95"
 							>
 								Start Module 1 &rarr;
 							</a>
@@ -450,7 +450,7 @@
 				</div>
 			{:else if course.status === 'partial' || course.status === 'failed' || failedCount > 0}
 				<div
-					class="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs font-semibold text-amber-300"
+					class="border-amber-500/30 bg-amber-500/10 p-3.5 text-xs font-semibold text-amber-300 flex items-center justify-between rounded-xl border"
 				>
 					<span
 						>Some modules failed generation. Click retry on failed modules below to regenerate them.</span
@@ -461,32 +461,32 @@
 			<!-- Certificate Card OR Progress Bar & Continue CTA -->
 			{#if isCourseCompleted}
 				<div
-					class="mt-2 flex flex-col items-center justify-center rounded-2xl border border-emerald-500/30 bg-linear-to-r from-emerald-950/40 to-teal-950/40 p-6 text-center shadow-lg"
+					class="mt-2 rounded-2xl border-emerald-500/30 from-emerald-950/40 to-teal-950/40 p-6 flex flex-col items-center justify-center border bg-linear-to-r text-center shadow-lg"
 				>
 					<div class="mb-3 text-3xl">🎓</div>
 					<h3 class="font-display text-lg font-bold text-emerald-300">
 						Course Achievement Unlocked!
 					</h3>
 					<p class="mt-1 text-xs text-emerald-200/80">You have completed 100% of {course.title}.</p>
-					<div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+					<div class="mt-4 gap-3 flex flex-wrap items-center justify-center">
 						<button
 							type="button"
 							onclick={() => (showCertificateModal = true)}
-							class="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 shadow-md transition-all hover:bg-amber-400 active:scale-95"
+							class="bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 rounded-xl shadow-md transition-all active:scale-95"
 						>
 							📜 Download / Print Certificate
 						</button>
 						<button
 							type="button"
 							onclick={handleOpenShare}
-							class="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-slate-950 shadow-md transition-all hover:bg-emerald-400 active:scale-95"
+							class="bg-emerald-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-emerald-400 rounded-xl shadow-md transition-all active:scale-95"
 						>
 							Share Your Achievement
 						</button>
 					</div>
 				</div>
 			{:else}
-				<div class="mt-2 flex flex-col gap-3">
+				<div class="mt-2 gap-3 flex flex-col">
 					<ProgressBar
 						progress={progressPercentage}
 						showLabel={true}
@@ -496,17 +496,17 @@
 
 					{#if nextIncompleteModule && nextIncompleteModule.status === 'ready'}
 						<div
-							class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary-soft/30 p-3.5"
+							class="gap-3 rounded-2xl p-3.5 flex flex-wrap items-center justify-between border border-primary/30 bg-primary-soft/30"
 						>
-							<div class="flex items-center gap-3">
+							<div class="gap-3 flex items-center">
 								<span
-									class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-xs font-bold text-white shadow-xs"
+									class="h-8 w-8 text-xs font-bold text-white shadow-xs flex items-center justify-center rounded-xl bg-primary"
 								>
 									→
 								</span>
 								<div>
-									<div class="flex items-center gap-2">
-										<span class="text-[10px] font-black tracking-wider text-primary uppercase">
+									<div class="gap-2 flex items-center">
+										<span class="font-black tracking-wider text-[10px] text-primary uppercase">
 											Up Next
 										</span>
 										{#if nextIncompleteModule.estimatedMinutes}
@@ -523,7 +523,7 @@
 
 							<a
 								href={`/app/courses/${courseId}/${nextIncompleteModule.id}`}
-								class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-primary-hover active:scale-95"
+								class="gap-1.5 px-4 py-2 text-xs font-bold text-white shadow-xs inline-flex items-center rounded-xl bg-primary transition-all hover:bg-primary-hover active:scale-95"
 							>
 								<span>Continue Learning &rarr;</span>
 							</a>
@@ -534,14 +534,14 @@
 		</div>
 
 		<!-- Modules List -->
-		<div class="flex flex-col gap-4">
+		<div class="gap-4 flex flex-col">
 			<div class="flex items-center justify-between">
 				<h2 class="font-display text-lg font-bold text-text">Modules ({modules.length})</h2>
 				<button
 					type="button"
 					onclick={handleAddModule}
 					disabled={actionLoading}
-					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-primary shadow-xs transition-colors hover:border-primary disabled:opacity-50"
+					class="gap-1.5 px-3 py-1.5 text-xs font-bold shadow-xs inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-primary transition-colors hover:border-primary disabled:opacity-50"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -561,7 +561,7 @@
 				</button>
 			</div>
 
-			<div class="flex flex-col gap-3">
+			<div class="gap-3 flex flex-col">
 				{#each modules as mod, idx (mod.id)}
 					{@const isCompleted = userCompletedModuleIds.includes(mod.id || '')}
 					{@const isReady = mod.status === 'ready'}
@@ -570,7 +570,7 @@
 					{@const isNextUp = nextIncompleteModule?.id === mod.id && !isCompleted}
 
 					<div
-						class="flex flex-col gap-3 rounded-2xl border p-4 shadow-xs transition-all duration-200 sm:flex-row sm:items-center sm:justify-between {isNextUp
+						class="gap-3 rounded-2xl p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between flex flex-col border transition-all duration-200 {isNextUp
 							? 'border-primary/50 bg-primary-soft/10 ring-1 ring-primary/30'
 							: isReady
 								? 'border-border bg-surface hover:border-primary/40'
@@ -578,23 +578,23 @@
 									? 'animate-pulse border-border/60 bg-surface-muted/40 opacity-70'
 									: 'border-danger/30 bg-danger-soft/20'}"
 					>
-						<div class="flex items-center gap-3.5">
+						<div class="gap-3.5 flex items-center">
 							<!-- Status Check / Icon -->
 							{#if isCompleted}
 								<div
-									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-sm font-bold text-emerald-400"
+									class="h-9 w-9 bg-emerald-500/20 text-sm font-bold text-emerald-400 flex shrink-0 items-center justify-center rounded-xl"
 								>
 									✓
 								</div>
 							{:else if isNextUp}
 								<div
-									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold text-white shadow-xs"
+									class="h-9 w-9 text-xs font-bold text-white shadow-xs flex shrink-0 items-center justify-center rounded-xl bg-primary"
 								>
 									→
 								</div>
 							{:else if isGenerating}
 								<div
-									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary"
+									class="h-9 w-9 flex shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary"
 								>
 									<span
 										class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"
@@ -602,13 +602,13 @@
 								</div>
 							{:else if isFailed}
 								<div
-									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-danger-soft font-bold text-danger"
+									class="h-9 w-9 font-bold flex shrink-0 items-center justify-center rounded-xl bg-danger-soft text-danger"
 								>
 									!
 								</div>
 							{:else}
 								<div
-									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-muted text-xs font-bold text-text-muted"
+									class="h-9 w-9 text-xs font-bold flex shrink-0 items-center justify-center rounded-xl bg-surface-muted text-text-muted"
 								>
 									{idx + 1}
 								</div>
@@ -616,17 +616,17 @@
 
 							<!-- Module Info -->
 							<div>
-								<div class="flex flex-wrap items-center gap-2">
+								<div class="gap-2 flex flex-wrap items-center">
 									<h4 class="font-display text-sm font-bold text-text">{mod.title}</h4>
 									<span
-										class="rounded-md border border-border/40 bg-surface-muted px-2 py-0.5 text-[9px] font-bold text-text-muted uppercase"
+										class="px-2 py-0.5 font-bold rounded-md border border-border/40 bg-surface-muted text-[9px] text-text-muted uppercase"
 									>
 										{mod.type}
 									</span>
 
 									{#if mod.estimatedMinutes}
 										<span
-											class="rounded-md border border-border/40 bg-surface-muted px-2 py-0.5 text-[9px] font-semibold text-text-muted"
+											class="px-2 py-0.5 font-semibold rounded-md border border-border/40 bg-surface-muted text-[9px] text-text-muted"
 										>
 											⏱️ ~{mod.estimatedMinutes} min
 										</span>
@@ -635,24 +635,24 @@
 									<!-- Per-module Granular Progress Badge (Item #5) -->
 									{#if isGenerating}
 										<span
-											class="rounded-md bg-indigo-500/20 px-2 py-0.5 text-[9px] font-bold text-indigo-300"
+											class="bg-indigo-500/20 px-2 py-0.5 font-bold text-indigo-300 rounded-md text-[9px]"
 										>
 											{mod.status === 'pending' ? 'Queued' : 'Building Content'}
 										</span>
 									{/if}
 								</div>
-								<p class="mt-0.5 line-clamp-1 text-xs text-text-muted">{mod.summary}</p>
+								<p class="mt-0.5 text-xs line-clamp-1 text-text-muted">{mod.summary}</p>
 							</div>
 						</div>
 
 						<!-- Action CTA -->
-						<div class="shrink-0 self-end sm:self-auto">
+						<div class="sm:self-auto shrink-0 self-end">
 							{#if isReady}
-								<div class="flex items-center gap-2">
+								<div class="gap-2 flex items-center">
 									{#if mod.type === 'quiz'}
 										<a
 											href={`/app/review?courseId=${courseId}&moduleId=${mod.id}`}
-											class="inline-flex cursor-pointer items-center justify-center gap-1 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 shadow-xs hover:bg-amber-500/20 active:scale-95"
+											class="gap-1 border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 shadow-xs hover:bg-amber-500/20 inline-flex cursor-pointer items-center justify-center rounded-xl border active:scale-95"
 											title="Drill flashcards in Spaced Repetition (FSRS-4.5)"
 										>
 											<span>🧠 FSRS Drill</span>
@@ -660,8 +660,8 @@
 									{/if}
 									<a
 										href={`/app/courses/${courseId}/${mod.id}`}
-										class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold shadow-xs transition-all active:scale-95 {isNextUp
-											? 'bg-primary text-white ring-2 ring-primary/20 hover:bg-primary-hover'
+										class="gap-1.5 px-4 py-2 text-xs font-bold shadow-xs inline-flex cursor-pointer items-center justify-center rounded-xl transition-all active:scale-95 {isNextUp
+											? 'text-white bg-primary ring-2 ring-primary/20 hover:bg-primary-hover'
 											: 'bg-surface-muted text-text hover:bg-surface-muted/80'}"
 									>
 										<span>{isCompleted ? 'Review' : 'Start'}</span>
@@ -669,12 +669,12 @@
 									</a>
 								</div>
 							{:else if isGenerating}
-								<span class="text-[11px] font-semibold text-text-muted">Generating...</span>
+								<span class="font-semibold text-[11px] text-text-muted">Generating...</span>
 							{:else if isFailed}
 								<button
 									type="button"
 									onclick={() => handleRetryModule(mod.id || '')}
-									class="cursor-pointer rounded-xl bg-danger-soft px-3 py-1.5 text-xs font-bold text-danger hover:bg-danger/20"
+									class="px-3 py-1.5 text-xs font-bold cursor-pointer rounded-xl bg-danger-soft text-danger hover:bg-danger/20"
 								>
 									Retry
 								</button>

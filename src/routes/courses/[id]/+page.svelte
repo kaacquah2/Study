@@ -304,12 +304,12 @@
 </svelte:head>
 
 <AppShell requireAuth={true}>
-	<div class="mx-auto flex w-full max-w-4xl grow flex-col gap-6 px-6 py-10">
+	<div class="max-w-4xl gap-6 px-6 py-10 mx-auto flex w-full grow flex-col">
 		<!-- Back Link and Share Button row -->
 		<div class="flex items-center justify-between select-none">
 			<a
 				href={resolve('/app')}
-				class="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-text-muted uppercase transition-colors duration-180 hover:text-primary"
+				class="gap-1.5 text-xs font-bold tracking-wider inline-flex items-center text-text-muted uppercase transition-colors duration-180 hover:text-primary"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -326,10 +326,10 @@
 			</a>
 
 			{#if course && course.status === 'ready'}
-				<div class="flex items-center gap-2">
+				<div class="gap-2 flex items-center">
 					<button
 						type="button"
-						class="inline-flex cursor-pointer items-center gap-2 rounded-r-md border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text shadow-sm transition-all duration-180 hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
+						class="gap-2 px-4 py-2.5 text-xs font-bold inline-flex cursor-pointer items-center rounded-r-md border border-border bg-surface text-text shadow-sm transition-all duration-180 hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
 						onclick={exportCourseToMarkdown}
 					>
 						<svg
@@ -350,7 +350,7 @@
 
 					<button
 						type="button"
-						class="inline-flex cursor-pointer items-center gap-2 rounded-r-md border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text shadow-sm transition-all duration-180 hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
+						class="gap-2 px-4 py-2.5 text-xs font-bold inline-flex cursor-pointer items-center rounded-r-md border border-border bg-surface text-text shadow-sm transition-all duration-180 hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
 						onclick={triggerShareLink}
 						disabled={actionLoading}
 					>
@@ -375,45 +375,45 @@
 
 		{#if loadingCourse}
 			<!-- Shimmer loading state for header -->
-			<div class="animate-pulse rounded-lg border border-border bg-surface p-6 shadow-sm">
+			<div class="animate-pulse p-6 rounded-lg border border-border bg-surface shadow-sm">
 				<div class="mb-3 h-4 w-20 rounded bg-surface-muted"></div>
-				<div class="mb-3 h-8 w-2/3 rounded bg-surface-muted"></div>
-				<div class="h-4 w-full rounded bg-surface-muted"></div>
+				<div class="mb-3 h-8 rounded w-2/3 bg-surface-muted"></div>
+				<div class="h-4 rounded w-full bg-surface-muted"></div>
 			</div>
 		{:else if !course}
 			<!-- 404 state -->
-			<div class="my-10 rounded-lg border border-border bg-surface p-10 text-center shadow-md">
+			<div class="my-10 p-10 rounded-lg border border-border bg-surface text-center shadow-md">
 				<h3 class="mb-2 font-display text-xl font-bold text-text">Course not found</h3>
 				<p class="mb-6 text-sm text-text-muted">
 					The course you are looking for does not exist or has been deleted.
 				</p>
 				<a
 					href={resolve('/app')}
-					class="rounded-r-md bg-primary px-6 py-3 text-xs font-bold text-white shadow-sm hover:bg-primary-hover"
+					class="px-6 py-3 text-xs font-bold text-white rounded-r-md bg-primary shadow-sm hover:bg-primary-hover"
 				>
 					Return to dashboard
 				</a>
 			</div>
 		{:else}
 			<!-- Course Main Card Header -->
-			<div class="rounded-lg border border-border bg-surface p-6 shadow-md sm:p-8">
-				<div class="mb-3 flex items-center gap-3">
+			<div class="p-6 sm:p-8 rounded-lg border border-border bg-surface shadow-md">
+				<div class="mb-3 gap-3 flex items-center">
 					{#if course.status === 'building'}
 						<span
-							class="inline-flex animate-pulse items-center gap-1.5 rounded bg-primary-soft px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-primary uppercase"
+							class="animate-pulse gap-1.5 rounded px-2.5 py-0.5 font-bold tracking-wider inline-flex items-center bg-primary-soft text-[10px] text-primary uppercase"
 						>
 							<span class="h-1.5 w-1.5 animate-ping rounded-full bg-primary"></span>
 							Building Course
 						</span>
 					{:else if course.status === 'ready'}
 						<span
-							class="inline-flex items-center gap-1 rounded-sm bg-success-soft px-2 py-0.5 text-[10px] font-bold tracking-wider text-success uppercase"
+							class="gap-1 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-success-soft text-[10px] text-success uppercase"
 						>
 							Ready
 						</span>
 					{:else}
 						<span
-							class="inline-flex items-center gap-1 rounded-sm bg-course-amber-soft px-2 py-0.5 text-[10px] font-bold tracking-wider text-course-amber uppercase"
+							class="gap-1 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-course-amber-soft text-[10px] text-course-amber uppercase"
 						>
 							Building modules
 						</span>
@@ -421,17 +421,17 @@
 				</div>
 
 				<h2
-					class="mb-2 font-display text-2xl leading-tight font-bold tracking-tight text-text sm:text-3xl"
+					class="mb-2 font-display text-2xl leading-tight font-bold tracking-tight sm:text-3xl text-text"
 				>
 					{course.title}
 				</h2>
-				<p class="mb-6 text-xs leading-relaxed text-text-muted sm:text-sm">
+				<p class="mb-6 text-xs leading-relaxed sm:text-sm text-text-muted">
 					{course.description}
 				</p>
 
 				<!-- Overall Progress bar -->
 				<div
-					class="mb-2 flex items-center justify-between text-[10px] font-bold tracking-wider text-text-muted uppercase"
+					class="mb-2 font-bold tracking-wider flex items-center justify-between text-[10px] text-text-muted uppercase"
 				>
 					<span>Progress</span>
 					<span>{completed} / {total} complete</span>
@@ -451,7 +451,7 @@
 			</div>
 
 			<!-- Modules Rows Container -->
-			<div class="mt-4 flex flex-col gap-4" aria-live="polite">
+			<div class="mt-4 gap-4 flex flex-col" aria-live="polite">
 				<h3 class="mb-1 pl-1 text-xs font-bold tracking-wider text-text-muted uppercase">
 					Syllabus Modules
 				</h3>
@@ -468,24 +468,24 @@
 						{#if mod.status === 'pending' || mod.status === 'generating'}
 							<!-- Shimmer skeleton row for active generation -->
 							<div
-								class="relative flex items-center justify-between overflow-hidden rounded-lg border border-border bg-surface p-5 shadow-sm select-none"
+								class="p-5 relative flex items-center justify-between overflow-hidden rounded-lg border border-border bg-surface shadow-sm select-none"
 							>
 								<!-- Shimmer highlight bar -->
 								<div
-									class="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-surface-muted/20 to-transparent"
+									class="inset-0 absolute -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-surface-muted/20 to-transparent"
 									style="background-size: 200% 100%;"
 								></div>
 
-								<div class="flex w-full items-center gap-4">
+								<div class="gap-4 flex w-full items-center">
 									<div
-										class="flex h-10 w-10 animate-pulse items-center justify-center rounded-lg bg-surface-muted"
+										class="h-10 w-10 animate-pulse flex items-center justify-center rounded-lg bg-surface-muted"
 									>
 										<span class="h-4 w-4 animate-ping rounded-full bg-border"></span>
 									</div>
-									<div class="flex grow flex-col gap-2">
+									<div class="gap-2 flex grow flex-col">
 										<div class="h-3 w-16 rounded bg-surface-muted"></div>
-										<div class="h-4 w-2/3 rounded bg-surface-muted"></div>
-										<div class="h-3.5 w-1/2 rounded bg-surface-muted"></div>
+										<div class="h-4 rounded w-2/3 bg-surface-muted"></div>
+										<div class="h-3.5 rounded w-1/2 bg-surface-muted"></div>
 									</div>
 								</div>
 								<div class="h-9 w-16 animate-pulse rounded-r-md bg-surface-muted"></div>
@@ -494,12 +494,12 @@
 							{@const isCompleted = completedModuleIds.includes(mod.id)}
 							<!-- Ready Module Row -->
 							<div
-								class="flex items-center justify-between rounded-lg border border-border bg-surface p-5 shadow-sm transition-colors duration-180 select-none hover:border-text-muted"
+								class="p-5 flex items-center justify-between rounded-lg border border-border bg-surface shadow-sm transition-colors duration-180 select-none hover:border-text-muted"
 							>
-								<div class="flex items-center gap-4">
+								<div class="gap-4 flex items-center">
 									<!-- Type tile -->
 									<div
-										class="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold shadow-sm select-none {mod.type ===
+										class="h-10 w-10 text-sm font-bold flex items-center justify-center rounded-lg shadow-sm select-none {mod.type ===
 										'lesson'
 											? 'bg-primary-soft text-primary'
 											: 'bg-course-amber-soft text-course-amber'}"
@@ -510,28 +510,28 @@
 									<div>
 										<!-- Type Indicator Tag -->
 										<span
-											class="mb-1 block text-[9px] font-bold tracking-widest text-text-muted uppercase"
+											class="mb-1 font-bold tracking-widest block text-[9px] text-text-muted uppercase"
 										>
 											{mod.type === 'lesson' ? 'Lesson' : 'Quiz'}
 										</span>
 										<!-- Module title -->
 										<h4
-											class="mb-1 font-display text-sm leading-tight font-bold text-text sm:text-base"
+											class="mb-1 font-display text-sm leading-tight font-bold sm:text-base text-text"
 										>
 											{mod.title}
 										</h4>
 										<!-- Module summary -->
-										<p class="line-clamp-1 text-xs leading-snug text-text-muted">
+										<p class="text-xs leading-snug line-clamp-1 text-text-muted">
 											{mod.summary}
 										</p>
 									</div>
 								</div>
 
 								<!-- Complete / Action Area -->
-								<div class="ml-4 flex items-center gap-3">
+								<div class="ml-4 gap-3 flex items-center">
 									{#if isCompleted}
 										<div
-											class="flex h-6 w-6 items-center justify-center rounded-full border border-success/15 bg-success-soft text-success shadow-sm"
+											class="h-6 w-6 flex items-center justify-center rounded-full border border-success/15 bg-success-soft text-success shadow-sm"
 											title="Module complete"
 										>
 											<svg
@@ -551,7 +551,7 @@
 										href={resolve(
 											`/courses/${courseId}/${mod.type === 'lesson' ? 'lessons' : 'quizzes'}/${mod.id}`
 										)}
-										class="rounded-r-md bg-primary-soft px-4.5 py-2 text-xs font-bold text-primary transition-all duration-180 hover:bg-primary hover:text-white active:scale-[0.97]"
+										class="px-4.5 py-2 text-xs font-bold hover:text-white rounded-r-md bg-primary-soft text-primary transition-all duration-180 hover:bg-primary active:scale-[0.97]"
 									>
 										{isCompleted ? 'Review' : 'Open'}
 									</a>
@@ -560,18 +560,18 @@
 						{:else if mod.status === 'failed'}
 							<!-- Failed Module Row -->
 							<div
-								class="flex items-center justify-between rounded-lg border border-danger/25 bg-danger-soft/10 p-5 shadow-sm select-none"
+								class="p-5 flex items-center justify-between rounded-lg border border-danger/25 bg-danger-soft/10 shadow-sm select-none"
 							>
-								<div class="flex items-center gap-4">
+								<div class="gap-4 flex items-center">
 									<div
-										class="flex h-10 w-10 items-center justify-center rounded-lg border border-danger/10 bg-danger-soft text-sm font-bold text-danger shadow-sm"
+										class="h-10 w-10 text-sm font-bold flex items-center justify-center rounded-lg border border-danger/10 bg-danger-soft text-danger shadow-sm"
 									>
 										!
 									</div>
 
 									<div>
 										<span
-											class="mb-1 block text-[9px] font-bold tracking-widest text-danger uppercase"
+											class="mb-1 font-bold tracking-widest block text-[9px] text-danger uppercase"
 										>
 											Generation Failed
 										</span>
@@ -587,7 +587,7 @@
 								<!-- Retry Affordance -->
 								<button
 									type="button"
-									class="flex cursor-pointer items-center gap-1.5 rounded-r-md bg-danger px-4.5 py-2 text-xs font-bold text-white transition-all hover:bg-danger/90 active:scale-[0.97]"
+									class="gap-1.5 px-4.5 py-2 text-xs font-bold text-white flex cursor-pointer items-center rounded-r-md bg-danger transition-all hover:bg-danger/90 active:scale-[0.97]"
 									onclick={() => handleRetryModule(mod.id)}
 									disabled={actionLoading}
 								>

@@ -61,12 +61,12 @@
 </script>
 
 <div
-	class="relative my-6 rounded-2xl border border-primary/30 bg-surface-muted/40 p-4 shadow-xs sm:p-5"
+	class="my-6 rounded-2xl p-4 shadow-xs sm:p-5 relative border border-primary/30 bg-surface-muted/40"
 >
 	<!-- Confetti burst overlay -->
 	{#if showConfetti}
 		<div
-			class="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
+			class="inset-0 rounded-2xl pointer-events-none absolute overflow-hidden"
 			aria-hidden="true"
 		>
 			{#each confettiParticles as p (p.id)}
@@ -82,21 +82,21 @@
 		</div>
 	{/if}
 
-	<div class="flex items-center gap-2 border-b border-border/40 pb-2">
-		<span class="rounded-lg bg-primary-soft p-1 text-xs text-primary"
+	<div class="gap-2 pb-2 flex items-center border-b border-border/40">
+		<span class="p-1 text-xs rounded-lg bg-primary-soft text-primary"
 			>⚡ Check Your Understanding</span
 		>
 	</div>
 
 	<h4 class="mt-3 text-xs leading-snug font-bold text-text">{prompt}</h4>
 
-	<div class="mt-3 flex flex-col gap-2">
+	<div class="mt-3 gap-2 flex flex-col">
 		{#each options as opt, idx (idx)}
 			<button
 				type="button"
 				onclick={() => handleSelect(idx)}
 				disabled={isLocked}
-				class="flex items-center justify-between rounded-xl border p-3 text-left text-xs font-semibold transition-all {idx ===
+				class="p-3 text-xs font-semibold flex items-center justify-between rounded-xl border text-left transition-all {idx ===
 				shakeIndex
 					? 'anim-shake'
 					: ''} {isLocked
@@ -106,12 +106,12 @@
 							? 'border-rose-500 bg-rose-500/10 text-rose-600'
 							: 'border-border bg-surface text-text-muted opacity-60'
 					: selectedIndex === idx
-						? 'border-primary bg-primary-soft text-primary shadow-xs'
+						? 'shadow-xs border-primary bg-primary-soft text-primary'
 						: 'border-border bg-surface text-text hover:border-primary/40'}"
 			>
-				<div class="flex items-center gap-2.5">
+				<div class="gap-2.5 flex items-center">
 					<span
-						class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-surface-muted text-[10px] font-bold text-text-muted"
+						class="h-5 w-5 font-bold flex shrink-0 items-center justify-center rounded-md bg-surface-muted text-[10px] text-text-muted"
 					>
 						{String.fromCharCode(65 + idx)}
 					</span>
@@ -134,7 +134,7 @@
 				type="button"
 				onclick={handleConfirm}
 				disabled={selectedIndex === null}
-				class="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-primary-hover active:scale-95 disabled:opacity-40"
+				class="px-4 py-2 text-xs font-bold text-white shadow-xs rounded-xl bg-primary transition-all hover:bg-primary-hover active:scale-95 disabled:opacity-40"
 			>
 				Confirm Answer
 			</button>
@@ -143,7 +143,7 @@
 		<!-- Motivational message -->
 		{#if motivationalMsg}
 			<div
-				class="anim-pop mt-3 text-center text-xs font-bold {selectedIndex === answerIndex
+				class="anim-pop mt-3 text-xs font-bold text-center {selectedIndex === answerIndex
 					? 'text-emerald-500'
 					: 'text-text-muted'}"
 			>
@@ -152,7 +152,7 @@
 		{/if}
 		<!-- Explanation -->
 		<div
-			class="anim-slide-up mt-3 rounded-xl border border-border/60 bg-surface p-3 text-xs text-text-muted"
+			class="anim-slide-up mt-3 p-3 text-xs rounded-xl border border-border/60 bg-surface text-text-muted"
 		>
 			<span class="font-bold text-text">Explanation:</span>
 			{explanation}

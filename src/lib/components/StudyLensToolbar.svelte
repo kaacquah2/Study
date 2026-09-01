@@ -210,14 +210,14 @@
 
 {#if visible}
 	<div
-		class="animate-pop-in fixed z-50 flex items-center gap-1 rounded-2xl border border-border/80 bg-surface/95 p-1.5 shadow-2xl backdrop-blur-md"
+		class="animate-pop-in gap-1 rounded-2xl p-1.5 shadow-2xl backdrop-blur-md fixed z-50 flex items-center border border-border/80 bg-surface/95"
 		style="left: {posX}px; top: {posY}px;"
 	>
-		<div class="flex items-center gap-1">
+		<div class="gap-1 flex items-center">
 			<button
 				type="button"
 				onclick={handleExplain}
-				class="inline-flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-bold text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
+				class="gap-1 px-2.5 py-1.5 font-bold inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
 				title="Explain this highlighted text simply"
 			>
 				<span>💡</span>
@@ -227,7 +227,7 @@
 			<button
 				type="button"
 				onclick={handleExample}
-				class="inline-flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-bold text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
+				class="gap-1 px-2.5 py-1.5 font-bold inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
 				title="Give a concrete example"
 			>
 				<span>🧪</span>
@@ -237,7 +237,7 @@
 			<button
 				type="button"
 				onclick={handleQuizMe}
-				class="inline-flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-bold text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
+				class="gap-1 px-2.5 py-1.5 font-bold inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
 				title="Test my understanding on this sentence"
 			>
 				<span>❓</span>
@@ -248,7 +248,7 @@
 				type="button"
 				onclick={handleGenerateFlashcard}
 				disabled={isCreatingCard}
-				class="inline-flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-bold text-text transition-colors hover:bg-amber-500/15 hover:text-amber-500 active:scale-95 disabled:opacity-50"
+				class="gap-1 px-2.5 py-1.5 font-bold hover:bg-amber-500/15 hover:text-amber-500 inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text transition-colors active:scale-95 disabled:opacity-50"
 				title="Convert into FSRS memory flashcard"
 			>
 				<span>🗂️</span>
@@ -258,7 +258,7 @@
 			<button
 				type="button"
 				onclick={handleSpeak}
-				class="inline-flex cursor-pointer items-center rounded-xl p-1.5 text-[11px] text-text-muted transition-colors hover:bg-surface-muted hover:text-text active:scale-95"
+				class="p-1.5 inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text-muted transition-colors hover:bg-surface-muted hover:text-text active:scale-95"
 				title="Listen to this text"
 				aria-label="Read selected text aloud"
 			>

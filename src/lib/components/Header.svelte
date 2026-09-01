@@ -20,15 +20,15 @@
 </script>
 
 <header
-	class="flex items-center justify-between border-b border-border bg-surface px-6 py-4 shadow-sm"
+	class="px-6 py-4 flex items-center justify-between border-b border-border bg-surface shadow-sm"
 >
 	<!-- Logo Section -->
 	<a
 		href="/app"
-		class="flex items-center gap-2 rounded-md text-lg font-bold text-text transition-opacity select-none hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+		class="gap-2 text-lg font-bold flex items-center rounded-md text-text transition-opacity select-none hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 	>
 		<div
-			class="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-white shadow-sm"
+			class="h-8 w-8 text-white flex items-center justify-center rounded-md bg-primary shadow-sm"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -49,12 +49,12 @@
 	</a>
 
 	<!-- Middle: Theme Switcher -->
-	<div class="hidden md:block">
+	<div class="md:block hidden">
 		<ThemeSwitcher />
 	</div>
 
 	<!-- Right: Streak & Avatar/Auth controls -->
-	<div class="flex items-center gap-3">
+	<div class="gap-3 flex items-center">
 		{#if authStore.user}
 			<StreakChip />
 
@@ -67,7 +67,7 @@
 				/>
 			{:else}
 				<div
-					class="flex h-8 w-8 items-center justify-center rounded-full border border-primary/10 bg-primary-soft text-xs font-bold text-text shadow-sm select-none"
+					class="h-8 w-8 text-xs font-bold flex items-center justify-center rounded-full border border-primary/10 bg-primary-soft text-text shadow-sm select-none"
 				>
 					{initials}
 				</div>
@@ -75,13 +75,13 @@
 
 			<button
 				type="button"
-				class="ml-1 cursor-pointer rounded-md p-2.5 text-xs font-semibold text-text-muted transition-all duration-180 hover:bg-danger-soft hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-danger active:scale-95"
+				class="ml-1 p-2.5 text-xs font-semibold cursor-pointer rounded-md text-text-muted transition-all duration-180 hover:bg-danger-soft hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-danger active:scale-95"
 				onclick={() => authStore.logout()}
 			>
 				Sign out
 			</button>
 		{:else}
-			<div class="block md:hidden">
+			<div class="md:hidden block">
 				<ThemeSwitcher />
 			</div>
 		{/if}

@@ -130,8 +130,8 @@
 </script>
 
 <div
-	class="lesson-container flex w-full flex-col gap-5 transition-all duration-200 {zenMode
-		? 'fixed inset-0 z-50 overflow-y-auto bg-bg p-6 sm:p-12'
+	class="lesson-container gap-5 flex w-full flex-col transition-all duration-200 {zenMode
+		? 'inset-0 p-6 sm:p-12 fixed z-50 overflow-y-auto bg-bg'
 		: 'relative'}"
 >
 	<!-- Contextual Selection Toolbar for Study Lens AI -->
@@ -144,21 +144,21 @@
 
 	<!-- Top Action & Navigation Bar -->
 	<div
-		class="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-3.5 {zenMode
-			? 'mx-auto w-full max-w-4xl'
+		class="gap-3 pb-3.5 flex flex-wrap items-center justify-between border-b border-border/80 {zenMode
+			? 'max-w-4xl mx-auto w-full'
 			: ''}"
 	>
 		<!-- Left: TOC & Page Indicator -->
-		<div class="flex items-center gap-3">
+		<div class="gap-3 flex items-center">
 			{#if pages.length > 1}
 				<button
 					type="button"
 					onclick={() => (showToc = !showToc)}
-					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text shadow-2xs hover:border-primary/50"
+					class="gap-1.5 px-3 py-1.5 text-xs font-semibold shadow-2xs inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-text hover:border-primary/50"
 				>
 					<span>📖 Contents</span>
 					<span
-						class="rounded-md bg-surface-muted px-1.5 py-0.5 text-[10px] font-bold text-text-muted"
+						class="px-1.5 py-0.5 font-bold rounded-md bg-surface-muted text-[10px] text-text-muted"
 						>{pages.length} Pages</span
 					>
 				</button>
@@ -168,15 +168,15 @@
 		</div>
 
 		<!-- Right: Tools (Zen Mode, Font Size, Audio, Regenerate) -->
-		<div class="flex flex-wrap items-center gap-2">
+		<div class="gap-2 flex flex-wrap items-center">
 			<!-- Font Sizing Buttons -->
-			<div class="flex items-center rounded-xl border border-border bg-surface p-0.5 shadow-2xs">
+			<div class="p-0.5 shadow-2xs flex items-center rounded-xl border border-border bg-surface">
 				<button
 					type="button"
 					onclick={() => (fontSize = 'sm')}
-					class="cursor-pointer rounded-lg px-2 py-1 text-xs font-bold transition-colors {fontSize ===
+					class="px-2 py-1 text-xs font-bold cursor-pointer rounded-lg transition-colors {fontSize ===
 					'sm'
-						? 'bg-primary text-white'
+						? 'text-white bg-primary'
 						: 'text-text-muted hover:text-text'}"
 					title="Small font"
 					aria-label="Small font"
@@ -186,9 +186,9 @@
 				<button
 					type="button"
 					onclick={() => (fontSize = 'md')}
-					class="cursor-pointer rounded-lg px-2 py-1 text-xs font-bold transition-colors {fontSize ===
+					class="px-2 py-1 text-xs font-bold cursor-pointer rounded-lg transition-colors {fontSize ===
 					'md'
-						? 'bg-primary text-white'
+						? 'text-white bg-primary'
 						: 'text-text-muted hover:text-text'}"
 					title="Medium font"
 					aria-label="Medium font"
@@ -198,9 +198,9 @@
 				<button
 					type="button"
 					onclick={() => (fontSize = 'lg')}
-					class="cursor-pointer rounded-lg px-2 py-1 text-xs font-bold transition-colors {fontSize ===
+					class="px-2 py-1 text-xs font-bold cursor-pointer rounded-lg transition-colors {fontSize ===
 					'lg'
-						? 'bg-primary text-white'
+						? 'text-white bg-primary'
 						: 'text-text-muted hover:text-text'}"
 					title="Large font"
 					aria-label="Large font"
@@ -213,7 +213,7 @@
 			<button
 				type="button"
 				onclick={() => (zenMode = !zenMode)}
-				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text shadow-2xs transition-colors hover:border-primary"
+				class="gap-1.5 px-3 py-1.5 text-xs font-bold shadow-2xs inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-text transition-colors hover:border-primary"
 				title={zenMode ? 'Exit Zen Focus Mode' : 'Enter Distraction-Free Zen Focus Mode'}
 			>
 				<span>{zenMode ? '🪟 Exit Zen' : '🧘 Zen Mode'}</span>
@@ -225,7 +225,7 @@
 					type="button"
 					onclick={onRegeneratePage}
 					disabled={isRegenerating}
-					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-primary/40 bg-primary-soft/50 px-3 py-1.5 text-xs font-bold text-primary transition-all hover:bg-primary hover:text-white disabled:opacity-50"
+					class="gap-1.5 px-3 py-1.5 text-xs font-bold hover:text-white inline-flex cursor-pointer items-center rounded-xl border border-primary/40 bg-primary-soft/50 text-primary transition-all hover:bg-primary disabled:opacity-50"
 					title="Regenerate this specific lesson page with AI"
 				>
 					{#if isRegenerating}
@@ -244,7 +244,7 @@
 				<button
 					type="button"
 					onclick={onFlagContent}
-					class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-text-muted shadow-2xs transition-colors hover:border-rose-500/40 hover:text-rose-400"
+					class="gap-1 px-2.5 py-1.5 text-xs font-semibold shadow-2xs hover:border-rose-500/40 hover:text-rose-400 inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-text-muted transition-colors"
 					title="Report an issue or flag content"
 					aria-label="Flag or report content issue"
 				>
@@ -257,11 +257,11 @@
 	<!-- Degraded Tier Provenance Notice (if failover occurred) -->
 	{#if provenance && provenance.degradedTier}
 		<div
-			class="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-semibold text-amber-300 shadow-2xs {zenMode
-				? 'mx-auto w-full max-w-4xl'
+			class="border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-semibold text-amber-300 shadow-2xs flex items-center justify-between rounded-xl border {zenMode
+				? 'max-w-4xl mx-auto w-full'
 				: ''}"
 		>
-			<div class="flex items-center gap-2">
+			<div class="gap-2 flex items-center">
 				<span>⚡</span>
 				<span>Generated with lightweight model tier ({provenance.provider}).</span>
 			</div>
@@ -269,7 +269,7 @@
 				<button
 					type="button"
 					onclick={onRegeneratePage}
-					class="cursor-pointer text-xs font-bold text-amber-300 underline hover:text-amber-200"
+					class="text-xs font-bold text-amber-300 hover:text-amber-200 cursor-pointer underline"
 				>
 					Regenerate with Full AI
 				</button>
@@ -280,21 +280,21 @@
 	<!-- Table of Contents Flyout Modal -->
 	{#if showToc}
 		<div
-			class="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-4 shadow-lg {zenMode
-				? 'mx-auto w-full max-w-4xl'
+			class="gap-2 rounded-2xl p-4 flex flex-col border border-border bg-surface shadow-lg {zenMode
+				? 'max-w-4xl mx-auto w-full'
 				: ''}"
 		>
-			<div class="flex items-center justify-between border-b border-border/60 pb-2">
+			<div class="pb-2 flex items-center justify-between border-b border-border/60">
 				<h4 class="font-display text-xs font-bold text-text">Lesson Outline</h4>
 				<button
 					type="button"
 					onclick={() => (showToc = false)}
-					class="cursor-pointer text-xs text-text-muted hover:text-text"
+					class="text-xs cursor-pointer text-text-muted hover:text-text"
 				>
 					✕
 				</button>
 			</div>
-			<div class="flex flex-col gap-1.5">
+			<div class="gap-1.5 flex flex-col">
 				{#each pages as page, idx (page.order || idx)}
 					<button
 						type="button"
@@ -302,9 +302,9 @@
 							onPageChange(idx);
 							showToc = false;
 						}}
-						class="flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition-colors {idx ===
+						class="px-3 py-2 text-xs flex cursor-pointer items-center justify-between rounded-xl text-left transition-colors {idx ===
 						currentPageIndex
-							? 'bg-primary font-bold text-white shadow-xs'
+							? 'font-bold text-white shadow-xs bg-primary'
 							: 'text-text hover:bg-surface-muted'}"
 					>
 						<span class="truncate">{idx + 1}. {page.heading || `Page ${idx + 1}`}</span>
@@ -319,20 +319,20 @@
 
 	<!-- Main Reading Card -->
 	<div
-		class="lesson-content-area flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-10 {zenMode
-			? 'mx-auto w-full max-w-4xl'
+		class="lesson-content-area gap-6 rounded-3xl p-6 sm:p-10 flex flex-col border border-border bg-surface shadow-sm {zenMode
+			? 'max-w-4xl mx-auto w-full'
 			: ''}"
 	>
 		{#if activePage}
 			<!-- Heading & Reading Metadata -->
-			<div class="flex flex-col gap-2 border-b border-border/60 pb-4">
-				<div class="flex items-center justify-between text-xs text-text-muted">
+			<div class="gap-2 pb-4 flex flex-col border-b border-border/60">
+				<div class="text-xs flex items-center justify-between text-text-muted">
 					<span class="font-bold text-primary uppercase"
 						>Page {currentPageIndex + 1} of {pages.length}</span
 					>
 					<span>⏱️ ~{estReadingMins} min read</span>
 				</div>
-				<h2 class="font-display text-2xl font-bold tracking-tight text-text sm:text-3xl">
+				<h2 class="font-display text-2xl font-bold tracking-tight sm:text-3xl text-text">
 					{activePage.heading}
 				</h2>
 				{#if activePage.subheading}
@@ -366,7 +366,7 @@
 							{@html section.content}
 						{:else if section.type === 'mermaid'}
 							<div
-								class="my-6 rounded-2xl border border-border/80 bg-surface-muted/60 p-4 shadow-xs"
+								class="my-6 rounded-2xl p-4 shadow-xs border border-border/80 bg-surface-muted/60"
 							>
 								<MermaidDiagram code={section.code} />
 							</div>
@@ -381,12 +381,12 @@
 	</div>
 
 	<!-- Bottom Navigation & Page Controls -->
-	<div class="flex items-center justify-between pt-2 {zenMode ? 'mx-auto w-full max-w-4xl' : ''}">
+	<div class="pt-2 flex items-center justify-between {zenMode ? 'max-w-4xl mx-auto w-full' : ''}">
 		<button
 			type="button"
 			onclick={handlePrevPage}
 			disabled={currentPageIndex === 0}
-			class="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-5 py-3 text-xs font-bold text-text shadow-2xs transition-all hover:border-primary disabled:cursor-not-allowed disabled:opacity-40"
+			class="gap-2 rounded-2xl px-5 py-3 text-xs font-bold shadow-2xs inline-flex cursor-pointer items-center border border-border bg-surface text-text transition-all hover:border-primary disabled:cursor-not-allowed disabled:opacity-40"
 		>
 			<span>&larr; Previous Page</span>
 		</button>
@@ -394,7 +394,7 @@
 		<button
 			type="button"
 			onclick={handleNextPage}
-			class="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-95"
+			class="gap-2 rounded-2xl px-6 py-3 text-xs font-bold text-white inline-flex cursor-pointer items-center bg-primary shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-95"
 		>
 			<span>{currentPageIndex < pages.length - 1 ? 'Next Page &rarr;' : 'Complete Lesson 🎉'}</span>
 		</button>

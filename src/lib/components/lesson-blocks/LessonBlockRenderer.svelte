@@ -18,7 +18,7 @@
 	let { blocks, courseId, moduleId }: Props = $props();
 </script>
 
-<div class="flex flex-col gap-4">
+<div class="gap-4 flex flex-col">
 	{#if blocks && blocks.length > 0}
 		{#each blocks as block, idx (idx)}
 			{#if block.type === 'text'}
@@ -29,7 +29,7 @@
 				<div class="my-4">
 					<MermaidDiagram code={block.mermaid} />
 					{#if block.caption}
-						<p class="mt-1.5 text-center text-xs text-text-muted italic">{block.caption}</p>
+						<p class="mt-1.5 text-xs text-center text-text-muted italic">{block.caption}</p>
 					{/if}
 				</div>
 			{:else if block.type === 'term'}
