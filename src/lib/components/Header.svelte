@@ -20,22 +20,24 @@
 </script>
 
 <header
-	class="px-6 py-4 flex items-center justify-between border-b border-border bg-surface shadow-sm"
+	class="sticky top-0 z-40 flex items-center justify-between px-5 py-3"
+	style="background: var(--surface-glass); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); border-bottom: 1px solid var(--border); box-shadow: 0 1px 0 0 var(--border);"
 >
 	<!-- Logo Section -->
 	<a
 		href="/app"
-		class="gap-2 text-lg font-bold flex items-center rounded-md text-text transition-opacity select-none hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+		class="flex items-center gap-2.5 rounded-md text-text transition-opacity select-none hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 	>
 		<div
-			class="h-8 w-8 text-white flex items-center justify-center rounded-md bg-primary shadow-sm"
+			class="h-8 w-8 flex items-center justify-center rounded-lg text-white"
+			style="background: var(--primary); box-shadow: 0 2px 8px var(--primary-glow);"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
 				viewBox="0 0 24 24"
 				fill="none"
 				stroke="currentColor"
-				stroke-width="3"
+				stroke-width="2.5"
 				stroke-linecap="round"
 				stroke-linejoin="round"
 				class="h-4.5 w-4.5"
@@ -45,7 +47,7 @@
 				<path d="M6 10h10" />
 			</svg>
 		</div>
-		<span class="font-display tracking-tight">AI Study Buddy</span>
+		<span class="text-[15px] font-bold tracking-tight text-text">AI Study Buddy</span>
 	</a>
 
 	<!-- Middle: Theme Switcher -->

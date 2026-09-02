@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminAuth } from '$lib/server/admin';
-import { verifySessionUser } from '$lib/server/auth';
+import { verifySessionUser, invalidateUserSessionCache } from '$lib/server/auth';
 import { purgeAllUserData } from '$lib/server/user/deleteUserData';
 
 /**
@@ -16,6 +16,9 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		// Purge all user Firestore documents and subcollections recursively
 		await purgeAllUserData(uid);
+
+		// Invalidate L1/L2 session cache
+		await invalidateUserSessionCache(uid);
 
 		// 4. Delete Auth User Record
 		try {

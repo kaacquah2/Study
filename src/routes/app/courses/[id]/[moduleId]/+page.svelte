@@ -53,6 +53,24 @@
 	let moduleVideos = $state<ModuleVideo[]>([]);
 	let loadingVideos = $state(false);
 	let activeVideoId = $state<string | null>(null);
+	let retryCount = $state(0);
+
+	const retryFetch = () => {
+		loadError = '';
+		loading = true;
+		retryCount++;
+		fetchVideos(true);
+	};
+
+	// Handle automatic reconnect on network restore
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		const handleOnline = () => {
+			if (loadError) retryFetch();
+		};
+		window.addEventListener('online', handleOnline);
+		return () => window.removeEventListener('online', handleOnline);
+	});
 
 	// Derived module sequence navigation
 	let sortedModules = $derived([...allModules].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
@@ -63,14 +81,12 @@
 			: null
 	);
 
-	// Single snapshot listener subscription
+	// 1. Course-level listener (course doc and allModules collection)
+	// Subscribed once per course view, NOT re-created when navigating between modules
 	$effect(() => {
-		if (!courseId || !moduleId) return;
+		if (!courseId) return;
+		void retryCount;
 
-		loading = true;
-		loadError = '';
-
-		// 1. Listen to Course Document
 		const courseRef = doc(db, 'courses', courseId);
 		const unsubCourse = onSnapshot(
 			courseRef,
@@ -83,11 +99,37 @@
 			},
 			(err) => {
 				console.error('Course listener error:', err);
-				loadError = 'Failed to load course details.';
+				loadError = 'Failed to load course details. Please check network connection.';
 			}
 		);
 
-		// 2. Listen to Active Module Document
+		const modulesColRef = collection(db, 'courses', courseId, 'modules');
+		const q = query(modulesColRef, orderBy('order', 'asc'));
+		const unsubAllModules = onSnapshot(
+			q,
+			(snap) => {
+				allModules = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as ModuleDoc);
+			},
+			(err) => {
+				console.warn('All modules listener error:', err);
+			}
+		);
+
+		return () => {
+			unsubCourse();
+			unsubAllModules();
+		};
+	});
+
+	// 2. Active Module-level listener
+	// Subscribes only to the active module document when moduleId changes
+	$effect(() => {
+		if (!courseId || !moduleId) return;
+		void retryCount;
+
+		loading = true;
+		loadError = '';
+
 		const modRef = doc(db, 'courses', courseId, 'modules', moduleId);
 		const unsubModule = onSnapshot(
 			modRef,
@@ -103,21 +145,8 @@
 			},
 			(err) => {
 				console.error('Module listener error:', err);
-				loadError = 'Failed to load lesson content.';
+				loadError = 'Failed to load lesson content. Please check network connection.';
 				loading = false;
-			}
-		);
-
-		// 3. Listen to all modules for progression ordering
-		const modulesColRef = collection(db, 'courses', courseId, 'modules');
-		const q = query(modulesColRef, orderBy('order', 'asc'));
-		const unsubAllModules = onSnapshot(
-			q,
-			(snap) => {
-				allModules = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as ModuleDoc);
-			},
-			(err) => {
-				console.warn('All modules listener error:', err);
 			}
 		);
 
@@ -125,9 +154,7 @@
 		fetchVideos();
 
 		return () => {
-			unsubCourse();
 			unsubModule();
-			unsubAllModules();
 		};
 	});
 
@@ -309,12 +336,21 @@
 			<span class="text-3xl">⚠️</span>
 			<h3 class="mt-2 font-display text-base font-bold text-danger">Unable to load module</h3>
 			<p class="mt-1 text-xs text-text-muted">{loadError}</p>
-			<a
-				href={`/app/courses/${courseId}`}
-				class="mt-4 px-5 py-2 text-xs font-bold text-white rounded-xl bg-primary"
-			>
-				Back to Course
-			</a>
+			<div class="mt-4 gap-3 flex items-center">
+				<button
+					type="button"
+					onclick={() => retryFetch()}
+					class="px-5 py-2 text-xs font-semibold text-white rounded-xl bg-danger shadow-sm transition hover:bg-danger/90"
+				>
+					🔄 Try Again
+				</button>
+				<a
+					href={`/app/courses/${courseId}`}
+					class="px-5 py-2 text-xs font-bold rounded-xl border border-border bg-surface text-text-muted hover:text-text"
+				>
+					Back to Course
+				</a>
+			</div>
 		</div>
 	{:else if isCompleted}
 		<!-- Completion Celebration Screen -->

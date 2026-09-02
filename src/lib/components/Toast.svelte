@@ -4,10 +4,14 @@
 
 {#if toastStore.toasts.length > 0}
 	<div
+		role="region"
+		aria-label="Notifications"
+		aria-live="polite"
 		class="right-6 bottom-6 max-w-sm gap-2.5 px-4 pointer-events-none fixed z-50 flex w-full flex-col"
 	>
 		{#each toastStore.toasts as toast (toast.id)}
 			<div
+				role="status"
 				class="animate-slide-in gap-3 p-4 text-xs font-semibold shadow-xl pointer-events-auto flex items-center justify-between rounded-xl border transition-all duration-200 {toast.type ===
 				'success'
 					? 'border-emerald-500/30 bg-emerald-950/90 text-emerald-200'
@@ -24,6 +28,7 @@
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
+							aria-hidden="true"
 						>
 							<path
 								stroke-linecap="round"
@@ -38,6 +43,7 @@
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
+							aria-hidden="true"
 						>
 							<path
 								stroke-linecap="round"
@@ -52,6 +58,7 @@
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
+							aria-hidden="true"
 						>
 							<path
 								stroke-linecap="round"
@@ -66,6 +73,7 @@
 				<button
 					type="button"
 					onclick={() => toastStore.remove(toast.id)}
+					aria-label="Dismiss notification"
 					class="p-1 cursor-pointer rounded-md opacity-70 hover:opacity-100"
 				>
 					&times;
@@ -88,5 +96,11 @@
 	}
 	.animate-slide-in {
 		animation: slideIn 0.2s ease-out forwards;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.animate-slide-in {
+			animation: none !important;
+			transform: none !important;
+		}
 	}
 </style>

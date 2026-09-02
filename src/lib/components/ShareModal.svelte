@@ -32,6 +32,14 @@
 	};
 </script>
 
+<svelte:window
+	onkeydown={(e) => {
+		if (e.key === 'Escape' && show) {
+			onClose();
+		}
+	}}
+/>
+
 {#if show}
 	<!-- Backdrop overlay, closes modal on click -->
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -42,6 +50,10 @@
 	>
 		<!-- Modal container, stopPropagation prevents click from propagating to backdrop -->
 		<div
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+			aria-labelledby="share-modal-title"
 			class="max-w-md gap-5 p-6 relative flex w-full flex-col rounded-lg border border-border bg-surface shadow-lg"
 			onclick={(e) => e.stopPropagation()}
 		>
@@ -61,12 +73,15 @@
 					stroke-linecap="round"
 					stroke-linejoin="round"
 					class="h-5 w-5"
+					aria-hidden="true"
 					><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg
 				>
 			</button>
 
 			<div>
-				<h3 class="mb-1 font-display text-lg font-bold text-text">Share {courseTitle}</h3>
+				<h3 id="share-modal-title" class="mb-1 font-display text-lg font-bold text-text">
+					Share {courseTitle}
+				</h3>
 				<p class="text-xs leading-relaxed text-text-muted">
 					Copy the link below and send it to your classmate. When they open it, an independent copy
 					of this course will be cloned into their account.
@@ -86,6 +101,7 @@
 				/>
 				<button
 					type="button"
+					aria-label={copied ? 'Link copied to clipboard' : 'Copy share link to clipboard'}
 					class="px-4 py-2 text-xs font-bold text-white cursor-pointer rounded-r-md bg-primary transition-all select-none hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
 					onclick={copyToClipboard}
 				>
@@ -110,6 +126,7 @@
 						stroke-linecap="round"
 						stroke-linejoin="round"
 						class="h-3.5 w-3.5"
+						aria-hidden="true"
 						><circle cx="12" cy="12" r="10" /><line
 							x1="4.93"
 							y1="4.93"
@@ -143,6 +160,12 @@
 		to {
 			opacity: 1;
 			transform: scale(1);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.animate-fade-in {
+			animation: none !important;
+			transform: none !important;
 		}
 	}
 </style>

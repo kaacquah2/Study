@@ -1,18 +1,15 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
-import { adminDb, FieldValue } from '$lib/server/admin';
-import type { DocumentData } from 'firebase-admin/firestore';
+import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
-import { generateLessonV2, generateQuiz } from '$lib/server/ai/provider';
-import { recordAttributionMetadata } from '$lib/server/ai/providerStats';
+import { enqueueModuleGenerationJob } from '$lib/server/ai/generationQueue';
 import { z } from 'zod';
-import { MLBackendError } from '$lib/server/ai/client';
-import { getCachedOutline } from '$lib/server/outlineCache';
 
 const GenerateModuleZod = z.object({
 	courseId: z.string()
 });
 
+// POST /api/modules/[id]/generate — Enqueues durable module generation job
 export const POST: RequestHandler = async ({ params, request }) => {
 	const { id: moduleId } = params;
 
@@ -41,330 +38,94 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		const moduleRef = courseRef.collection('modules').doc(moduleId);
 		const usageRef = adminDb.collection('usage').doc(user.uid);
 
-		// 3. Enforce Rate Limits & Idempotency Lock in a Transaction (with auto-retry for contention)
-		interface ModuleState {
-			shouldGenerate: boolean;
-			data: DocumentData;
-			courseData: DocumentData;
-		}
+		// 3. Enforce Rate Limits & Verify Ownership in a Transaction
+		let txAttempts = 0;
+		const maxTxAttempts = 3;
+		while (txAttempts < maxTxAttempts) {
+			try {
+				txAttempts++;
+				await adminDb.runTransaction(async (transaction) => {
+					// (a) Enforce Rate Limit
+					const hourStr = Math.floor(Date.now() / 3600000).toString();
+					const usageDoc = await transaction.get(usageRef);
+					let modulesThisHour = 0;
 
-		const acquireModuleState = async (): Promise<ModuleState> => {
-			let txAttempts = 0;
-			const maxTxAttempts = 3;
-			while (txAttempts < maxTxAttempts) {
-				try {
-					txAttempts++;
-					return await adminDb.runTransaction(async (transaction) => {
-						// (a) Enforce Rate Limit
-						const hourStr = Math.floor(Date.now() / 3600000).toString(); // Hour index
-						const usageDoc = await transaction.get(usageRef);
-						let modulesThisHour = 0;
-
-						if (usageDoc.exists) {
-							const usageData = usageDoc.data();
-							const usageHour = usageData?.hour || '';
-							if (usageHour === hourStr) {
-								modulesThisHour = usageData?.modulesThisHour || 0;
-							}
+					if (usageDoc.exists) {
+						const usageData = usageDoc.data();
+						const usageHour = usageData?.hour || '';
+						if (usageHour === hourStr) {
+							modulesThisHour = usageData?.modulesThisHour || 0;
 						}
-
-						if (modulesThisHour >= 30) {
-							throw new Error('RATE_LIMIT_EXCEEDED');
-						}
-
-						// (b) Fetch Course context inside transaction to verify ownership before modifying anything
-						const courseDoc = await transaction.get(courseRef);
-						if (!courseDoc.exists) {
-							throw new Error('COURSE_NOT_FOUND');
-						}
-						const courseData = courseDoc.data();
-						if (!courseData || courseData.ownerUid !== user.uid) {
-							throw new Error('FORBIDDEN');
-						}
-
-						// (c) Read module state to ensure idempotency
-						const moduleDoc = await transaction.get(moduleRef);
-						if (!moduleDoc.exists) {
-							throw new Error('MODULE_NOT_FOUND');
-						}
-
-						const moduleData = moduleDoc.data();
-						if (!moduleData) {
-							throw new Error('MODULE_NOT_FOUND');
-						}
-
-						if (moduleData.status === 'generating' || moduleData.status === 'ready') {
-							return { shouldGenerate: false, data: moduleData, courseData };
-						}
-
-						// Lock the module for generation and increment attempts
-						const idempotencyKey = request.headers.get('x-idempotency-key') || null;
-						const attempts = (moduleData.attempts || 0) + 1;
-						transaction.set(
-							moduleRef,
-							{
-								status: 'generating',
-								idempotencyKey: idempotencyKey || moduleData.idempotencyKey || null,
-								attempts: attempts
-							},
-							{ merge: true }
-						);
-
-						// Update hourly limit counters
-						transaction.set(
-							usageRef,
-							{
-								modulesThisHour: modulesThisHour + 1,
-								hour: hourStr
-							},
-							{ merge: true }
-						);
-
-						return { shouldGenerate: true, data: { ...moduleData, attempts }, courseData };
-					});
-				} catch (txErr) {
-					const txMsg = txErr instanceof Error ? txErr.message : String(txErr);
-					if (
-						(txMsg.includes('10 ABORTED') || txMsg.includes('cross-transaction contention')) &&
-						txAttempts < maxTxAttempts
-					) {
-						await new Promise((r) => setTimeout(r, txAttempts * 200));
-						continue;
 					}
-					throw txErr;
+
+					if (modulesThisHour >= 30) {
+						throw new Error('RATE_LIMIT_EXCEEDED');
+					}
+
+					// (b) Verify Course Exists & Ownership
+					const courseDoc = await transaction.get(courseRef);
+					if (!courseDoc.exists) {
+						throw new Error('COURSE_NOT_FOUND');
+					}
+					const courseData = courseDoc.data();
+					if (!courseData || courseData.ownerUid !== user.uid) {
+						throw new Error('FORBIDDEN');
+					}
+
+					// (c) Verify Module Exists
+					const moduleDoc = await transaction.get(moduleRef);
+					if (!moduleDoc.exists) {
+						throw new Error('MODULE_NOT_FOUND');
+					}
+
+					// Set module status to pending and increment usage counter
+					transaction.set(
+						moduleRef,
+						{
+							status: 'pending',
+							error: null
+						},
+						{ merge: true }
+					);
+
+					transaction.set(
+						usageRef,
+						{
+							modulesThisHour: modulesThisHour + 1,
+							hour: hourStr
+						},
+						{ merge: true }
+					);
+				});
+				break;
+			} catch (txErr) {
+				const txMsg = txErr instanceof Error ? txErr.message : String(txErr);
+				if (
+					(txMsg.includes('10 ABORTED') || txMsg.includes('cross-transaction contention')) &&
+					txAttempts < maxTxAttempts
+				) {
+					await new Promise((r) => setTimeout(r, txAttempts * 200));
+					continue;
 				}
+				throw txErr;
 			}
-			throw new Error('CONCURRENT_REQUEST');
-		};
-
-		const moduleState = await acquireModuleState();
-
-		if (!moduleState.shouldGenerate) {
-			return json({
-				status: moduleState.data.status,
-				message: 'Module is already building or ready'
-			});
 		}
 
-		const moduleData = moduleState.data;
-		const courseData = moduleState.courseData;
-
-		// Read full outline of modules to prevent content overlap (cached to prevent duplicate concurrent queries)
-		const outlineModules = await getCachedOutline(courseId, async () => {
-			const modulesSnapshot = await courseRef.collection('modules').orderBy('order', 'asc').get();
-			return modulesSnapshot.docs.map((doc) => {
-				const data = doc.data();
-				return {
-					order: data.order,
-					type: data.type,
-					title: data.title,
-					summary: data.summary,
-					learningObjective: data.learningObjective || '',
-					keyPoints: data.keyPoints || []
-				};
-			});
+		// 4. Enqueue durable background generation job
+		const job = await enqueueModuleGenerationJob({
+			courseId,
+			moduleId,
+			userId: user.uid
 		});
 
-		const courseOutline = {
-			title: courseData.title,
-			description: courseData.description,
-			modules: outlineModules
-		};
-
-		// 4. Generate content using AI provider layer
-		try {
-			if (moduleData.type === 'lesson') {
-				const { result, provider } = await generateLessonV2(
-					courseOutline.title,
-					courseOutline,
-					moduleData.title,
-					moduleData.learningObjective || '',
-					moduleData.keyPoints || [],
-					user.uid
-				);
-
-				const pages = result.pages.map((page) => ({
-					order: page.order,
-					heading: page.heading,
-					subheading: page.subheading,
-					blocks: page.blocks
-				}));
-
-				// Calculate dynamic duration from block text / markdown length
-				const totalWords = pages.reduce((acc, p) => {
-					const blockText = p.blocks
-						.map((b) => ('markdown' in b ? b.markdown : 'text' in b ? b.text : ''))
-						.join(' ');
-					return acc + (blockText ? blockText.split(/\s+/).filter(Boolean).length : 0);
-				}, 0);
-				const estMinutes = Math.max(2, Math.ceil(totalWords / 200));
-
-				// Write lesson pages to database with contentVersion: 2
-				await moduleRef.set(
-					{
-						pages: pages,
-						contentVersion: 2,
-						estimatedMinutes: estMinutes,
-						status: 'ready',
-						model: provider,
-						generatedAt: FieldValue.serverTimestamp(),
-						error: null
-					},
-					{ merge: true }
-				);
-
-				await recordAttributionMetadata(
-					'modules',
-					moduleId,
-					{
-						servicedByProvider: provider
-					},
-					courseId
-				);
-			} else if (moduleData.type === 'quiz') {
-				const { result, provider } = await generateQuiz(
-					courseOutline.title,
-					courseOutline,
-					moduleData.title,
-					moduleData.learningObjective || '',
-					moduleData.keyPoints || [],
-					user.uid
-				);
-
-				// Pre-save Quality Guardrail Validation
-				for (const q of result.questions) {
-					if (!q.prompt || typeof q.prompt !== 'string' || q.prompt.trim().length === 0) {
-						throw new Error('Quality validation error: Quiz question prompt cannot be empty.');
-					}
-					if (!Array.isArray(q.options) || q.options.length !== 4) {
-						throw new Error('Quality validation error: Quiz question must have exactly 4 options.');
-					}
-					const uniqueOptions = new Set(q.options.map((o) => o.trim().toLowerCase()));
-					if (uniqueOptions.size < 4) {
-						throw new Error('Quality validation error: Quiz question options must be distinct.');
-					}
-					if (typeof q.correctIndex !== 'number' || q.correctIndex < 0 || q.correctIndex > 3) {
-						throw new Error(
-							'Quality validation error: Quiz correct option index must be between 0 and 3.'
-						);
-					}
-					if (!q.explanation || q.explanation.trim().length < 5) {
-						throw new Error('Quality validation error: Quiz explanation is missing or incomplete.');
-					}
-				}
-
-				// Calculate dynamic duration for quiz (45 seconds per question)
-				const estMinutes = Math.max(2, Math.ceil((result.questions.length * 45) / 60));
-
-				// Write quiz questions to database
-				await moduleRef.set(
-					{
-						questions: result.questions,
-						estimatedMinutes: estMinutes,
-						status: 'ready',
-						model: provider,
-						generatedAt: FieldValue.serverTimestamp(),
-						error: null
-					},
-					{ merge: true }
-				);
-
-				await recordAttributionMetadata(
-					'modules',
-					moduleId,
-					{
-						servicedByProvider: provider
-					},
-					courseId
-				);
-			}
-
-			// Check if all modules are ready, update course status & total estimated duration
-			const updatedSnapshot = await courseRef.collection('modules').get();
-			const modulesData = updatedSnapshot.docs.map((doc) => doc.data());
-			const statuses = modulesData.map((m) => m.status);
-			const allReady = statuses.every((status) => status === 'ready');
-			const anyFailed = statuses.some((status) => status === 'failed');
-
-			const totalCourseEstMinutes = modulesData.reduce(
-				(acc, m) => acc + (typeof m.estimatedMinutes === 'number' ? m.estimatedMinutes : 12),
-				0
-			);
-
-			if (allReady) {
-				await courseRef.set(
-					{
-						status: 'ready',
-						estimatedMinutes: totalCourseEstMinutes,
-						updatedAt: FieldValue.serverTimestamp()
-					},
-					{ merge: true }
-				);
-			} else if (anyFailed) {
-				await courseRef.set(
-					{
-						status: 'partial',
-						estimatedMinutes: totalCourseEstMinutes,
-						updatedAt: FieldValue.serverTimestamp()
-					},
-					{ merge: true }
-				);
-			} else {
-				await courseRef.set(
-					{
-						estimatedMinutes: totalCourseEstMinutes,
-						updatedAt: FieldValue.serverTimestamp()
-					},
-					{ merge: true }
-				);
-			}
-
-			return json({ status: 'ready', message: 'Module generated successfully' });
-		} catch (aiErr) {
-			console.error('AI Generation or writing error:', aiErr);
-			const message =
-				aiErr instanceof MLBackendError
-					? 'Failed to generate module content due to an internal AI error.'
-					: aiErr instanceof Error
-						? aiErr.message
-						: 'AI Generation Failed';
-
-			// Handle failure and register attempts
-			const statusUpdate = 'failed';
-			try {
-				await moduleRef.set(
-					{
-						status: statusUpdate,
-						error: message
-					},
-					{ merge: true }
-				);
-
-				// Update course status to partial
-				await courseRef.set(
-					{
-						status: 'partial',
-						updatedAt: FieldValue.serverTimestamp()
-					},
-					{ merge: true }
-				);
-			} catch (dbErr) {
-				console.warn('Failed to update failure status in Firestore:', dbErr);
-			}
-
-			return json(
-				{
-					error: {
-						code: 'GENERATION_FAILED',
-						message:
-							aiErr instanceof MLBackendError
-								? 'Failed to generate module content due to an internal AI error.'
-								: message
-					}
-				},
-				{ status: 500 }
-			);
-		}
+		return json(
+			{
+				status: 'queued',
+				jobId: job.jobId,
+				message: 'Module generation queued successfully'
+			},
+			{ status: 202 }
+		);
 	} catch (err) {
 		const message = err instanceof Error ? err.message : '';
 		if (message === 'RATE_LIMIT_EXCEEDED') {
@@ -404,11 +165,11 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		if (message.includes('Unauthorized')) {
 			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
 		}
+
 		console.error('Module generate API error:', err);
-		const clientMessage =
-			err instanceof MLBackendError
-				? 'Internal AI backend error'
-				: message || 'Internal Server Error';
-		return json({ error: { code: 'SERVER_ERROR', message: clientMessage } }, { status: 500 });
+		return json(
+			{ error: { code: 'SERVER_ERROR', message: message || 'Internal Server Error' } },
+			{ status: 500 }
+		);
 	}
 };

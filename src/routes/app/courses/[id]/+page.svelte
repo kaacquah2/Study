@@ -7,6 +7,7 @@
 	import ShareModal from '$lib/components/ShareModal.svelte';
 	import CertificateModal from '$lib/components/CertificateModal.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
+	import { authStore } from '$lib/stores/auth.svelte';
 	import type { CourseDoc, ModuleDoc } from '$lib/firebase/converters';
 	import {
 		generateCourseMarkdown,
@@ -23,10 +24,17 @@
 	let loading = $state(true);
 	let loadError = $state('');
 	let actionLoading = $state(false);
+	let retryCount = $state(0);
 
 	let shareUrl = $state('');
 	let showShareModal = $state(false);
 	let showCertificateModal = $state(false);
+
+	const retryFetch = () => {
+		loadError = '';
+		loading = true;
+		retryCount++;
+	};
 
 	// Push notification when generation finishes (Item #5)
 	let previousCourseStatus = $state<string | null>(null);
@@ -46,6 +54,16 @@
 		}
 	});
 
+	// Handle automatic reconnect on network restore
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		const handleOnline = () => {
+			if (loadError) retryFetch();
+		};
+		window.addEventListener('online', handleOnline);
+		return () => window.removeEventListener('online', handleOnline);
+	});
+
 	const requestNotificationPermission = () => {
 		if ('Notification' in window && Notification.permission === 'default') {
 			Notification.requestPermission();
@@ -55,6 +73,7 @@
 	// Unified Real-time Course, Modules, and User Progress Listener
 	$effect(() => {
 		if (!courseId) return;
+		void retryCount;
 
 		// Request notification permission if course is building
 		requestNotificationPermission();
@@ -72,28 +91,40 @@
 			},
 			(err) => {
 				console.error('Course fetch error:', err);
-				loadError = 'Failed to load course details.';
+				loadError = 'Failed to load course details. Please check network connection.';
 				loading = false;
 			}
 		);
 
 		const modulesRef = collection(db, 'courses', courseId, 'modules');
 		const q = query(modulesRef, orderBy('order', 'asc'));
-		const unsubModules = onSnapshot(q, (snap) => {
-			const mods = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as ModuleDoc[];
-			mods.sort((a, b) => (a.order || 0) - (b.order || 0));
-			modules = mods;
-		});
+		const unsubModules = onSnapshot(
+			q,
+			(snap) => {
+				const mods = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as ModuleDoc[];
+				mods.sort((a, b) => (a.order || 0) - (b.order || 0));
+				modules = mods;
+			},
+			(err) => {
+				console.error('Modules fetch error:', err);
+			}
+		);
 
 		let unsubProgress: (() => void) | null = null;
-		const uid = auth.currentUser?.uid;
+		const uid = authStore.user?.uid;
 		if (uid) {
 			const progressRef = doc(db, 'users', uid, 'progress', courseId);
-			unsubProgress = onSnapshot(progressRef, (snap) => {
-				if (snap.exists()) {
-					userCompletedModuleIds = snap.data()?.completedModuleIds || [];
+			unsubProgress = onSnapshot(
+				progressRef,
+				(snap) => {
+					if (snap.exists()) {
+						userCompletedModuleIds = snap.data()?.completedModuleIds || [];
+					}
+				},
+				(err) => {
+					console.warn('Progress fetch error:', err);
 				}
-			});
+			);
 		}
 
 		return () => {
@@ -156,16 +187,6 @@
 			if (!res.ok) {
 				throw new Error(data.error?.message || 'Failed to add module');
 			}
-
-			// Trigger module generation
-			fetch(`/api/modules/${data.moduleId}/generate`, {
-				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ courseId })
-			}).catch((e) => console.error('Module gen error:', e));
 
 			toastStore.success('New module added! Generating content...');
 		} catch (err) {
@@ -353,9 +374,18 @@
 		<Skeleton variant="card" height="h-64" />
 	{:else if loadError || !course}
 		<div
-			class="rounded-2xl p-6 text-xs font-bold border border-danger/20 bg-danger-soft text-center text-danger"
+			class="gap-3 rounded-2xl p-6 text-xs font-bold flex flex-col items-center justify-center border border-danger/20 bg-danger-soft text-center text-danger"
 		>
-			{loadError || 'Course not found.'}
+			<span>{loadError || 'Course not found.'}</span>
+			{#if loadError}
+				<button
+					type="button"
+					onclick={() => retryFetch()}
+					class="px-4 py-2 font-semibold text-white rounded-xl bg-danger shadow-sm transition hover:bg-danger/90"
+				>
+					🔄 Try Again
+				</button>
+			{/if}
 		</div>
 	{:else}
 		<!-- Course Overview Header -->

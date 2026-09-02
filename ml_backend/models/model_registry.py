@@ -92,12 +92,48 @@ def get_pipeline(task: str, model_id: str, **kwargs) -> Pipeline:
             kwargs["torch_dtype"] = torch.float16
 
         from typing import Any, cast
-        pipe: Any = pipeline(
-            task=cast(Any, task),
-            model=model_id,
-            tokenizer=model_id,
-            **kwargs
-        )  # type: ignore
+        model_kwargs = kwargs.pop("model_kwargs", None) or {}
+        prefer_local = (
+            os.getenv("APP_ENV") == "production"
+            or os.getenv("TRANSFORMERS_OFFLINE") == "1"
+            or os.getenv("HF_HUB_OFFLINE") == "1"
+        )
+
+        try:
+            if prefer_local:
+                offline_kwargs = dict(model_kwargs)
+                offline_kwargs["local_files_only"] = True
+                pipe: Any = pipeline(
+                    task=cast(Any, task),
+                    model=model_id,
+                    tokenizer=model_id,
+                    model_kwargs=offline_kwargs,
+                    **kwargs
+                )  # type: ignore
+            else:
+                pipe = pipeline(
+                    task=cast(Any, task),
+                    model=model_id,
+                    tokenizer=model_id,
+                    model_kwargs=model_kwargs if model_kwargs else None,
+                    **kwargs
+                )  # type: ignore
+        except Exception as load_err:
+            if prefer_local and os.getenv("TRANSFORMERS_OFFLINE") != "1" and os.getenv("HF_HUB_OFFLINE") != "1":
+                logger.warning(
+                    f"Model Registry: Local cached load failed for '{model_id}' ({load_err}). "
+                    "Attempting online fallback download..."
+                )
+                pipe = pipeline(
+                    task=cast(Any, task),
+                    model=model_id,
+                    tokenizer=model_id,
+                    model_kwargs=model_kwargs if model_kwargs else None,
+                    **kwargs
+                )  # type: ignore
+            else:
+                logger.error(f"Model Registry: Failed to load model '{model_id}': {load_err}")
+                raise
 
         # Apply PyTorch dynamic INT8 quantization on CPU for linear layers to boost CPU speed
         if DEVICE == -1:
@@ -136,5 +172,94 @@ def get_device_diagnostics() -> dict:
         "loaded_pipelines_count": loaded_count,
         "loaded_pipelines": loaded_keys,
         "quantization": "dynamic_int8" if not CUDA_AVAILABLE else "fp16_cuda"
+    }
+
+
+def classify_model_tier(model_id: str, default_id: str, is_specialized_baseline: bool = False) -> tuple[str, bool]:
+    """
+    Classify a model identifier into its provenance tier.
+    Returns (tier, is_fine_tuned)
+    Tiers:
+      - 'base_foundation': generic open-weight foundation model (e.g. google/flan-t5-base)
+      - 'pretrained_specialized': community task-specialized pre-trained checkpoint (e.g. valhalla/t5-small-qg-prepend)
+      - 'local_checkpoint': local fine-tuned weights on filesystem
+      - 'fine_tuned_custom': custom fine-tuned weights hosted on HuggingFace Hub
+    """
+    if os.path.exists(model_id) or (os.path.isabs(model_id) and os.path.exists(model_id)):
+        return ("local_checkpoint", True)
+
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    rel_path = os.path.join(backend_dir, model_id)
+    if os.path.exists(rel_path):
+        return ("local_checkpoint", True)
+
+    if model_id == default_id:
+        if is_specialized_baseline:
+            return ("pretrained_specialized", False)
+        return ("base_foundation", False)
+
+    return ("fine_tuned_custom", True)
+
+
+def get_model_provenance_manifest(loaded_models_map: dict[str, bool] | None = None) -> dict:
+    """
+    Generate the complete provenance manifest for all ML components.
+    Distinguishes whether the runtime is operating with default base foundation models
+    or custom domain fine-tuned checkpoints.
+    """
+    if loaded_models_map is None:
+        loaded_models_map = {}
+
+    configs = [
+        ("summarizer", "SUMMARIZER_MODEL_ID", "google/flan-t5-base", "seq2seq_prompting", "seq2seq_domain_adapted", False),
+        ("paraphraser", "PARAPHRASER_MODEL_ID", "google/flan-t5-base", "seq2seq_prompting", "seq2seq_domain_adapted", False),
+        ("outline_generator", "OUTLINE_MODEL_ID", "google/flan-t5-large", "rag_instruction_prompting", "rag_domain_adapted", False),
+        ("lesson_generator", "LESSON_MODEL_ID", "google/flan-t5-large", "rag_page_generation", "rag_domain_adapted", False),
+        ("quiz_qg", "QUIZ_QG_MODEL_ID", "valhalla/t5-small-qg-prepend", "t5_question_generation", "t5_question_generation", True),
+        ("quiz_dg", "QUIZ_DG_MODEL_ID", "potsawee/t5-large-generation-race-Distractor", "distractor_generation", "distractor_generation", True),
+        ("chat_assistant", "CHAT_MODEL_ID", "TinyLlama/TinyLlama-1.1B-Chat-v1.0", "chatml_rag_prompting", "chatml_domain_adapted", False),
+        ("rag_embeddings", "EMBED_MODEL_ID", "sentence-transformers/all-MiniLM-L6-v2", "dense_faiss_biencoder", "dense_faiss_biencoder", True),
+    ]
+
+    models_manifest = {}
+    fine_tuned_count = 0
+    base_count = 0
+    specialized_count = 0
+
+    for name, env_var, default_id, base_strat, ft_strat, is_specialized in configs:
+        configured_id = os.getenv(env_var, default_id)
+        tier, is_ft = classify_model_tier(configured_id, default_id, is_specialized_baseline=is_specialized)
+
+        if is_ft:
+            fine_tuned_count += 1
+            strategy = ft_strat
+        elif tier == "pretrained_specialized":
+            specialized_count += 1
+            strategy = base_strat
+        else:
+            base_count += 1
+            strategy = base_strat
+
+        # Check loaded status from mapping or internal pipeline registry
+        is_loaded = loaded_models_map.get(name, is_pipeline_loaded("summarization" if name == "summarizer" else name, configured_id))
+
+        models_manifest[name] = {
+            "model_id": configured_id,
+            "tier": tier,
+            "is_fine_tuned": is_ft,
+            "default_id": default_id,
+            "strategy": strategy,
+            "loaded": is_loaded,
+        }
+
+    system_mode = "fine_tuned_production" if fine_tuned_count > 0 else "base_foundation_development"
+
+    return {
+        "system_mode": system_mode,
+        "fine_tuned_count": fine_tuned_count,
+        "base_count": base_count,
+        "specialized_count": specialized_count,
+        "models": models_manifest,
+        "device_diagnostics": get_device_diagnostics(),
     }
 

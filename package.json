@@ -12,9 +12,14 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
-		"test:unit": "vitest",
-		"test": "npm run test:unit -- --run && npm run test:e2e",
-		"test:e2e": "playwright install && playwright test"
+		"test:unit": "vitest --project=server",
+		"test:pipeline": "vitest run src/routes/api/pipeline.integration.test.ts",
+		"test:rules": "vitest run --project=rules",
+		"test:rules:emulator": "npx firebase-tools emulators:exec --only firestore \"vitest run --project=rules\"",
+		"test:e2e": "playwright install && playwright test",
+		"test:e2e:ui": "playwright test tests/userJourney.e2e.ts tests/responsiveLayout.e2e.ts",
+		"test:e2e:hermetic": "playwright test tests/fullPipeline.hermetic.e2e.ts",
+		"test": "npm run test:unit -- --run && npm run test:e2e"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

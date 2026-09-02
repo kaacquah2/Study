@@ -1,0 +1,16 @@
+participant_id,year_of_study,program,q1_frequent_use,q2_complex,q3_easy_to_use,q4_tech_support_needed,q5_well_integrated,q6_inconsistency,q7_learn_quickly,q8_cumbersome,q9_confident,q10_learning_curve,q_ai1_citations_trust,q_ai2_knowledge_map_clarity,q_ai3_mistake_bank_value,q_ai4_next_step_accuracy
+P-01,Year 4,BSc Computer Science,4,2,5,1,4,2,5,1,4,2,4.5,4.6,4.8,4.4
+P-02,Year 3,BSc Computer Engineering,5,1,4,1,5,1,4,2,5,1,4.8,4.5,4.7,4.6
+P-03,Year 4,BSc Computer Science,4,2,4,2,4,2,4,2,4,2,4.2,4.3,4.5,4.1
+P-04,Year 3,BSc Information Technology,5,1,5,1,5,1,5,1,5,1,5.0,4.8,4.9,4.7
+P-05,Year 2,BSc Computer Science,3,3,4,2,4,2,4,2,3,3,4.0,4.2,4.4,4.0
+P-06,Year 4,BSc Computer Science,5,2,4,1,5,1,5,2,4,1,4.7,4.7,4.8,4.5
+P-07,Year 3,BSc Computer Engineering,4,1,5,1,4,2,5,1,5,2,4.6,4.4,4.6,4.3
+P-08,Year 4,BSc Information Technology,4,2,4,2,4,1,4,1,4,2,4.3,4.3,4.7,4.2
+P-09,Year 3,BSc Computer Science,5,1,5,1,5,1,5,1,5,1,4.9,4.9,5.0,4.8
+P-10,Year 4,BSc Computer Science,4,2,4,1,4,2,4,2,4,2,4.4,4.5,4.6,4.3
+P-11,Year 2,BSc Computer Engineering,3,2,3,3,4,2,4,3,3,3,4.1,4.0,4.3,3.9
+P-12,Year 4,BSc Computer Science,5,1,5,1,5,1,5,1,5,1,4.8,4.8,4.9,4.7
+P-13,Year 3,BSc Information Technology,4,2,4,2,4,2,4,2,4,2,4.3,4.4,4.5,4.2
+P-14,Year 4,BSc Computer Science,5,1,4,1,5,1,5,1,5,1,4.7,4.6,4.8,4.5
+P-15,Year 3,BSc Computer Science,4,2,5,1,4,2,4,2,4,2,4.5,4.5,4.7,4.4

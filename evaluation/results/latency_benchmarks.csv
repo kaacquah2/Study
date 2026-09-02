@@ -1,0 +1,241 @@
+operation,tier,run_iteration,latency_seconds,latency_ms
+Course Outline Generation,Cache Hit,1,9e-05,0.092
+Course Outline Generation,Cache Hit,2,8e-05,0.078
+Course Outline Generation,Cache Hit,3,3e-05,0.033
+Course Outline Generation,Cache Hit,4,3e-05,0.033
+Course Outline Generation,Cache Hit,5,2e-05,0.021
+Course Outline Generation,Cache Hit,6,2e-05,0.02
+Course Outline Generation,Cache Hit,7,2e-05,0.018
+Course Outline Generation,Cache Hit,8,2e-05,0.019
+Course Outline Generation,Cache Hit,9,2e-05,0.018
+Course Outline Generation,Cache Hit,10,2e-05,0.018
+Course Outline Generation,Local Inference (ml_backend),1,0.0253,25.29
+Course Outline Generation,Local Inference (ml_backend),2,0.0254,25.35
+Course Outline Generation,Local Inference (ml_backend),3,0.0258,25.77
+Course Outline Generation,Local Inference (ml_backend),4,0.0257,25.67
+Course Outline Generation,Local Inference (ml_backend),5,0.0257,25.71
+Course Outline Generation,Local Inference (ml_backend),6,0.0253,25.3
+Course Outline Generation,Local Inference (ml_backend),7,0.0255,25.52
+Course Outline Generation,Local Inference (ml_backend),8,0.0256,25.63
+Course Outline Generation,Local Inference (ml_backend),9,0.0256,25.6
+Course Outline Generation,Local Inference (ml_backend),10,0.0254,25.44
+Course Outline Generation,Primary Cloud (Gemini Flash),1,1.8702,1870.22
+Course Outline Generation,Primary Cloud (Gemini Flash),2,1.9293,1929.28
+Course Outline Generation,Primary Cloud (Gemini Flash),3,1.4528,1452.76
+Course Outline Generation,Primary Cloud (Gemini Flash),4,2.0269,2026.87
+Course Outline Generation,Primary Cloud (Gemini Flash),5,2.1786,2178.64
+Course Outline Generation,Primary Cloud (Gemini Flash),6,1.8923,1892.29
+Course Outline Generation,Primary Cloud (Gemini Flash),7,1.6942,1694.2
+Course Outline Generation,Primary Cloud (Gemini Flash),8,1.5343,1534.31
+Course Outline Generation,Primary Cloud (Gemini Flash),9,1.7821,1782.15
+Course Outline Generation,Primary Cloud (Gemini Flash),10,1.697,1696.97
+Lesson Generation (3 Pages),Cache Hit,1,3e-05,0.029
+Lesson Generation (3 Pages),Cache Hit,2,1e-05,0.011
+Lesson Generation (3 Pages),Cache Hit,3,1e-05,0.008
+Lesson Generation (3 Pages),Cache Hit,4,1e-05,0.007
+Lesson Generation (3 Pages),Cache Hit,5,1e-05,0.007
+Lesson Generation (3 Pages),Cache Hit,6,1e-05,0.007
+Lesson Generation (3 Pages),Cache Hit,7,1e-05,0.007
+Lesson Generation (3 Pages),Cache Hit,8,1e-05,0.007
+Lesson Generation (3 Pages),Cache Hit,9,1e-05,0.006
+Lesson Generation (3 Pages),Cache Hit,10,1e-05,0.007
+Lesson Generation (3 Pages),Local Inference (ml_backend),1,0.0359,35.89
+Lesson Generation (3 Pages),Local Inference (ml_backend),2,0.0353,35.31
+Lesson Generation (3 Pages),Local Inference (ml_backend),3,0.0356,35.61
+Lesson Generation (3 Pages),Local Inference (ml_backend),4,0.0353,35.32
+Lesson Generation (3 Pages),Local Inference (ml_backend),5,0.0359,35.94
+Lesson Generation (3 Pages),Local Inference (ml_backend),6,0.0356,35.62
+Lesson Generation (3 Pages),Local Inference (ml_backend),7,0.0352,35.22
+Lesson Generation (3 Pages),Local Inference (ml_backend),8,0.0356,35.64
+Lesson Generation (3 Pages),Local Inference (ml_backend),9,0.0356,35.62
+Lesson Generation (3 Pages),Local Inference (ml_backend),10,0.0356,35.57
+Lesson Generation (3 Pages),Primary Cloud (Gemini Flash),1,2.7785,2778.54
+Lesson Generation (3 Pages),Primary Cloud (Gemini Flash),2,2.1473,2147.31
+Lesson Generation (3 Pages),Primary Cloud (Gemini Flash),3,2.2462,2246.24
+Lesson Generation (3 Pages),Primary Cloud (Gemini Flash),4,2.4178,2417.83
+Lesson Generation (3 Pages),Primary Cloud (Gemini Flash),5,2.1741,2174.07
+Lesson Generation (3 Pages),Primary Cloud (Gemini Flash),6,2.8381,2838.1
+Lesson Generation (3 Pages),Primary Cloud (Gemini Flash),7,1.8751,1875.07
+Lesson Generation (3 Pages),Primary Cloud (Gemini Flash),8,3.1229,3122.91
+Lesson Generation (3 Pages),Primary Cloud (Gemini Flash),9,2.2973,2297.32
+Lesson Generation (3 Pages),Primary Cloud (Gemini Flash),10,2.1063,2106.34
+Quiz Generation (5 MCQs),Cache Hit,1,0.00011,0.113
+Quiz Generation (5 MCQs),Cache Hit,2,4e-05,0.044
+Quiz Generation (5 MCQs),Cache Hit,3,6e-05,0.058
+Quiz Generation (5 MCQs),Cache Hit,4,4e-05,0.038
+Quiz Generation (5 MCQs),Cache Hit,5,4e-05,0.036
+Quiz Generation (5 MCQs),Cache Hit,6,3e-05,0.034
+Quiz Generation (5 MCQs),Cache Hit,7,4e-05,0.036
+Quiz Generation (5 MCQs),Cache Hit,8,3e-05,0.033
+Quiz Generation (5 MCQs),Cache Hit,9,3e-05,0.031
+Quiz Generation (5 MCQs),Cache Hit,10,3e-05,0.029
+Quiz Generation (5 MCQs),Local Inference (ml_backend),1,0.0206,20.62
+Quiz Generation (5 MCQs),Local Inference (ml_backend),2,0.0203,20.25
+Quiz Generation (5 MCQs),Local Inference (ml_backend),3,0.0205,20.51
+Quiz Generation (5 MCQs),Local Inference (ml_backend),4,0.0203,20.33
+Quiz Generation (5 MCQs),Local Inference (ml_backend),5,0.0206,20.59
+Quiz Generation (5 MCQs),Local Inference (ml_backend),6,0.0206,20.63
+Quiz Generation (5 MCQs),Local Inference (ml_backend),7,0.0206,20.63
+Quiz Generation (5 MCQs),Local Inference (ml_backend),8,0.0207,20.66
+Quiz Generation (5 MCQs),Local Inference (ml_backend),9,0.0203,20.3
+Quiz Generation (5 MCQs),Local Inference (ml_backend),10,0.0207,20.74
+Quiz Generation (5 MCQs),Primary Cloud (Gemini Flash),1,1.8193,1819.26
+Quiz Generation (5 MCQs),Primary Cloud (Gemini Flash),2,1.5313,1531.27
+Quiz Generation (5 MCQs),Primary Cloud (Gemini Flash),3,1.4432,1443.17
+Quiz Generation (5 MCQs),Primary Cloud (Gemini Flash),4,1.4523,1452.29
+Quiz Generation (5 MCQs),Primary Cloud (Gemini Flash),5,1.6215,1621.45
+Quiz Generation (5 MCQs),Primary Cloud (Gemini Flash),6,1.5462,1546.21
+Quiz Generation (5 MCQs),Primary Cloud (Gemini Flash),7,1.4608,1460.79
+Quiz Generation (5 MCQs),Primary Cloud (Gemini Flash),8,1.43,1430.03
+Quiz Generation (5 MCQs),Primary Cloud (Gemini Flash),9,1.4906,1490.58
+Quiz Generation (5 MCQs),Primary Cloud (Gemini Flash),10,1.8492,1849.21
+Document RAG Search & Retrieval,Cache Hit,1,8e-05,0.076
+Document RAG Search & Retrieval,Cache Hit,2,3e-05,0.028
+Document RAG Search & Retrieval,Cache Hit,3,2e-05,0.02
+Document RAG Search & Retrieval,Cache Hit,4,2e-05,0.019
+Document RAG Search & Retrieval,Cache Hit,5,2e-05,0.018
+Document RAG Search & Retrieval,Cache Hit,6,2e-05,0.018
+Document RAG Search & Retrieval,Cache Hit,7,4e-05,0.04
+Document RAG Search & Retrieval,Cache Hit,8,2e-05,0.02
+Document RAG Search & Retrieval,Cache Hit,9,2e-05,0.018
+Document RAG Search & Retrieval,Cache Hit,10,2e-05,0.018
+Document RAG Search & Retrieval,Local Inference (ml_backend),1,0.0449,44.92
+Document RAG Search & Retrieval,Local Inference (ml_backend),2,0.0411,41.05
+Document RAG Search & Retrieval,Local Inference (ml_backend),3,0.033,33.01
+Document RAG Search & Retrieval,Local Inference (ml_backend),4,0.0339,33.86
+Document RAG Search & Retrieval,Local Inference (ml_backend),5,0.0327,32.74
+Document RAG Search & Retrieval,Local Inference (ml_backend),6,0.0324,32.41
+Document RAG Search & Retrieval,Local Inference (ml_backend),7,0.0329,32.87
+Document RAG Search & Retrieval,Local Inference (ml_backend),8,0.0345,34.48
+Document RAG Search & Retrieval,Local Inference (ml_backend),9,0.0327,32.68
+Document RAG Search & Retrieval,Local Inference (ml_backend),10,0.0331,33.06
+Document RAG Search & Retrieval,Primary Cloud (Gemini Flash),1,0.0387,38.68
+Document RAG Search & Retrieval,Primary Cloud (Gemini Flash),2,0.0341,34.05
+Document RAG Search & Retrieval,Primary Cloud (Gemini Flash),3,0.0353,35.33
+Document RAG Search & Retrieval,Primary Cloud (Gemini Flash),4,0.0487,48.73
+Document RAG Search & Retrieval,Primary Cloud (Gemini Flash),5,0.0409,40.86
+Document RAG Search & Retrieval,Primary Cloud (Gemini Flash),6,0.0301,30.06
+Document RAG Search & Retrieval,Primary Cloud (Gemini Flash),7,0.0338,33.77
+Document RAG Search & Retrieval,Primary Cloud (Gemini Flash),8,0.0401,40.15
+Document RAG Search & Retrieval,Primary Cloud (Gemini Flash),9,0.0317,31.66
+Document RAG Search & Retrieval,Primary Cloud (Gemini Flash),10,0.0421,42.08
+Chat Assistant (First Token),Cache Hit,1,4e-05,0.044
+Chat Assistant (First Token),Cache Hit,2,2e-05,0.018
+Chat Assistant (First Token),Cache Hit,3,1e-05,0.013
+Chat Assistant (First Token),Cache Hit,4,1e-05,0.012
+Chat Assistant (First Token),Cache Hit,5,1e-05,0.012
+Chat Assistant (First Token),Cache Hit,6,1e-05,0.013
+Chat Assistant (First Token),Cache Hit,7,1e-05,0.013
+Chat Assistant (First Token),Cache Hit,8,1e-05,0.013
+Chat Assistant (First Token),Cache Hit,9,1e-05,0.013
+Chat Assistant (First Token),Cache Hit,10,1e-05,0.013
+Chat Assistant (First Token),Local Inference (ml_backend),1,0.0181,18.12
+Chat Assistant (First Token),Local Inference (ml_backend),2,0.0181,18.12
+Chat Assistant (First Token),Local Inference (ml_backend),3,0.0186,18.62
+Chat Assistant (First Token),Local Inference (ml_backend),4,0.0183,18.34
+Chat Assistant (First Token),Local Inference (ml_backend),5,0.0181,18.15
+Chat Assistant (First Token),Local Inference (ml_backend),6,0.0184,18.44
+Chat Assistant (First Token),Local Inference (ml_backend),7,0.0184,18.39
+Chat Assistant (First Token),Local Inference (ml_backend),8,0.0183,18.28
+Chat Assistant (First Token),Local Inference (ml_backend),9,0.0181,18.12
+Chat Assistant (First Token),Local Inference (ml_backend),10,0.0186,18.58
+Chat Assistant (First Token),Primary Cloud (Gemini Flash),1,0.3801,380.08
+Chat Assistant (First Token),Primary Cloud (Gemini Flash),2,0.3612,361.19
+Chat Assistant (First Token),Primary Cloud (Gemini Flash),3,0.3594,359.45
+Chat Assistant (First Token),Primary Cloud (Gemini Flash),4,0.2108,210.76
+Chat Assistant (First Token),Primary Cloud (Gemini Flash),5,0.3631,363.14
+Chat Assistant (First Token),Primary Cloud (Gemini Flash),6,0.3533,353.25
+Chat Assistant (First Token),Primary Cloud (Gemini Flash),7,0.3408,340.76
+Chat Assistant (First Token),Primary Cloud (Gemini Flash),8,0.4228,422.81
+Chat Assistant (First Token),Primary Cloud (Gemini Flash),9,0.2981,298.1
+Chat Assistant (First Token),Primary Cloud (Gemini Flash),10,0.3145,314.46
+Chat Assistant (Full Response),Cache Hit,1,4e-05,0.04
+Chat Assistant (Full Response),Cache Hit,2,2e-05,0.016
+Chat Assistant (Full Response),Cache Hit,3,1e-05,0.012
+Chat Assistant (Full Response),Cache Hit,4,1e-05,0.013
+Chat Assistant (Full Response),Cache Hit,5,1e-05,0.012
+Chat Assistant (Full Response),Cache Hit,6,1e-05,0.012
+Chat Assistant (Full Response),Cache Hit,7,1e-05,0.011
+Chat Assistant (Full Response),Cache Hit,8,1e-05,0.012
+Chat Assistant (Full Response),Cache Hit,9,1e-05,0.011
+Chat Assistant (Full Response),Cache Hit,10,1e-05,0.011
+Chat Assistant (Full Response),Local Inference (ml_backend),1,0.0184,18.41
+Chat Assistant (Full Response),Local Inference (ml_backend),2,0.0185,18.49
+Chat Assistant (Full Response),Local Inference (ml_backend),3,0.0184,18.43
+Chat Assistant (Full Response),Local Inference (ml_backend),4,0.0184,18.36
+Chat Assistant (Full Response),Local Inference (ml_backend),5,0.0182,18.23
+Chat Assistant (Full Response),Local Inference (ml_backend),6,0.0186,18.57
+Chat Assistant (Full Response),Local Inference (ml_backend),7,0.0183,18.33
+Chat Assistant (Full Response),Local Inference (ml_backend),8,0.0182,18.15
+Chat Assistant (Full Response),Local Inference (ml_backend),9,0.0182,18.25
+Chat Assistant (Full Response),Local Inference (ml_backend),10,0.0184,18.42
+Chat Assistant (Full Response),Primary Cloud (Gemini Flash),1,1.5766,1576.63
+Chat Assistant (Full Response),Primary Cloud (Gemini Flash),2,1.6765,1676.48
+Chat Assistant (Full Response),Primary Cloud (Gemini Flash),3,2.1441,2144.08
+Chat Assistant (Full Response),Primary Cloud (Gemini Flash),4,1.5536,1553.62
+Chat Assistant (Full Response),Primary Cloud (Gemini Flash),5,1.9937,1993.69
+Chat Assistant (Full Response),Primary Cloud (Gemini Flash),6,2.0292,2029.23
+Chat Assistant (Full Response),Primary Cloud (Gemini Flash),7,1.7485,1748.5
+Chat Assistant (Full Response),Primary Cloud (Gemini Flash),8,1.9044,1904.43
+Chat Assistant (Full Response),Primary Cloud (Gemini Flash),9,2.089,2089.02
+Chat Assistant (Full Response),Primary Cloud (Gemini Flash),10,1.8546,1854.58
+Text Summarization,Cache Hit,1,7e-05,0.066
+Text Summarization,Cache Hit,2,2e-05,0.025
+Text Summarization,Cache Hit,3,2e-05,0.019
+Text Summarization,Cache Hit,4,2e-05,0.017
+Text Summarization,Cache Hit,5,4e-05,0.035
+Text Summarization,Cache Hit,6,2e-05,0.018
+Text Summarization,Cache Hit,7,2e-05,0.016
+Text Summarization,Cache Hit,8,2e-05,0.015
+Text Summarization,Cache Hit,9,1e-05,0.015
+Text Summarization,Cache Hit,10,2e-05,0.016
+Text Summarization,Local Inference (ml_backend),1,0.0154,15.4
+Text Summarization,Local Inference (ml_backend),2,0.0156,15.59
+Text Summarization,Local Inference (ml_backend),3,0.0154,15.37
+Text Summarization,Local Inference (ml_backend),4,0.0156,15.64
+Text Summarization,Local Inference (ml_backend),5,0.0154,15.43
+Text Summarization,Local Inference (ml_backend),6,0.016,16.05
+Text Summarization,Local Inference (ml_backend),7,0.0155,15.49
+Text Summarization,Local Inference (ml_backend),8,0.0154,15.39
+Text Summarization,Local Inference (ml_backend),9,0.016,16.04
+Text Summarization,Local Inference (ml_backend),10,0.0158,15.78
+Text Summarization,Primary Cloud (Gemini Flash),1,1.0911,1091.12
+Text Summarization,Primary Cloud (Gemini Flash),2,0.8154,815.44
+Text Summarization,Primary Cloud (Gemini Flash),3,1.1527,1152.73
+Text Summarization,Primary Cloud (Gemini Flash),4,1.2082,1208.17
+Text Summarization,Primary Cloud (Gemini Flash),5,0.9965,996.52
+Text Summarization,Primary Cloud (Gemini Flash),6,0.9051,905.1
+Text Summarization,Primary Cloud (Gemini Flash),7,1.1006,1100.64
+Text Summarization,Primary Cloud (Gemini Flash),8,1.2327,1232.71
+Text Summarization,Primary Cloud (Gemini Flash),9,1.4037,1403.69
+Text Summarization,Primary Cloud (Gemini Flash),10,1.1914,1191.4
+Text Paraphrasing (3 Tones),Cache Hit,1,9e-05,0.088
+Text Paraphrasing (3 Tones),Cache Hit,2,4e-05,0.045
+Text Paraphrasing (3 Tones),Cache Hit,3,3e-05,0.032
+Text Paraphrasing (3 Tones),Cache Hit,4,3e-05,0.029
+Text Paraphrasing (3 Tones),Cache Hit,5,3e-05,0.029
+Text Paraphrasing (3 Tones),Cache Hit,6,3e-05,0.029
+Text Paraphrasing (3 Tones),Cache Hit,7,3e-05,0.032
+Text Paraphrasing (3 Tones),Cache Hit,8,3e-05,0.033
+Text Paraphrasing (3 Tones),Cache Hit,9,3e-05,0.032
+Text Paraphrasing (3 Tones),Cache Hit,10,3e-05,0.032
+Text Paraphrasing (3 Tones),Local Inference (ml_backend),1,0.0153,15.29
+Text Paraphrasing (3 Tones),Local Inference (ml_backend),2,0.0157,15.65
+Text Paraphrasing (3 Tones),Local Inference (ml_backend),3,0.0156,15.65
+Text Paraphrasing (3 Tones),Local Inference (ml_backend),4,0.0152,15.19
+Text Paraphrasing (3 Tones),Local Inference (ml_backend),5,0.0157,15.65
+Text Paraphrasing (3 Tones),Local Inference (ml_backend),6,0.0152,15.19
+Text Paraphrasing (3 Tones),Local Inference (ml_backend),7,0.0151,15.13
+Text Paraphrasing (3 Tones),Local Inference (ml_backend),8,0.0154,15.39
+Text Paraphrasing (3 Tones),Local Inference (ml_backend),9,0.0152,15.25
+Text Paraphrasing (3 Tones),Local Inference (ml_backend),10,0.0156,15.61
+Text Paraphrasing (3 Tones),Primary Cloud (Gemini Flash),1,1.3728,1372.84
+Text Paraphrasing (3 Tones),Primary Cloud (Gemini Flash),2,1.0674,1067.41
+Text Paraphrasing (3 Tones),Primary Cloud (Gemini Flash),3,1.1153,1115.28
+Text Paraphrasing (3 Tones),Primary Cloud (Gemini Flash),4,1.1983,1198.31
+Text Paraphrasing (3 Tones),Primary Cloud (Gemini Flash),5,1.0804,1080.36
+Text Paraphrasing (3 Tones),Primary Cloud (Gemini Flash),6,1.4017,1401.66
+Text Paraphrasing (3 Tones),Primary Cloud (Gemini Flash),7,0.9357,935.68
+Text Paraphrasing (3 Tones),Primary Cloud (Gemini Flash),8,1.5395,1539.47
+Text Paraphrasing (3 Tones),Primary Cloud (Gemini Flash),9,1.14,1139.99
+Text Paraphrasing (3 Tones),Primary Cloud (Gemini Flash),10,1.0476,1047.58

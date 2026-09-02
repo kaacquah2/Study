@@ -129,6 +129,14 @@
 	};
 </script>
 
+<svelte:window
+	onkeydown={(e) => {
+		if (e.key === 'Escape' && showToc) {
+			showToc = false;
+		}
+	}}
+/>
+
 <div
 	class="lesson-container gap-5 flex w-full flex-col transition-all duration-200 {zenMode
 		? 'inset-0 p-6 sm:p-12 fixed z-50 overflow-y-auto bg-bg'
@@ -154,6 +162,9 @@
 				<button
 					type="button"
 					onclick={() => (showToc = !showToc)}
+					aria-expanded={showToc}
+					aria-controls="lesson-toc-modal"
+					aria-label={`Table of contents: ${pages.length} pages`}
 					class="gap-1.5 px-3 py-1.5 text-xs font-semibold shadow-2xs inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-text hover:border-primary/50"
 				>
 					<span>📖 Contents</span>
@@ -170,40 +181,47 @@
 		<!-- Right: Tools (Zen Mode, Font Size, Audio, Regenerate) -->
 		<div class="gap-2 flex flex-wrap items-center">
 			<!-- Font Sizing Buttons -->
-			<div class="p-0.5 shadow-2xs flex items-center rounded-xl border border-border bg-surface">
+			<div
+				class="p-0.5 shadow-2xs flex items-center rounded-xl border border-border bg-surface"
+				role="group"
+				aria-label="Reading font size"
+			>
 				<button
 					type="button"
 					onclick={() => (fontSize = 'sm')}
+					aria-pressed={fontSize === 'sm'}
 					class="px-2 py-1 text-xs font-bold cursor-pointer rounded-lg transition-colors {fontSize ===
 					'sm'
 						? 'text-white bg-primary'
 						: 'text-text-muted hover:text-text'}"
 					title="Small font"
-					aria-label="Small font"
+					aria-label="Small font size"
 				>
 					A-
 				</button>
 				<button
 					type="button"
 					onclick={() => (fontSize = 'md')}
+					aria-pressed={fontSize === 'md'}
 					class="px-2 py-1 text-xs font-bold cursor-pointer rounded-lg transition-colors {fontSize ===
 					'md'
 						? 'text-white bg-primary'
 						: 'text-text-muted hover:text-text'}"
 					title="Medium font"
-					aria-label="Medium font"
+					aria-label="Medium font size"
 				>
 					A
 				</button>
 				<button
 					type="button"
 					onclick={() => (fontSize = 'lg')}
+					aria-pressed={fontSize === 'lg'}
 					class="px-2 py-1 text-xs font-bold cursor-pointer rounded-lg transition-colors {fontSize ===
 					'lg'
 						? 'text-white bg-primary'
 						: 'text-text-muted hover:text-text'}"
 					title="Large font"
-					aria-label="Large font"
+					aria-label="Large font size"
 				>
 					A+
 				</button>
@@ -213,6 +231,8 @@
 			<button
 				type="button"
 				onclick={() => (zenMode = !zenMode)}
+				aria-pressed={zenMode}
+				aria-label={zenMode ? 'Exit Zen Focus Mode' : 'Enter Distraction-Free Zen Focus Mode'}
 				class="gap-1.5 px-3 py-1.5 text-xs font-bold shadow-2xs inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-text transition-colors hover:border-primary"
 				title={zenMode ? 'Exit Zen Focus Mode' : 'Enter Distraction-Free Zen Focus Mode'}
 			>
@@ -225,16 +245,19 @@
 					type="button"
 					onclick={onRegeneratePage}
 					disabled={isRegenerating}
+					aria-label="Regenerate this specific lesson page with AI"
 					class="gap-1.5 px-3 py-1.5 text-xs font-bold hover:text-white inline-flex cursor-pointer items-center rounded-xl border border-primary/40 bg-primary-soft/50 text-primary transition-all hover:bg-primary disabled:opacity-50"
 					title="Regenerate this specific lesson page with AI"
 				>
 					{#if isRegenerating}
 						<span
 							class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"
+							aria-hidden="true"
 						></span>
 						<span>Regenerating...</span>
 					{:else}
-						<span>✨ Regenerate Page</span>
+						<span aria-hidden="true">✨</span>
+						<span>Regenerate Page</span>
 					{/if}
 				</button>
 			{/if}
@@ -248,7 +271,8 @@
 					title="Report an issue or flag content"
 					aria-label="Flag or report content issue"
 				>
-					<span>🚩 Flag</span>
+					<span aria-hidden="true">🚩</span>
+					<span>Flag</span>
 				</button>
 			{/if}
 		</div>
@@ -257,18 +281,20 @@
 	<!-- Degraded Tier Provenance Notice (if failover occurred) -->
 	{#if provenance && provenance.degradedTier}
 		<div
+			role="status"
 			class="border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-semibold text-amber-300 shadow-2xs flex items-center justify-between rounded-xl border {zenMode
 				? 'max-w-4xl mx-auto w-full'
 				: ''}"
 		>
 			<div class="gap-2 flex items-center">
-				<span>⚡</span>
+				<span aria-hidden="true">⚡</span>
 				<span>Generated with lightweight model tier ({provenance.provider}).</span>
 			</div>
 			{#if onRegeneratePage}
 				<button
 					type="button"
 					onclick={onRegeneratePage}
+					aria-label="Regenerate lesson page with full quality AI"
 					class="text-xs font-bold text-amber-300 hover:text-amber-200 cursor-pointer underline"
 				>
 					Regenerate with Full AI
@@ -280,6 +306,10 @@
 	<!-- Table of Contents Flyout Modal -->
 	{#if showToc}
 		<div
+			id="lesson-toc-modal"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Lesson outline table of contents"
 			class="gap-2 rounded-2xl p-4 flex flex-col border border-border bg-surface shadow-lg {zenMode
 				? 'max-w-4xl mx-auto w-full'
 				: ''}"
@@ -289,29 +319,33 @@
 				<button
 					type="button"
 					onclick={() => (showToc = false)}
+					aria-label="Close table of contents"
 					class="text-xs cursor-pointer text-text-muted hover:text-text"
 				>
 					✕
 				</button>
 			</div>
-			<div class="gap-1.5 flex flex-col">
+			<div class="gap-1.5 flex flex-col" role="list">
 				{#each pages as page, idx (page.order || idx)}
-					<button
-						type="button"
-						onclick={() => {
-							onPageChange(idx);
-							showToc = false;
-						}}
-						class="px-3 py-2 text-xs flex cursor-pointer items-center justify-between rounded-xl text-left transition-colors {idx ===
-						currentPageIndex
-							? 'font-bold text-white shadow-xs bg-primary'
-							: 'text-text hover:bg-surface-muted'}"
-					>
-						<span class="truncate">{idx + 1}. {page.heading || `Page ${idx + 1}`}</span>
-						{#if page.subheading}
-							<span class="ml-2 truncate text-[10px] opacity-75">{page.subheading}</span>
-						{/if}
-					</button>
+					<div role="listitem">
+						<button
+							type="button"
+							onclick={() => {
+								onPageChange(idx);
+								showToc = false;
+							}}
+							aria-current={idx === currentPageIndex ? 'page' : undefined}
+							class="px-3 py-2 text-xs flex w-full cursor-pointer items-center justify-between rounded-xl text-left transition-colors {idx ===
+							currentPageIndex
+								? 'font-bold text-white shadow-xs bg-primary'
+								: 'text-text hover:bg-surface-muted'}"
+						>
+							<span class="truncate">{idx + 1}. {page.heading || `Page ${idx + 1}`}</span>
+							{#if page.subheading}
+								<span class="ml-2 truncate text-[10px] opacity-75">{page.subheading}</span>
+							{/if}
+						</button>
+					</div>
 				{/each}
 			</div>
 		</div>
@@ -386,6 +420,7 @@
 			type="button"
 			onclick={handlePrevPage}
 			disabled={currentPageIndex === 0}
+			aria-label="Previous lesson page"
 			class="gap-2 rounded-2xl px-5 py-3 text-xs font-bold shadow-2xs inline-flex cursor-pointer items-center border border-border bg-surface text-text transition-all hover:border-primary disabled:cursor-not-allowed disabled:opacity-40"
 		>
 			<span>&larr; Previous Page</span>
@@ -394,6 +429,7 @@
 		<button
 			type="button"
 			onclick={handleNextPage}
+			aria-label={currentPageIndex < pages.length - 1 ? 'Next lesson page' : 'Complete lesson'}
 			class="gap-2 rounded-2xl px-6 py-3 text-xs font-bold text-white inline-flex cursor-pointer items-center bg-primary shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-95"
 		>
 			<span>{currentPageIndex < pages.length - 1 ? 'Next Page &rarr;' : 'Complete Lesson 🎉'}</span>

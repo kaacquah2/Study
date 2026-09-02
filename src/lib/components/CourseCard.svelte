@@ -20,6 +20,7 @@
 		progress?: { completed: number; total: number };
 		onDelete?: (id: string) => void;
 		onShare: (id: string) => void;
+		onFork?: (id: string) => void;
 	}
 
 	let props: Props = $props();
@@ -40,6 +41,7 @@
 	let course = $derived(courseObj);
 	let onDelete = $derived(props.onDelete || (() => {}));
 	let onShare = $derived(props.onShare);
+	let onFork = $derived(props.onFork);
 
 	// Compute completion percent
 	let completed = $derived(course.progress?.completed || 0);
@@ -105,7 +107,15 @@
 	};
 </script>
 
-<svelte:window onclick={handleDocumentClick} />
+<svelte:window
+	onclick={handleDocumentClick}
+	onkeydown={(e) => {
+		if (e.key === 'Escape') {
+			if (showMenu) showMenu = false;
+			if (showDeleteConfirmModal) showDeleteConfirmModal = false;
+		}
+	}}
+/>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
@@ -125,8 +135,9 @@
 			{#if course.status === 'building'}
 				<span
 					class="gap-1.5 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-primary-soft text-[10px] text-primary uppercase"
+					aria-label="Status: Building course"
 				>
-					<span class="h-1.5 w-1.5 relative flex">
+					<span class="h-1.5 w-1.5 relative flex" aria-hidden="true">
 						<span
 							class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
 						></span>
@@ -137,18 +148,21 @@
 			{:else if course.status === 'ready'}
 				<span
 					class="gap-1 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-success-soft text-[10px] text-success uppercase"
+					aria-label="Status: Course ready"
 				>
 					Ready
 				</span>
 			{:else if course.status === 'failed'}
 				<span
 					class="gap-1 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-danger-soft text-[10px] text-danger uppercase"
+					aria-label="Status: Course generation failed"
 				>
 					Failed
 				</span>
 			{:else}
 				<span
 					class="gap-1 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-surface-muted text-[10px] text-text-muted uppercase"
+					aria-label="Status: Draft course"
 				>
 					Draft
 				</span>
@@ -160,7 +174,9 @@
 			<button
 				type="button"
 				onclick={toggleMenu}
-				aria-label="Course options menu"
+				aria-label={`Course options for ${course.title}`}
+				aria-haspopup="menu"
+				aria-expanded={showMenu}
 				class="h-7 w-7 flex items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-muted hover:text-text"
 			>
 				<svg
@@ -172,6 +188,7 @@
 					stroke-linecap="round"
 					stroke-linejoin="round"
 					class="h-4 w-4"
+					aria-hidden="true"
 				>
 					<circle cx="12" cy="12" r="1" />
 					<circle cx="12" cy="5" r="1" />
@@ -182,10 +199,13 @@
 			<!-- Dropdown Menu -->
 			{#if showMenu}
 				<div
+					role="menu"
+					aria-label={`Options menu for ${course.title}`}
 					class="right-0 mt-1 w-36 p-1 absolute top-full z-20 rounded-md border border-border bg-surface shadow-lg"
 				>
 					<button
 						type="button"
+						role="menuitem"
 						onclick={(e) => {
 							e.stopPropagation();
 							showMenu = false;
@@ -202,6 +222,7 @@
 							stroke-linecap="round"
 							stroke-linejoin="round"
 							class="h-3.5 w-3.5"
+							aria-hidden="true"
 							><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle
 								cx="18"
 								cy="19"
@@ -216,8 +237,42 @@
 						Share
 					</button>
 
+					{#if onFork}
+						<button
+							type="button"
+							role="menuitem"
+							onclick={(e) => {
+								e.stopPropagation();
+								showMenu = false;
+								onFork(course.id);
+							}}
+							disabled={course.status !== 'ready'}
+							title={course.status !== 'ready'
+								? 'Course must be ready to duplicate'
+								: 'Duplicate this course into your library'}
+							class="gap-2 rounded px-3 py-1.5 text-xs font-semibold flex w-full items-center text-text transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="h-3.5 w-3.5"
+								aria-hidden="true"
+								><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path
+									d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+								/></svg
+							>
+							Duplicate
+						</button>
+					{/if}
+
 					<button
 						type="button"
+						role="menuitem"
 						onclick={(e) => {
 							e.stopPropagation();
 							triggerDelete();
@@ -233,6 +288,7 @@
 							stroke-linecap="round"
 							stroke-linejoin="round"
 							class="h-3.5 w-3.5"
+							aria-hidden="true"
 							><polyline points="3 6 5 6 21 6" /><path
 								d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
 							/><line x1="10" y1="11" x2="10" y2="17" /><line
@@ -275,6 +331,11 @@
 
 		<!-- Progress Bar -->
 		<div
+			role="progressbar"
+			aria-valuenow={percent}
+			aria-valuemin={0}
+			aria-valuemax={100}
+			aria-label={`Course progress for ${course.title}: ${percent}% complete`}
 			class="mb-4 h-1.5 w-full overflow-hidden rounded-full border border-border/10 bg-surface-muted"
 		>
 			<div
@@ -290,6 +351,11 @@
 		<!-- Start Learning Button -->
 		<a
 			href={`/app/courses/${course.id}`}
+			aria-label={percent === 0
+				? `Start learning course: ${course.title}`
+				: percent === 100
+					? `Review course: ${course.title}`
+					: `Resume learning course: ${course.title} (${percent}% complete)`}
 			class="px-4 py-3 text-xs font-bold hover:text-white flex w-full items-center justify-center rounded-md bg-primary-soft text-primary shadow-sm transition-all duration-180 hover:bg-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
 		>
 			{#if percent === 0}
@@ -305,13 +371,20 @@
 
 <!-- Delete Confirmation Modal Dialog -->
 {#if showDeleteConfirmModal}
-	<div class="inset-0 bg-black/60 p-4 backdrop-blur-xs fixed z-50 flex items-center justify-center">
+	<div
+		class="inset-0 bg-black/60 p-4 backdrop-blur-xs fixed z-50 flex items-center justify-center"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="delete-course-dialog-title"
+	>
 		<div
 			class="max-w-sm gap-4 rounded-2xl p-6 shadow-2xl flex w-full flex-col border border-border bg-surface"
 		>
 			<div class="gap-3 flex items-center text-danger">
-				<span class="text-2xl">⚠️</span>
-				<h3 class="font-display text-base font-bold">Delete Course?</h3>
+				<span class="text-2xl" aria-hidden="true">⚠️</span>
+				<h3 id="delete-course-dialog-title" class="font-display text-base font-bold">
+					Delete Course?
+				</h3>
 			</div>
 
 			<p class="text-xs leading-relaxed text-text-muted">
@@ -331,6 +404,7 @@
 				<button
 					type="button"
 					onclick={confirmDelete}
+					aria-label={`Confirm delete course ${course.title}`}
 					class="px-4 py-2 text-xs font-bold text-white cursor-pointer rounded-xl bg-danger shadow-sm hover:bg-danger/90 active:scale-95"
 				>
 					Delete Course

@@ -141,6 +141,7 @@
 	<!-- Celebration Graphic -->
 	<div
 		class="mb-6 h-20 w-20 animate-bounce rounded-3xl from-amber-400 to-orange-500 text-white shadow-orange-500/30 relative flex items-center justify-center bg-linear-to-br shadow-lg"
+		aria-hidden="true"
 	>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -167,6 +168,8 @@
 	<!-- Streak Badge -->
 	{#if streakCount !== undefined && streakCount > 0}
 		<div
+			role="status"
+			aria-label={`Streak maintained: ${streakCount} day${streakCount > 1 ? 's' : ''}`}
 			class="mb-6 gap-2 border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-500 inline-flex items-center rounded-full border shadow-sm"
 		>
 			<span>🔥 Streak Maintained! {streakCount} Day{streakCount > 1 ? 's' : ''}</span>
@@ -175,7 +178,7 @@
 
 	<!-- Earned Badges Strip -->
 	{#if earnedBadges.length > 0}
-		<div class="mb-6 flex flex-col items-center">
+		<div class="mb-6 flex flex-col items-center" role="region" aria-label="Newly unlocked badges">
 			<span class="mb-2 font-bold tracking-wider text-[11px] text-text-muted uppercase"
 				>Newly Unlocked Badges</span
 			>
@@ -184,7 +187,7 @@
 					<span
 						class="gap-1.5 border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-400 shadow-xs inline-flex items-center rounded-xl border"
 					>
-						<span>🏆</span>
+						<span aria-hidden="true">🏆</span>
 						{badge}
 					</span>
 				{/each}
@@ -198,7 +201,7 @@
 			class="my-3 max-w-xl gap-4 rounded-2xl border-amber-500/40 bg-amber-500/10 p-4 shadow-xs flex w-full items-center justify-between border text-left"
 		>
 			<div class="gap-3 flex items-center">
-				<span class="text-2xl">🧠</span>
+				<span class="text-2xl" aria-hidden="true">🧠</span>
 				<div>
 					<h4 class="font-display text-xs font-bold text-text">Reinforce Missed Concepts</h4>
 					<p class="text-[11px] text-text-muted">
@@ -213,9 +216,10 @@
 				type="button"
 				onclick={handleDrillMissedConcepts}
 				disabled={isSyncingMissedCards}
+				aria-label={`Drill ${missedItems.length} missed concepts in Spaced Repetition review`}
 				class="gap-1.5 bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-xs hover:bg-amber-400 inline-flex shrink-0 cursor-pointer items-center rounded-xl active:scale-95 disabled:opacity-50"
 			>
-				<span>{isSyncingMissedCards ? 'Syncing...' : '🧠 Drill in FSRS &rarr;'}</span>
+				<span>{isSyncingMissedCards ? 'Syncing...' : '🧠 Drill in FSRS →'}</span>
 			</button>
 		</div>
 	{/if}
@@ -226,6 +230,9 @@
 			<button
 				type="button"
 				onclick={() => (showQuizReview = !showQuizReview)}
+				aria-expanded={showQuizReview}
+				aria-controls="quiz-review-breakdown"
+				aria-label="Toggle review of all quiz answers and explanations"
 				class="px-4 py-3 text-xs font-bold flex w-full cursor-pointer items-center justify-between rounded-xl border border-border bg-surface text-text hover:border-primary/50"
 			>
 				<span class="gap-2 flex items-center">
@@ -236,6 +243,9 @@
 
 			{#if showQuizReview}
 				<div
+					id="quiz-review-breakdown"
+					role="region"
+					aria-label="Quiz answers review details"
 					class="mt-3 max-h-96 gap-3 p-4 flex flex-col overflow-y-auto rounded-xl border border-border bg-surface-muted/40"
 				>
 					{#each quizReviewItems as item, idx (idx)}
@@ -274,6 +284,8 @@
 								{#if !isCorrect}
 									{#if explanations[idx]}
 										<div
+											role="region"
+											aria-label="AI mistake explanation"
 											class="mt-1.5 p-2.5 text-xs leading-relaxed rounded-md border border-primary/30 bg-primary-soft/40 text-text"
 										>
 											<span class="font-bold text-primary">🤖 AI Detailed Mistake Explanation:</span
@@ -285,9 +297,10 @@
 											type="button"
 											onclick={() => fetchExplanation(idx, item)}
 											disabled={explainingIndex === idx}
+											aria-label={`Explain why question ${idx + 1} was incorrect using AI`}
 											class="mt-1 gap-1 font-bold inline-flex cursor-pointer items-center text-[11px] text-primary hover:underline disabled:opacity-50"
 										>
-											<span>💡</span>
+											<span aria-hidden="true">💡</span>
 											<span
 												>{explainingIndex === idx
 													? 'Generating Explanation...'
@@ -309,7 +322,7 @@
 		<div
 			class="mb-6 max-w-md rounded-2xl border-amber-500/30 bg-amber-500/5 p-6 w-full border text-center shadow-md"
 		>
-			<div class="mb-2 text-2xl">📜</div>
+			<div class="mb-2 text-2xl" aria-hidden="true">📜</div>
 			<h3 class="font-display text-base font-bold text-text">Certificate of Completion</h3>
 			<p class="mt-1 text-xs text-text-muted">
 				Awarded to <strong>{certificate.studentName}</strong> for completing
@@ -326,6 +339,7 @@
 			<button
 				type="button"
 				onclick={onShareCertificate}
+				aria-label="Share course completion certificate"
 				class="gap-2 px-6 py-3.5 text-xs font-bold inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-surface text-text hover:border-primary/40 hover:text-primary active:scale-[0.98]"
 			>
 				<span>🔗 Share Achievement</span>
@@ -337,17 +351,19 @@
 			<button
 				type="button"
 				onclick={() => onNextModule(nextModuleId)}
+				aria-label={`Continue to next module: ${nextModuleTitle || 'Next Module'}`}
 				class="gap-2 px-8 py-3.5 text-xs font-bold text-white inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/20 transition-all duration-180 hover:bg-primary-hover active:scale-[0.98]"
 			>
-				<span>Continue to {nextModuleTitle || 'Next Module'} &rarr;</span>
+				<span>Continue to {nextModuleTitle || 'Next Module'} →</span>
 			</button>
 		{:else}
 			<button
 				type="button"
 				onclick={onContinue}
+				aria-label="Return to course overview"
 				class="gap-2 px-8 py-3.5 text-xs font-bold text-white inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/20 transition-all duration-180 hover:bg-primary-hover active:scale-[0.98]"
 			>
-				Return to Course Overview &rarr;
+				<span>Return to Course Overview →</span>
 			</button>
 		{/if}
 	</div>

@@ -2,10 +2,12 @@
 FastAPI ML Backend — main entry point.
 
 Endpoints:
-  GET  /healthcheck              — Check server + model load status
-  GET  /health                   — Container liveness probe
-  POST /summarize                — Summarize text (fine-tuned flan-t5)
-  POST /paraphrase               — Paraphrase text (fine-tuned flan-t5)
+  GET  /healthcheck              — Check server + model load status (authenticated)
+  GET  /health                   — Container probe (readiness by default, ?probe=liveness)
+  GET  /health/live              — Container HTTP liveness probe
+  GET  /health/ready             — Container ML model readiness probe
+  POST /summarize                — Summarize text (Flan-T5: base or fine-tuned checkpoint)
+  POST /paraphrase               — Paraphrase text (Flan-T5: base or fine-tuned checkpoint)
   POST /outline                  — Generate course outline (RAG + flan-t5-large)
   POST /lesson                   — Generate lesson pages  (RAG + flan-t5-large)
   POST /quiz                     — Generate quiz          (3-stage QG/DG pipeline)
@@ -25,13 +27,14 @@ import secrets
 import asyncio
 import logging
 import random
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from dotenv import load_dotenv
 
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -50,6 +53,7 @@ from schemas.types import (
     QuizRequest, QuizResponse, QuizQuestion,
     ChatRequest, ChatResponse, DocumentsRequest,
     HealthResponse, CompletionRequest, CompletionResponse,
+    ModelProvenanceInfo, ModelManifestResponse,
 )
 
 import models.summarizer as summarizer_model
@@ -58,7 +62,10 @@ import models.outline_generator as outline_model
 import models.lesson_generator as lesson_model
 import models.quiz_pipeline as quiz_model
 import models.chat_assistant as chat_model
-from models.model_registry import inference_lock, is_any_inference_busy, get_device_diagnostics, inference_start, inference_end
+from models.model_registry import (
+    inference_lock, is_any_inference_busy, get_device_diagnostics,
+    inference_start, inference_end, get_model_provenance_manifest,
+)
 from models.rag_pipeline import rag
 
 # ── Structured JSON Logging ────────────────────────────────────────────────────
@@ -189,6 +196,20 @@ _EAGER_WARMUP = os.getenv("EAGER_MODEL_WARMUP", "false").lower() in ("true", "1"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("ML backend server booted.")
+    manifest = get_model_provenance_manifest()
+    logger.info("======================================================================")
+    logger.info("AI STUDY BUDDY — MODEL PROVENANCE MANIFEST")
+    logger.info(f"System Operational Mode: {manifest['system_mode'].upper()}")
+    logger.info(
+        f"Fine-Tuned Checkpoints: {manifest['fine_tuned_count']} | "
+        f"Base Foundation: {manifest['base_count']} | "
+        f"Specialized: {manifest['specialized_count']}"
+    )
+    logger.info("----------------------------------------------------------------------")
+    for name, info in manifest["models"].items():
+        logger.info(f" • {name:<18}: {info['model_id']} [{info['tier'].upper()}]")
+    logger.info("======================================================================")
+
     if _EAGER_WARMUP:
         logger.info("Launching eager model warmup in background...")
         asyncio.create_task(_async_warmup_models())
@@ -210,9 +231,6 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 # ── X-Request-ID and Latency Middleware ─────────────────────────────────────────
-import time
-import psutil  # type: ignore[import-untyped]
-
 _METRICS_COUNTERS = {
     "total_requests": 0,
     "total_errors": 0,
@@ -335,55 +353,132 @@ async def _ensure_model_loaded(model_name: str, check_fn, load_fn):
                 await asyncio.to_thread(load_fn)
 
 
-# ── Health ─────────────────────────────────────────────────────────────────────
+# ── Health & Probe Subsystem ───────────────────────────────────────────────────
 
-@app.get("/healthcheck", response_model=HealthResponse, dependencies=[Depends(verify_api_key)], tags=["Health"])
-async def healthcheck():
-    # Dynamically update the status if is_loaded is true and we don't have an error recorded
-    for model_name, status in _MODEL_STATUS.items():
+def _evaluate_ml_readiness() -> tuple[bool, str, dict[str, bool], dict[str, str]]:
+    """
+    Evaluates ML subsystem readiness and model statuses.
+    Returns: (is_ready, status_string, models_loaded_map, errors_map)
+    """
+    models_loaded = {
+        "summarizer": summarizer_model.is_loaded(),
+        "paraphraser": paraphraser_model.is_loaded(),
+        "outline_generator": outline_model.is_loaded(),
+        "lesson_generator": lesson_model.is_loaded(),
+        "quiz_pipeline": quiz_model.is_loaded(),
+        "chat_assistant": chat_model.is_loaded(),
+        "rag_index": rag.has_documents(),
+    }
+
+    # Dynamically update the status map based on current is_loaded state
+    for model_name in ["summarizer", "paraphraser", "outline_generator", "lesson_generator", "quiz_pipeline", "chat_assistant"]:
+        status = _MODEL_STATUS.get(model_name, "pending")
         if not status.startswith("error"):
-            loaded = False
-            if model_name == "summarizer":
-                loaded = summarizer_model.is_loaded()
-            elif model_name == "paraphraser":
-                loaded = paraphraser_model.is_loaded()
-            elif model_name == "outline_generator":
-                loaded = outline_model.is_loaded()
-            elif model_name == "lesson_generator":
-                loaded = lesson_model.is_loaded()
-            elif model_name == "quiz_pipeline":
-                loaded = quiz_model.is_loaded()
-            elif model_name == "chat_assistant":
-                loaded = chat_model.is_loaded()
-            
-            if loaded:
+            if models_loaded[model_name]:
                 _MODEL_STATUS[model_name] = "ready"
             elif status == "ready":
                 _MODEL_STATUS[model_name] = "pending"
 
-    is_healthy = not any(status.startswith("error") for status in _MODEL_STATUS.values())
-    if _MODEL_STATUS["summarizer"].startswith("error") or _MODEL_STATUS["paraphraser"].startswith("error"):
-        is_healthy = False
-        
-    return HealthResponse(
-        status="ok" if is_healthy else "unhealthy",
-        models_loaded={
-            "summarizer": summarizer_model.is_loaded(),
-            "paraphraser": paraphraser_model.is_loaded(),
-            "outline_generator": outline_model.is_loaded(),
-            "lesson_generator": lesson_model.is_loaded(),
-            "quiz_pipeline": quiz_model.is_loaded(),
-            "chat_assistant": chat_model.is_loaded(),
-            "rag_index": rag.has_documents(),
-        },
-        inference_busy=is_any_inference_busy(),
-    )
+    errors = {name: status for name, status in _MODEL_STATUS.items() if status.startswith("error")}
+
+    # Critical models failure check (if any model encountered an error)
+    if errors:
+        return False, "unhealthy", models_loaded, errors
+
+    # If eager warmup is active, check if all required models have completed loading
+    if _EAGER_WARMUP:
+        pending_models = [name for name, status in _MODEL_STATUS.items() if status == "pending"]
+        if pending_models:
+            return False, "warming_up", models_loaded, {}
+
+    return True, "ready", models_loaded, {}
+
+
+@app.get("/health/live", tags=["Health"])
+@app.get("/health/liveness", tags=["Health"])
+async def health_liveness():
+    """Unauthenticated HTTP liveness probe — returns 200 as long as FastAPI process is alive."""
+    return {
+        "status": "alive",
+        "uptime_seconds": round(time.time() - _METRICS_COUNTERS["start_time"], 1),
+    }
+
+
+@app.get("/health/ready", tags=["Health"])
+@app.get("/health/readiness", tags=["Health"])
+async def health_readiness():
+    """
+    Unauthenticated ML readiness probe — returns 200 if ML subsystem is ready to serve inference,
+    or 503 if models are warming up or in an error state.
+    """
+    is_ready, status_str, models_loaded, errors = _evaluate_ml_readiness()
+
+    payload: dict[str, Any] = {
+        "status": status_str,
+        "ready": is_ready,
+        "models_loaded": models_loaded,
+        "inference_busy": is_any_inference_busy(),
+        "eager_warmup": _EAGER_WARMUP,
+    }
+    if errors:
+        payload["errors"] = errors
+
+    status_code = 200 if is_ready else 503
+    return JSONResponse(status_code=status_code, content=payload)
 
 
 @app.get("/health", tags=["Health"])
-async def health_alias():
-    """Simple standard /health endpoint for container probes."""
-    return {"status": "ok"}
+async def health_probe(probe: str = "readiness"):
+    """
+    Standard container probe endpoint.
+    Defaults to 'readiness' probe (returning 200 when ready, 503 when warming/errored),
+    or 'liveness' probe via ?probe=liveness.
+    """
+    if probe.lower() == "liveness":
+        return await health_liveness()
+    return await health_readiness()
+
+
+@app.get("/healthcheck", response_model=HealthResponse, dependencies=[Depends(verify_api_key)], tags=["Health"])
+async def healthcheck(response: Response):
+    """
+    Protected detailed ML healthcheck & diagnostic endpoint (requires X-API-Key).
+    Used by SvelteKit backend client and administrative analytics dashboards.
+    Returns HTTP 200 when fully ready, or HTTP 503 when warming up or errored.
+    """
+    is_ready, status_str, models_loaded, errors = _evaluate_ml_readiness()
+    if not is_ready:
+        response.status_code = 503
+
+    manifest = get_model_provenance_manifest(models_loaded)
+    provenance_summary = {
+        "system_mode": manifest["system_mode"],
+        "fine_tuned_count": manifest["fine_tuned_count"],
+        "base_count": manifest["base_count"],
+        "specialized_count": manifest["specialized_count"],
+    }
+
+    return HealthResponse(
+        status="ok" if is_ready else status_str,
+        ready=is_ready,
+        models_loaded=models_loaded,
+        inference_busy=is_any_inference_busy(),
+        errors=errors if errors else None,
+        model_provenance=provenance_summary,
+    )
+
+
+@app.get("/models/info", response_model=ModelManifestResponse, dependencies=[Depends(verify_api_key)], tags=["Models"])
+@app.get("/api/models/info", response_model=ModelManifestResponse, dependencies=[Depends(verify_api_key)], tags=["Models"])
+async def get_models_info():
+    """
+    Protected model manifest & provenance inspection endpoint (requires X-API-Key).
+    Returns complete classification (base foundation vs fine-tuned domain checkpoints)
+    along with hardware diagnostics and runtime loaded statuses.
+    """
+    _, _, models_loaded, _ = _evaluate_ml_readiness()
+    manifest_data = get_model_provenance_manifest(models_loaded)
+    return ModelManifestResponse(**manifest_data)
 
 
 @app.get("/metrics", dependencies=[Depends(verify_api_key)], tags=["Health"])
@@ -392,8 +487,13 @@ def metrics():
     """Protected system, inference, and operational metrics endpoint."""
     import torch
     cuda_available = torch.cuda.is_available()
-    process = psutil.Process(os.getpid())
-    ram_mb = round(process.memory_info().rss / (1024 * 1024), 2)
+    ram_mb = None
+    try:
+        import psutil  # type: ignore[import-untyped]
+        process = psutil.Process(os.getpid())
+        ram_mb = round(process.memory_info().rss / (1024 * 1024), 2)
+    except Exception:
+        ram_mb = None
     uptime_sec = round(time.time() - _METRICS_COUNTERS["start_time"], 1)
 
     metrics_data: dict[str, Any] = {

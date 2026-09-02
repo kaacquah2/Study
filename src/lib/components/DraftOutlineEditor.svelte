@@ -241,7 +241,7 @@
 			>
 		</div>
 
-		<div class="gap-3 flex flex-col">
+		<div class="gap-3 flex flex-col" role="list" aria-label="Course modules outline">
 			{#each modules as mod, idx (mod.id || idx)}
 				<div
 					role="listitem"
@@ -258,6 +258,7 @@
 						<!-- Drag Handle -->
 						<div
 							class="flex cursor-grab items-center text-text-muted hover:text-text active:cursor-grabbing"
+							aria-hidden="true"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -278,6 +279,7 @@
 						<!-- Order Badge -->
 						<div
 							class="h-8 w-8 text-xs font-bold flex shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary"
+							aria-label={`Module number ${idx + 1}`}
 						>
 							{idx + 1}
 						</div>
@@ -289,6 +291,7 @@
 							<input
 								type="text"
 								bind:value={mod.title}
+								aria-label={`Module ${idx + 1} title`}
 								class="min-w-44 px-3 py-1.5 text-xs font-bold grow rounded-lg border border-border/60 bg-surface-muted/50 text-text focus:border-primary focus:outline-none"
 							/>
 
@@ -308,6 +311,7 @@
 						</div>
 						<textarea
 							bind:value={mod.summary}
+							aria-label={`Module ${idx + 1} summary`}
 							rows="2"
 							class="px-3 py-1.5 leading-relaxed w-full resize-none rounded-lg border border-border/40 bg-surface-muted/30 text-[11px] text-text-muted focus:border-primary focus:outline-none"
 						></textarea>
@@ -319,6 +323,7 @@
 							<button
 								type="button"
 								title="Regenerate this specific module with AI"
+								aria-label={`Regenerate module ${idx + 1}: ${mod.title} with AI`}
 								disabled={regeneratingModuleIndex !== null}
 								onclick={() => handleRegenerateSingleModule(idx)}
 								class="px-2 py-1 font-bold cursor-pointer rounded-lg text-[11px] text-primary hover:bg-primary-soft/80 disabled:opacity-30"
@@ -326,6 +331,7 @@
 								{#if regeneratingModuleIndex === idx}
 									<span
 										class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"
+										aria-hidden="true"
 									></span>
 								{:else}
 									✨ Regenerate
@@ -335,6 +341,7 @@
 						<button
 							type="button"
 							title="Move up"
+							aria-label={`Move module ${idx + 1} (${mod.title}) up`}
 							disabled={idx === 0}
 							onclick={() => moveModule(idx, idx - 1)}
 							class="p-1.5 cursor-pointer rounded-lg text-text-muted hover:bg-surface-muted hover:text-text disabled:opacity-30"
@@ -344,6 +351,7 @@
 						<button
 							type="button"
 							title="Move down"
+							aria-label={`Move module ${idx + 1} (${mod.title}) down`}
 							disabled={idx === modules.length - 1}
 							onclick={() => moveModule(idx, idx + 1)}
 							class="p-1.5 cursor-pointer rounded-lg text-text-muted hover:bg-surface-muted hover:text-text disabled:opacity-30"
@@ -353,6 +361,7 @@
 						<button
 							type="button"
 							title="Delete module"
+							aria-label={`Delete module ${idx + 1}: ${mod.title}`}
 							disabled={modules.length <= 1}
 							onclick={() => deleteModule(idx)}
 							class="p-1.5 cursor-pointer rounded-lg text-text-muted hover:bg-danger-soft hover:text-danger disabled:opacity-30"

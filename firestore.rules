@@ -84,6 +84,16 @@ service cloud.firestore {
         allow write: if false;
       }
     }
+
+    // Peer questions lifecycle security:
+    // - Anyone authenticated can read approved questions or their own submissions.
+    // - Authenticated users can create questions with status 'pending' where submittedBy matches auth.uid.
+    // - Direct client updates and deletes are disallowed (Admin SDK only).
+    match /peerQuestions/{questionId} {
+      allow read: if signedIn() && (resource.data.status == 'approved' || resource.data.submittedBy == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.submittedBy == request.auth.uid && request.resource.data.status == 'pending';
+      allow update, delete: if false;
+    }
   }
 }
 

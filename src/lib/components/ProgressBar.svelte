@@ -44,6 +44,11 @@
 
 	<div
 		class="w-full overflow-hidden rounded-full border border-border/40 bg-surface-muted {height}"
+		role="progressbar"
+		aria-valuenow={Math.round(safeProgress)}
+		aria-valuemin={0}
+		aria-valuemax={100}
+		aria-label={label || 'Progress'}
 	>
 		<div
 			class="ease-out h-full rounded-full transition-all duration-500 {accentGradient}"

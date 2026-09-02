@@ -32,6 +32,12 @@
 	};
 
 	const triggerConfetti = () => {
+		if (
+			typeof window !== 'undefined' &&
+			window.matchMedia('(prefers-reduced-motion: reduce)').matches
+		) {
+			return;
+		}
 		showConfetti = true;
 		setTimeout(() => (showConfetti = false), 900);
 	};
@@ -61,6 +67,8 @@
 </script>
 
 <div
+	role="region"
+	aria-label="Quick comprehension check"
 	class="my-6 rounded-2xl p-4 shadow-xs sm:p-5 relative border border-primary/30 bg-surface-muted/40"
 >
 	<!-- Confetti burst overlay -->
@@ -88,15 +96,19 @@
 		>
 	</div>
 
-	<h4 class="mt-3 text-xs leading-snug font-bold text-text">{prompt}</h4>
+	<h4 id="inline-check-prompt" class="mt-3 text-xs leading-snug font-bold text-text">{prompt}</h4>
 
-	<div class="mt-3 gap-2 flex flex-col">
+	<div class="mt-3 gap-2 flex flex-col" role="radiogroup" aria-labelledby="inline-check-prompt">
 		{#each options as opt, idx (idx)}
 			<button
 				type="button"
+				role="radio"
+				aria-checked={selectedIndex === idx}
+				aria-disabled={isLocked}
+				aria-label={`Option ${String.fromCharCode(65 + idx)}: ${opt}`}
 				onclick={() => handleSelect(idx)}
 				disabled={isLocked}
-				class="p-3 text-xs font-semibold flex items-center justify-between rounded-xl border text-left transition-all {idx ===
+				class="p-3 text-xs font-semibold flex cursor-pointer items-center justify-between rounded-xl border text-left transition-all {idx ===
 				shakeIndex
 					? 'anim-shake'
 					: ''} {isLocked
@@ -112,6 +124,7 @@
 				<div class="gap-2.5 flex items-center">
 					<span
 						class="h-5 w-5 font-bold flex shrink-0 items-center justify-center rounded-md bg-surface-muted text-[10px] text-text-muted"
+						aria-hidden="true"
 					>
 						{String.fromCharCode(65 + idx)}
 					</span>
@@ -134,7 +147,7 @@
 				type="button"
 				onclick={handleConfirm}
 				disabled={selectedIndex === null}
-				class="px-4 py-2 text-xs font-bold text-white shadow-xs rounded-xl bg-primary transition-all hover:bg-primary-hover active:scale-95 disabled:opacity-40"
+				class="px-4 py-2 text-xs font-bold text-white shadow-xs cursor-pointer rounded-xl bg-primary transition-all hover:bg-primary-hover active:scale-95 disabled:opacity-40"
 			>
 				Confirm Answer
 			</button>
@@ -143,6 +156,8 @@
 		<!-- Motivational message -->
 		{#if motivationalMsg}
 			<div
+				role="status"
+				aria-live="polite"
 				class="anim-pop mt-3 text-xs font-bold text-center {selectedIndex === answerIndex
 					? 'text-emerald-500'
 					: 'text-text-muted'}"

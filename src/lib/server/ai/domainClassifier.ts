@@ -1,9 +1,13 @@
 /**
  * Domain Classifier — Step 1 Topic Domain Verification
  *
- * Evaluates whether a user-submitted topic falls within our fine-tuned CS course dataset domain.
- * If in-domain (confidence >= DOMAIN_CONFIDENCE_THRESHOLD), routes to ml_backend fine-tuned model first.
- * If out-of-domain, routes directly to Gemini Flash to avoid degraded local model responses.
+ * Lightweight lexical heuristic (token/Jaccard overlap) to quickly determine if
+ * a user-submitted topic matches the core CS curriculum taxonomy without incurring
+ * model inference latency.
+ *
+ * Note: The confidence score represents lexical keyword overlap against the CS taxonomy,
+ * not semantic model confidence. In-domain matches route to local/domain-adapted `ml_backend` models,
+ * while out-of-domain topics route to general-purpose cloud models (Google Gemini).
  */
 
 import { adminDb } from '../admin';

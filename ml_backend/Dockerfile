@@ -27,10 +27,20 @@ ENV PORT=8000
 ENV APP_ENV=production
 EXPOSE 8000
 
-# Pre-download models at build time so cold starts are fast
-# Comment out this block (COPY + RUN) if you prefer a smaller image
-# and are okay with models loading on first request instead.
+# Standardize Hugging Face cache location
+ENV HF_HOME=/root/.cache/huggingface
+
+# Pre-download and verify models at build time so cold starts are fast and offline availability is guaranteed.
+# Model availability is a strict build-time invariant; any download or offline verification failure halts the build.
+# Use --build-arg PRELOAD_MODELS=false for fast lightweight dev builds.
+ARG PRELOAD_MODELS=true
 COPY download_models.py .
-RUN python download_models.py || echo "Model pre-download skipped"
+RUN if [ "$PRELOAD_MODELS" = "true" ]; then \
+        echo "==> Enforcing build-time invariant: Downloading and verifying all production ML models..."; \
+        python download_models.py || exit 1; \
+    else \
+        echo "==> Model pre-download explicitly skipped (PRELOAD_MODELS=false)"; \
+    fi
 
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+

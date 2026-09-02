@@ -12,15 +12,21 @@
 	<button
 		type="button"
 		onclick={() => (showPopover = !showPopover)}
+		aria-expanded={showPopover}
+		aria-haspopup="dialog"
+		aria-label={`Definition for ${term}`}
 		class="gap-1 px-1.5 py-0.5 font-medium inline-flex cursor-pointer items-center rounded-md border-b-2 border-dashed border-primary/60 bg-primary-soft/30 text-primary hover:border-primary hover:bg-primary-soft active:scale-95"
 		title="Tap for definition"
 	>
 		<span>{term}</span>
-		<span class="text-[10px] opacity-70">🔍</span>
+		<span class="text-[10px] opacity-70" aria-hidden="true">🔍</span>
 	</button>
 
 	{#if showPopover}
 		<div
+			role="dialog"
+			aria-modal="false"
+			aria-label={`Definition of ${term}`}
 			class="animate-fade-in left-0 mb-2 w-64 rounded-2xl p-3 text-xs shadow-xl backdrop-blur-md absolute bottom-full z-30 border border-border bg-surface"
 		>
 			<div
@@ -30,7 +36,8 @@
 				<button
 					type="button"
 					onclick={() => (showPopover = false)}
-					class="text-text-muted hover:text-text"
+					aria-label="Close definition popover"
+					class="cursor-pointer text-text-muted hover:text-text"
 				>
 					✕
 				</button>

@@ -82,17 +82,22 @@
 	];
 </script>
 
-<div class="my-6 gap-3 flex flex-col items-center">
+<div
+	class="my-6 gap-3 flex flex-col items-center"
+	role="region"
+	aria-label="Interactive memory flashcard"
+>
 	<!-- 3D Flip Card -->
 	<div
 		class="flip-card h-52 max-w-md w-full cursor-pointer"
 		onclick={flipCard}
-		onkeydown={(e) => e.key === 'Enter' && flipCard()}
+		onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && flipCard()}
 		role="button"
 		tabindex="0"
+		aria-pressed={isFlipped}
 		aria-label={isFlipped
-			? 'Flashcard back — click to flip back'
-			: 'Flashcard front — click to reveal answer'}
+			? `Flashcard back showing answer: ${back}. Tap to flip back to question.`
+			: `Flashcard front showing question: ${front}. Tap to reveal answer.`}
 	>
 		<div class="flip-card-inner {isFlipped ? 'is-flipped' : ''}">
 			<!-- Front face -->
@@ -126,7 +131,11 @@
 				</div>
 
 				<!-- Self-rating buttons -->
-				<div class="gap-2 pt-1 flex items-center justify-center">
+				<div
+					class="gap-2 pt-1 flex items-center justify-center"
+					role="group"
+					aria-label="Flashcard difficulty rating"
+				>
 					{#each ratingConfig as r (r.key)}
 						<button
 							type="button"
@@ -134,7 +143,9 @@
 								e.stopPropagation();
 								selfRating = r.key;
 							}}
-							class="px-2 py-1 font-bold rounded-lg border text-[10px] transition-all active:scale-90 {selfRating ===
+							aria-pressed={selfRating === r.key}
+							aria-label={`Rate difficulty: ${r.key}`}
+							class="px-2 py-1 font-bold cursor-pointer rounded-lg border text-[10px] transition-all active:scale-90 {selfRating ===
 							r.key
 								? r.cls + ' scale-105 shadow-sm'
 								: 'border-border bg-surface text-text-muted hover:border-border/80'}"
@@ -151,6 +162,8 @@
 	{#if isFlipped}
 		<div
 			class="anim-slide-up max-w-md gap-2 px-4 py-2.5 flex w-full items-center justify-between rounded-xl border border-border bg-surface"
+			role="status"
+			aria-live="polite"
 		>
 			<span class="text-[11px] text-text-muted">
 				{selfRating ? `Rated: ${selfRating}` : 'Rate how well you knew this ↑'}
@@ -159,7 +172,10 @@
 				type="button"
 				onclick={handleAddToReview}
 				disabled={isSaved || isSaving}
-				class="gap-1.5 px-3 py-1.5 font-bold hover:text-white inline-flex items-center rounded-xl border border-primary/40 bg-primary-soft/60 text-[11px] text-primary transition-all hover:bg-primary active:scale-95 disabled:opacity-50"
+				aria-label={isSaved
+					? 'Flashcard already added to review'
+					: 'Save flashcard to Spaced Repetition queue'}
+				class="gap-1.5 px-3 py-1.5 font-bold hover:text-white inline-flex cursor-pointer items-center rounded-xl border border-primary/40 bg-primary-soft/60 text-[11px] text-primary transition-all hover:bg-primary active:scale-95 disabled:opacity-50"
 			>
 				{#if isSaved}
 					<span>✓ Added to Review</span>

@@ -110,13 +110,13 @@ $$\text{Mastery Score} = 0.45 \times A_{\text{quiz}} + 0.35 \times P_{\text{FSRS
 
 The system adapts to the student's needs using deterministic priority rules:
 
-| Priority       | Condition                                       | System Action                                                   | Recommended Route                  |
-| -------------- | ----------------------------------------------- | --------------------------------------------------------------- | ---------------------------------- |
-| **Priority 1** | $\text{Due FSRS Questions} > 0$                 | Trigger immediate spaced repetition review before memory decays | `/app/review?moduleId=...`         |
-| **Priority 2** | $\text{Unresolved Mistakes} \ge 3$ on concept   | Direct student to Mistake Notebook for error correction         | `/app/mistakes?moduleId=...`       |
-| **Priority 3** | Concept Mastery $< 50\%$                        | Trigger targeted practice drill for weak concept                | `/app/courses/{cid}/modules/{mid}` |
-| **Priority 4** | Unmastered module with prerequisites $\ge 80\%$ | Advance to next sequential curriculum topic                     | `/app/courses/{cid}/modules/{mid}` |
-| **Priority 5** | All course modules mastered ($\ge 80\%$)        | Reinforce lowest stability module or explore new subjects       | `/app/review` or `/app/explore`    |
+| Priority       | Condition                                       | System Action                                                   | Recommended Route               |
+| -------------- | ----------------------------------------------- | --------------------------------------------------------------- | ------------------------------- |
+| **Priority 1** | $\text{Due FSRS Questions} > 0$                 | Trigger immediate spaced repetition review before memory decays | `/app/review?moduleId=...`      |
+| **Priority 2** | $\text{Unresolved Mistakes} \ge 3$ on concept   | Direct student to Mistake Notebook for error correction         | `/app/mistakes?moduleId=...`    |
+| **Priority 3** | Concept Mastery $< 50\%$                        | Trigger targeted practice drill for weak concept                | `/app/courses/{cid}/{mid}`      |
+| **Priority 4** | Unmastered module with prerequisites $\ge 80\%$ | Advance to next sequential curriculum topic                     | `/app/courses/{cid}/{mid}`      |
+| **Priority 5** | All course modules mastered ($\ge 80\%$)        | Reinforce lowest stability module or explore new subjects       | `/app/review` or `/app/explore` |
 
 ---
 
@@ -124,14 +124,14 @@ The system adapts to the student's needs using deterministic priority rules:
 
 The inference architecture prioritizes high-availability dual-provider routing with Gemini Flash as primary cloud provider and local PyTorch / Hugging Face models as offline/self-hosted fallback.
 
-| Model / Pipeline          | Target Task                                           | Parameter Size | Architectural Justification                                                                      |
-| ------------------------- | ----------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------ |
-| **Google Gemini Flash**   | Primary Generation (Outlines, Lessons, Quizzes, Chat) | Cloud LLM      | Sub-second latency, extensive context window, high instruction fidelity.                         |
-| **FLAN-T5 Large**         | Local Summarization & Paraphrasing                    | 780M params    | Fine-tuned seq2seq encoder-decoder; superior instruction following without hallucinatory drift.  |
-| **T5 Question Generator** | Local Quiz Question Generation                        | 220M params    | Specialized question-generation head trained on SQuAD/SciQ.                                      |
-| **Distractor Generator**  | Multiple-Choice Plausible Options                     | 110M params    | Sentence-level similarity model ensuring distractors represent plausible student misconceptions. |
-| **TinyLlama 1.1B**        | Local AI Chat Assistant                               | 1.1B params    | Highly compact quantized LLM enabling local conversational inference on consumer hardware.       |
-| **all-MiniLM-L6-v2**      | Sentence Embeddings for RAG                           | 22M params     | Dense 384-dimensional semantic embeddings optimized for low latency FAISS cosine similarity.     |
+| Model / Pipeline          | Target Task                                           | Parameter Size | Architectural Justification                                                                                                   |
+| ------------------------- | ----------------------------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Google Gemini Flash**   | Primary Generation (Outlines, Lessons, Quizzes, Chat) | Cloud LLM      | Sub-second latency, extensive context window, high instruction fidelity.                                                      |
+| **FLAN-T5 Large**         | Local Summarization & Paraphrasing                    | 780M params    | Instruction-tuned seq2seq baseline (with turnkey support for custom domain fine-tuned checkpoints); superior prompt fidelity. |
+| **T5 Question Generator** | Local Quiz Question Generation                        | 220M params    | Specialized question-generation head trained on SQuAD/SciQ.                                                                   |
+| **Distractor Generator**  | Multiple-Choice Plausible Options                     | 110M params    | Sentence-level similarity model ensuring distractors represent plausible student misconceptions.                              |
+| **TinyLlama 1.1B**        | Local AI Chat Assistant                               | 1.1B params    | Highly compact quantized LLM enabling local conversational inference on consumer hardware.                                    |
+| **all-MiniLM-L6-v2**      | Sentence Embeddings for RAG                           | 22M params     | Dense 384-dimensional semantic embeddings optimized for low latency FAISS cosine similarity.                                  |
 
 ---
 

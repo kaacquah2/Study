@@ -32,12 +32,12 @@ services:
       test:
         [
           'CMD-SHELL',
-          'python -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/health")'' || exit 1'
+          'python -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/health/ready")'' || exit 1'
         ]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
+      start_period: 30s
     networks:
       - study-network
 

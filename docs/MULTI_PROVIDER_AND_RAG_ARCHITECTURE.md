@@ -12,6 +12,14 @@ The system uses a high-availability, multi-tiered AI architecture supporting **G
 
 Tasks are categorized into **Reasoning Tasks** (Course Outlines, Lesson Content, Quiz Generation, Contextual Chat) and **Utility Tasks** (Text Summarization, Text Paraphrasing).
 
+> [!NOTE]
+> **Domain Classification Mechanism & Confidence Score:**
+> The domain classifier (`domainClassifier.ts`) uses a deterministic **token-Jaccard lexical overlap heuristic** against a curated 10-topic Computer Science syllabus taxonomy.
+>
+> - **Zero-Latency Routing**: Operates synchronously in TypeScript without incurring external API or ML inference overhead prior to task dispatch.
+> - **Lexical vs. Semantic Confidence**: The output score ($0.0 - 1.0$) measures lexical token overlap against taxonomy topic tokens, not semantic model probability. Complex or non-literal phrasings of CS concepts may yield lower lexical scores and route to Google Gemini by default.
+> - **Production Roadmap**: Future iterations can augment or replace this heuristic with a lightweight semantic bi-encoder (e.g. `Sentence-Transformers` cosine similarity or ONNX zero-shot classifier) in `ml_backend`.
+
 ```mermaid
 flowchart TD
     Request["Incoming AI Request"] --> TaskType{"Task Type?"}
@@ -19,7 +27,7 @@ flowchart TD
     TaskType -->|"Reasoning Task (Outline, Lesson, Quiz, Chat)"| DomainCheck["Domain Classifier (domainClassifier.ts)"]
     TaskType -->|"Utility Task (Summarize, Paraphrase)"| UtilTier1["Tier 1: ML Backend (FastAPI + Hugging Face)"]
 
-    DomainCheck -->|"CS In-Domain (High Confidence)"| InDomainT1["Tier 1: ML Backend (Fine-Tuned)"]
+    DomainCheck -->|"CS In-Domain (High Confidence)"| InDomainT1["Tier 1: ML Backend (Local RAG / Domain-Adapted)"]
     DomainCheck -->|"Out-of-Domain (General Topic)"| OutDomainT1["Tier 1: Google Gemini Flash (gemini-flash-latest)"]
 
     InDomainT1 -->|Success| Success["Return Generated Result"]

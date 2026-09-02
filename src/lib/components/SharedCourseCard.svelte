@@ -108,6 +108,7 @@
 			type="button"
 			onclick={() => onImport(shareId)}
 			disabled={loading}
+			aria-label={`Import course: ${title}`}
 			class="gap-1.5 px-4 py-2 text-xs font-bold text-white shadow-xs inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary transition-all duration-180 hover:bg-primary-hover active:scale-95 disabled:opacity-50"
 		>
 			{#if loading}
@@ -123,6 +124,7 @@
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
+					aria-hidden="true"
 				>
 					<path
 						stroke-linecap="round"

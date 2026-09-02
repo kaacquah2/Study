@@ -53,6 +53,8 @@
 </script>
 
 <div
+	role="region"
+	aria-label={`Code snippet in ${language || 'code'}`}
 	class="my-4 rounded-2xl bg-slate-950 text-slate-100 overflow-hidden border border-border shadow-md"
 >
 	<!-- Header bar -->
@@ -61,9 +63,9 @@
 	>
 		<div class="gap-2 flex items-center">
 			<!-- traffic lights -->
-			<span class="h-2.5 w-2.5 bg-rose-500/70 rounded-full"></span>
-			<span class="h-2.5 w-2.5 bg-amber-500/70 rounded-full"></span>
-			<span class="h-2.5 w-2.5 bg-emerald-500/70 rounded-full"></span>
+			<span class="h-2.5 w-2.5 bg-rose-500/70 rounded-full" aria-hidden="true"></span>
+			<span class="h-2.5 w-2.5 bg-amber-500/70 rounded-full" aria-hidden="true"></span>
+			<span class="h-2.5 w-2.5 bg-emerald-500/70 rounded-full" aria-hidden="true"></span>
 			<span class="ml-2 font-mono font-bold text-slate-400 text-[11px] uppercase"
 				>{language || 'code'}</span
 			>
@@ -75,11 +77,13 @@
 					type="button"
 					onclick={handleRun}
 					disabled={isRunning}
+					aria-label={isRunning ? 'Executing code...' : `Run ${language} code snippet`}
 					class="gap-1.5 border-emerald-700/60 bg-emerald-500/15 px-2.5 py-1 font-bold text-emerald-400 hover:bg-emerald-500/25 inline-flex cursor-pointer items-center rounded-md border text-[11px] transition-all active:scale-95 disabled:opacity-50"
 				>
 					{#if isRunning}
 						<span
 							class="h-2.5 w-2.5 animate-spin border-emerald-400 rounded-full border-2 border-t-transparent"
+							aria-hidden="true"
 						></span>
 						<span>Running...</span>
 					{:else}
@@ -91,6 +95,7 @@
 			<button
 				type="button"
 				onclick={handleCopy}
+				aria-label={copied ? 'Code snippet copied to clipboard' : 'Copy code snippet to clipboard'}
 				class="gap-1 border-slate-700 bg-slate-800 px-2.5 py-1 font-medium hover:bg-slate-700 hover:text-white inline-flex cursor-pointer items-center rounded-md border text-[11px] transition-all active:scale-95 {copied
 					? 'border-emerald-700/60 bg-emerald-500/15 text-emerald-400'
 					: 'text-slate-300'}"
@@ -98,7 +103,13 @@
 				{#if copied}
 					<span>✓ Copied!</span>
 				{:else}
-					<svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<svg
+						class="h-3 w-3"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						aria-hidden="true"
+					>
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
@@ -117,7 +128,11 @@
 
 	<!-- Output panel -->
 	{#if showOutput}
-		<div class="anim-slide-up border-slate-800 bg-slate-900/60 px-4 py-3 border-t">
+		<div
+			role="status"
+			aria-live="polite"
+			class="anim-slide-up border-slate-800 bg-slate-900/60 px-4 py-3 border-t"
+		>
 			<div class="pb-2 font-bold text-slate-400 flex items-center justify-between text-[10px]">
 				<span>Output</span>
 				<button
@@ -126,6 +141,7 @@
 						showOutput = false;
 						output = '';
 					}}
+					aria-label="Close code execution output"
 					class="text-slate-500 hover:text-slate-300 cursor-pointer">✕ Close</button
 				>
 			</div>

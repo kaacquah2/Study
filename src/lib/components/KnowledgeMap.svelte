@@ -252,6 +252,7 @@
 			<input
 				type="text"
 				bind:value={searchQuery}
+				aria-label="Search concepts or modules"
 				placeholder="🔍 Search concepts or modules..."
 				class="px-3.5 py-2 text-xs font-semibold w-full rounded-xl border border-border bg-surface-muted text-text placeholder-text-muted focus:border-primary focus:outline-none"
 			/>
@@ -259,7 +260,8 @@
 				<button
 					type="button"
 					onclick={() => (searchQuery = '')}
-					class="top-2.5 right-3 text-xs absolute text-text-muted hover:text-text"
+					aria-label="Clear search input"
+					class="top-2.5 right-3 text-xs absolute cursor-pointer text-text-muted hover:text-text"
 				>
 					✕
 				</button>
@@ -269,9 +271,15 @@
 		<!-- Right: View Mode Toggle & Zoom Actions -->
 		<div class="gap-2 flex items-center">
 			<!-- Dual-Mode Toggle: Graph Canvas vs Accessible Tree View -->
-			<div class="p-0.5 shadow-2xs flex rounded-xl border border-border bg-surface-muted">
+			<div
+				class="p-0.5 shadow-2xs flex rounded-xl border border-border bg-surface-muted"
+				role="tablist"
+				aria-label="Knowledge map display mode"
+			>
 				<button
 					type="button"
+					role="tab"
+					aria-selected={viewMode === 'canvas'}
 					onclick={() => (viewMode = 'canvas')}
 					class="px-3 py-1.5 text-xs font-bold cursor-pointer rounded-lg transition-all {viewMode ===
 					'canvas'
@@ -283,6 +291,8 @@
 				</button>
 				<button
 					type="button"
+					role="tab"
+					aria-selected={viewMode === 'tree'}
 					onclick={() => (viewMode = 'tree')}
 					class="px-3 py-1.5 text-xs font-bold cursor-pointer rounded-lg transition-all {viewMode ===
 					'tree'
@@ -296,13 +306,17 @@
 
 			<!-- Canvas Zoom Buttons (Only visible in Canvas view) -->
 			{#if viewMode === 'canvas'}
-				<div class="p-0.5 shadow-2xs flex items-center rounded-xl border border-border bg-surface">
+				<div
+					class="p-0.5 shadow-2xs flex items-center rounded-xl border border-border bg-surface"
+					role="group"
+					aria-label="Canvas zoom controls"
+				>
 					<button
 						type="button"
 						onclick={() => handleZoom(0.15)}
 						class="px-2.5 py-1 text-xs font-bold cursor-pointer rounded-lg text-text-muted hover:text-text"
 						title="Zoom in"
-						aria-label="Zoom in"
+						aria-label="Zoom in canvas"
 					>
 						+
 					</button>
@@ -311,7 +325,7 @@
 						onclick={() => handleZoom(-0.15)}
 						class="px-2.5 py-1 text-xs font-bold cursor-pointer rounded-lg text-text-muted hover:text-text"
 						title="Zoom out"
-						aria-label="Zoom out"
+						aria-label="Zoom out canvas"
 					>
 						-
 					</button>
@@ -320,7 +334,7 @@
 						onclick={handleResetView}
 						class="px-2 py-1 text-xs font-bold cursor-pointer rounded-lg text-text-muted hover:text-text"
 						title="Reset zoom and pan"
-						aria-label="Reset zoom and pan"
+						aria-label="Reset canvas zoom and pan"
 					>
 						⟲
 					</button>
@@ -332,9 +346,11 @@
 	<!-- Stale / Calculating Status Banner -->
 	{#if isStale}
 		<div
+			role="status"
+			aria-live="polite"
 			class="gap-2 border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-semibold text-amber-300 shadow-2xs flex items-center rounded-xl border"
 		>
-			<span>⏳</span>
+			<span aria-hidden="true">⏳</span>
 			<span>Updating knowledge graph based on your latest study reviews...</span>
 		</div>
 	{/if}
@@ -344,9 +360,12 @@
 		{#if layoutLoading}
 			<div
 				class="h-96 gap-3 rounded-3xl p-12 shadow-xs flex w-full flex-col items-center justify-center border border-border bg-surface text-center"
+				role="status"
+				aria-live="polite"
 			>
 				<div
 					class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
+					aria-hidden="true"
 				></div>
 				<p class="text-xs font-bold text-text-muted">
 					Computing ELKjs Hierarchical Knowledge Graph Layout...
@@ -356,35 +375,39 @@
 			<div
 				class="rounded-3xl p-12 shadow-xs flex flex-col items-center justify-center border border-border bg-surface text-center"
 			>
-				<div class="mb-2 text-3xl">📚</div>
+				<div class="mb-2 text-3xl" aria-hidden="true">📚</div>
 				<h4 class="font-display text-base font-bold text-text">No Knowledge Graph Available</h4>
 				<p class="text-xs text-text-muted">
 					Complete course modules to build your interactive visual learning map.
 				</p>
 			</div>
 		{:else}
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 			<div
 				class="min-h-125 rounded-3xl bg-slate-950 p-4 shadow-inner relative w-full cursor-grab overflow-hidden border border-border active:cursor-grabbing"
 				onwheel={handleWheel}
 				onmousedown={handleMouseDown}
 				onmousemove={handleMouseMove}
 				onmouseup={handleMouseUp}
+				role="region"
+				aria-label="Interactive Knowledge Graph Canvas"
 			>
 				<!-- Legend -->
 				<div
 					class="top-4 right-4 gap-3 rounded-2xl border-slate-800 bg-slate-900/90 p-3 font-semibold text-slate-300 backdrop-blur-md absolute z-10 flex flex-wrap items-center border text-[11px] shadow-md"
+					role="note"
+					aria-label="Mastery color and percentage legend"
 				>
 					<div class="gap-1.5 flex items-center">
-						<span class="h-3 w-3 bg-emerald-500 rounded-full"></span>
+						<span class="h-3 w-3 bg-emerald-500 rounded-full" aria-hidden="true"></span>
 						<span>Mastered (&ge;80%)</span>
 					</div>
 					<div class="gap-1.5 flex items-center">
-						<span class="h-3 w-3 bg-amber-500 rounded-full"></span>
+						<span class="h-3 w-3 bg-amber-500 rounded-full" aria-hidden="true"></span>
 						<span>Learning (50-80%)</span>
 					</div>
 					<div class="gap-1.5 flex items-center">
-						<span class="h-3 w-3 bg-rose-500 rounded-full"></span>
+						<span class="h-3 w-3 bg-rose-500 rounded-full" aria-hidden="true"></span>
 						<span>Needs Review (&lt;50%)</span>
 					</div>
 				</div>
@@ -394,6 +417,8 @@
 					<svg
 						class="min-h-125 h-full w-full select-none"
 						viewBox="0 0 {elkLayout.width || 800} {elkLayout.height || 600}"
+						role="img"
+						aria-label="Visual graph of course concepts and modules"
 					>
 						<g transform="translate({panX}, {panY}) scale({zoomLevel})">
 							<!-- Render Clusters (Modules) -->
@@ -403,41 +428,47 @@
 								{@const isCollapsed = collapsedModules.has(modId)}
 
 								<g class="transition-all duration-300">
-									<!-- svelte-ignore a11y_click_events_have_key_events -->
-									<!-- svelte-ignore a11y_no_static_element_interactions -->
-									<rect
-										x={cluster.x}
-										y={cluster.y}
-										width={cluster.width}
-										height={cluster.height}
-										rx="16"
-										fill="#0f172a"
-										stroke="#334155"
-										stroke-width="2"
-										stroke-dasharray={isCollapsed ? '6 6' : undefined}
+									<g
+										role="button"
+										tabindex="0"
+										aria-label={`Toggle module cluster ${groupInfo?.title || 'Module'}: currently ${isCollapsed ? 'collapsed' : 'expanded'}`}
+										aria-expanded={!isCollapsed}
 										onclick={(e) => {
 											e.stopPropagation();
 											toggleModuleCollapse(modId);
 										}}
-										class="hover:stroke-slate-400 cursor-pointer"
-									/>
-									<!-- svelte-ignore a11y_click_events_have_key_events -->
-									<!-- svelte-ignore a11y_no_static_element_interactions -->
-									<text
-										x={(cluster.x || 0) + 16}
-										y={(cluster.y || 0) + 24}
-										fill="#94a3b8"
-										font-size="12"
-										font-weight="bold"
-										font-family="system-ui"
-										onclick={(e) => {
-											e.stopPropagation();
-											toggleModuleCollapse(modId);
+										onkeydown={(e) => {
+											if (e.key === 'Enter' || e.key === ' ') {
+												e.stopPropagation();
+												toggleModuleCollapse(modId);
+											}
 										}}
-										class="hover:fill-slate-200 cursor-pointer"
+										class="cursor-pointer"
 									>
-										{isCollapsed ? '▶' : '▼'} 📦 {groupInfo?.title || 'Module'}
-									</text>
+										<rect
+											x={cluster.x}
+											y={cluster.y}
+											width={cluster.width}
+											height={cluster.height}
+											rx="16"
+											fill="#0f172a"
+											stroke="#334155"
+											stroke-width="2"
+											stroke-dasharray={isCollapsed ? '6 6' : undefined}
+											class="hover:stroke-slate-400"
+										/>
+										<text
+											x={(cluster.x || 0) + 16}
+											y={(cluster.y || 0) + 24}
+											fill="#94a3b8"
+											font-size="12"
+											font-weight="bold"
+											font-family="system-ui"
+											class="hover:fill-slate-200"
+										>
+											{isCollapsed ? '▶' : '▼'} 📦 {groupInfo?.title || 'Module'}
+										</text>
+									</g>
 
 									<!-- Render Nodes inside cluster -->
 									{#if !isCollapsed && cluster.children}
@@ -454,13 +485,20 @@
 												(n.labels?.[0]?.text?.toLowerCase().includes(searchQuery.toLowerCase()) ||
 													n.id.toLowerCase().includes(searchQuery.toLowerCase()))}
 
-											<!-- svelte-ignore a11y_click_events_have_key_events -->
-											<!-- svelte-ignore a11y_no_static_element_interactions -->
 											<g
 												transform="translate({absoluteX}, {absoluteY})"
+												role="button"
+												tabindex="0"
+												aria-label={`Concept: ${n.labels?.[0]?.text || n.id}. Status: ${colors.label}${isRecommended ? ', Recommended Next' : ''}`}
 												onclick={(e) => {
 													e.stopPropagation();
 													if (conceptObj) selectedNode = conceptObj;
+												}}
+												onkeydown={(e) => {
+													if (e.key === 'Enter' || e.key === ' ') {
+														e.stopPropagation();
+														if (conceptObj) selectedNode = conceptObj;
+													}
 												}}
 												class="cursor-pointer transition-transform hover:scale-[1.03]"
 											>
@@ -510,6 +548,8 @@
 		<!-- VIEW MODE 2: Accessible Hierarchical Tree (WCAG 2.2 SC 2.5.1 Full Parity) -->
 		<div
 			class="gap-4 rounded-3xl p-6 sm:p-8 flex flex-col border border-border bg-surface shadow-sm"
+			role="region"
+			aria-label="Knowledge Map Accessible Tree View"
 		>
 			<div class="pb-3 flex items-center justify-between border-b border-border">
 				<div>
@@ -530,7 +570,7 @@
 						<!-- Module Header -->
 						<div class="gap-2 flex flex-wrap items-center justify-between">
 							<div class="gap-2 flex items-center">
-								<span class="text-base">📦</span>
+								<span class="text-base" aria-hidden="true">📦</span>
 								<h4 class="font-display text-sm font-bold text-text">{group.title}</h4>
 								<span
 									class="px-2.5 py-0.5 font-bold rounded-full text-[10px]"
@@ -554,7 +594,7 @@
 						</div>
 
 						<!-- Concept Nodes List -->
-						<div class="gap-2 pt-2 sm:grid-cols-2 lg:grid-cols-3 grid grid-cols-1">
+						<div class="gap-2 pt-2 sm:grid-cols-2 lg:grid-cols-3 grid grid-cols-1" role="list">
 							{#each group.nodes as node (node.id)}
 								{@const isRecommended =
 									recommendation?.node?.id === node.id ||
@@ -564,9 +604,10 @@
 										? 'border-amber-500/60 bg-amber-500/5'
 										: ''}"
 									onclick={() => (selectedNode = node)}
-									onkeydown={(e) => e.key === 'Enter' && (selectedNode = node)}
+									onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (selectedNode = node)}
 									role="button"
 									tabindex="0"
+									aria-label={`Concept: ${node.label}, ID: ${node.id}${isRecommended ? ', Recommended Next' : ''}`}
 								>
 									<div class="gap-0.5 flex flex-col">
 										<div class="gap-1.5 flex items-center">
@@ -581,7 +622,7 @@
 										</div>
 										<span class="font-semibold text-[10px] text-text-muted">{node.id}</span>
 									</div>
-									<span class="text-xs font-bold text-primary">&rarr;</span>
+									<span class="text-xs font-bold text-primary" aria-hidden="true">&rarr;</span>
 								</div>
 							{/each}
 						</div>
@@ -598,7 +639,12 @@
 		{@const dueCount = nodeMastery ? nodeMastery.questionsDue : 0}
 		{@const avgStability = nodeMastery ? nodeMastery.averageStability : 0}
 
-		<div class="gap-4 rounded-3xl p-6 shadow-xl flex flex-col border border-primary/30 bg-surface">
+		<div
+			class="gap-4 rounded-3xl p-6 shadow-xl flex flex-col border border-primary/30 bg-surface"
+			role="region"
+			aria-labelledby="selected-node-title"
+			aria-live="polite"
+		>
 			<div class="flex items-start justify-between">
 				<div>
 					<div class="gap-2 flex items-center">
@@ -633,7 +679,9 @@
 							</span>
 						{/if}
 					</div>
-					<h3 class="mt-1 font-display text-lg font-bold text-text">{selectedNode.label}</h3>
+					<h3 id="selected-node-title" class="mt-1 font-display text-lg font-bold text-text">
+						{selectedNode.label}
+					</h3>
 					<p class="text-xs text-text-muted">
 						Part of: <strong class="text-text">{selectedNode.moduleTitle || 'Module'}</strong>
 					</p>

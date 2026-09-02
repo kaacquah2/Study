@@ -4,6 +4,7 @@ import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
 import { z } from 'zod';
 import { invalidateCachedOutline } from '$lib/server/outlineCache';
+import { enqueueModuleGenerationJob } from '$lib/server/ai/generationQueue';
 
 const UpdateDraftZod = z.object({
 	title: z.string().min(3).max(120),
@@ -128,7 +129,7 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 };
 
 // POST /api/courses/[id]/draft - Confirm draft and start full course generation
-export const POST: RequestHandler = async ({ params, request, url }) => {
+export const POST: RequestHandler = async ({ params, request }) => {
 	const { id: courseId } = params;
 
 	try {
@@ -155,42 +156,14 @@ export const POST: RequestHandler = async ({ params, request, url }) => {
 		const modulesSnap = await courseRef.collection('modules').orderBy('order', 'asc').get();
 		const moduleIds = modulesSnap.docs.map((doc) => doc.id);
 
-		const authHeader = request.headers.get('Authorization');
-		const origin = url.origin;
-
-		(async () => {
-			if (moduleIds.length === 0) return;
-
-			const makeHeaders = () => {
-				const h: Record<string, string> = { 'Content-Type': 'application/json' };
-				if (authHeader) h['Authorization'] = authHeader;
-				return h;
-			};
-
-			// Step 1: Prioritize Module 1 completion first so user can start reading immediately
-			const firstModId = moduleIds[0];
-			try {
-				await fetch(`${origin}/api/modules/${firstModId}/generate`, {
-					method: 'POST',
-					headers: makeHeaders(),
-					body: JSON.stringify({ courseId })
-				});
-			} catch (e) {
-				console.error(`[Background Generator] Prioritized Module 1 error:`, e);
-			}
-
-			// Step 2: Trigger remaining modules concurrently
-			const remainingIds = moduleIds.slice(1);
-			await Promise.all(
-				remainingIds.map((modId) =>
-					fetch(`${origin}/api/modules/${modId}/generate`, {
-						method: 'POST',
-						headers: makeHeaders(),
-						body: JSON.stringify({ courseId })
-					}).catch((e) => console.error(`[Background Generator] Module ${modId} error:`, e))
-				)
-			);
-		})().catch((err) => console.error('[Background Generator] Orchestration error:', err));
+		// Enqueue durable module generation jobs for all modules
+		for (const modId of moduleIds) {
+			await enqueueModuleGenerationJob({
+				courseId,
+				moduleId: modId,
+				userId: user.uid
+			});
+		}
 
 		return json({
 			status: 'building',

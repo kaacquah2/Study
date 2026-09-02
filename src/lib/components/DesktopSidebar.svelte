@@ -41,7 +41,8 @@
 </script>
 
 <aside
-	class="top-0 w-56 md:flex xl:w-64 sticky z-30 hidden h-screen shrink-0 flex-col justify-between overflow-hidden border-r border-border bg-surface select-none"
+	class="top-0 w-56 md:flex xl:w-64 sticky z-30 hidden h-screen shrink-0 flex-col justify-between overflow-hidden border-r select-none"
+	style="background: var(--surface); border-color: var(--border); box-shadow: 1px 0 0 0 var(--border);"
 >
 	<!-- Fixed Top Zone -->
 	<div class="gap-4 p-4 pb-2 xl:gap-6 xl:p-5 xl:pb-3 flex shrink-0 flex-col">
@@ -80,15 +81,19 @@
 			<button
 				type="button"
 				onclick={() => chatStore.toggle()}
-				class="mb-1 gap-2.5 px-3 py-2.5 text-xs font-bold shadow-xs hover:text-white xl:px-4 xl:py-2.5 flex w-full cursor-pointer items-center justify-between rounded-xl border border-primary/30 bg-primary-soft/50 text-primary transition-all duration-180 hover:bg-primary"
+				class="mb-1.5 flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all duration-200 xl:px-4 xl:py-2.5"
+				style="border: 1px solid var(--primary-glow); background: var(--primary-soft); color: var(--primary); box-shadow: 0 0 0 0 var(--primary-glow);"
+				onmouseenter={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 0 3px var(--primary-glow)'; }}
+				onmouseleave={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 0 0 var(--primary-glow)'; }}
 				aria-label="Open AI Study Tutor"
 			>
-				<div class="gap-2.5 flex items-center truncate">
-					<span class="text-base leading-none">✨</span>
-					<span class="truncate">AI Study Tutor</span>
+				<div class="flex items-center gap-2 truncate">
+					<span class="text-sm leading-none">✨</span>
+					<span class="truncate font-semibold">AI Study Tutor</span>
 				</div>
 				<span
-					class="px-1.5 py-0.5 font-black group-hover:bg-white/20 group-hover:text-white rounded-md bg-primary/10 text-[10px] text-primary uppercase transition-colors"
+					class="rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+					style="background: var(--primary-glow); color: var(--primary);"
 				>
 					{chatStore.isOpen ? 'Open' : 'Chat'}
 				</span>
@@ -97,25 +102,44 @@
 			{#each navItems as item, idx (item.href)}
 				{#if sectionBreaks[idx]}
 					<div
-						class="mt-2.5 mb-1 px-3 font-black tracking-wider text-[10px] text-text-muted/60 uppercase"
+						class="mb-1 mt-3 flex items-center gap-2 px-3"
 					>
-						{sectionBreaks[idx]}
+						<div class="h-px flex-1" style="background: var(--border);"></div>
+						<span
+							class="text-[9px] font-bold uppercase tracking-widest"
+							style="color: var(--text-subtle);"
+						>
+							{sectionBreaks[idx]}
+						</span>
+						<div class="h-px flex-1" style="background: var(--border);"></div>
 					</div>
 				{/if}
 				{@const active =
 					currentPath === item.href || (item.href !== '/app' && currentPath.startsWith(item.href))}
 				<a
 					href={item.href}
-					class="gap-2.5 px-3 py-2 text-xs font-bold xl:px-4 xl:py-2.5 flex items-center rounded-xl transition-all duration-180 {active
-						? 'text-white bg-primary shadow-md shadow-primary/20'
-						: 'text-text-muted hover:bg-surface-muted hover:text-text'}"
+					aria-current={active ? 'page' : undefined}
+					class="relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-150 xl:px-4 xl:py-2"
+					style={active
+						? 'background: var(--primary-soft); color: var(--primary); font-weight: 600;'
+						: 'color: var(--text-muted);'}
+					onmouseenter={(e) => { if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'var(--surface-muted)'; (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text)'; }}
+					onmouseleave={(e) => { if (!active) { (e.currentTarget as HTMLAnchorElement).style.background = ''; (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-muted)'; }}}
 				>
+					<!-- Left accent bar for active state -->
+					{#if active}
+						<span
+							class="absolute left-0 top-1/2 h-4 w-0.75 -translate-y-1/2 rounded-full"
+							style="background: var(--primary);"
+						></span>
+					{/if}
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						class="h-4 w-4 shrink-0"
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke="currentColor"
+						aria-hidden="true"
 					>
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={item.icon} />
 					</svg>
@@ -140,18 +164,21 @@
 		<div class="relative">
 			{#if sidebarProfileOpen}
 				<div
+					role="menu"
+					aria-label="User profile options"
 					class="left-0 mb-3 gap-3 rounded-2xl p-3 shadow-2xl absolute bottom-full z-50 flex w-full flex-col border border-border bg-surface transition-all duration-180"
 				>
 					<div class="gap-3 pb-3 flex items-center border-b border-border/60">
 						{#if authStore.user?.photoURL}
 							<img
 								src={authStore.user.photoURL}
-								alt={authStore.user.displayName || 'User'}
+								alt={authStore.user.displayName || 'User profile picture'}
 								class="h-9 w-9 rounded-full border border-border object-cover"
 							/>
 						{:else}
 							<div
 								class="h-9 w-9 text-xs font-bold flex shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"
+								aria-hidden="true"
 							>
 								{userInitials}
 							</div>
@@ -172,6 +199,7 @@
 					<div class="gap-1 text-xs font-semibold flex flex-col">
 						<a
 							href="/app/settings"
+							role="menuitem"
 							onclick={() => (sidebarProfileOpen = false)}
 							class="px-3 py-2 flex items-center justify-between rounded-xl text-text transition-colors hover:bg-surface-muted"
 						>
@@ -182,6 +210,7 @@
 									fill="none"
 									viewBox="0 0 24 24"
 									stroke="currentColor"
+									aria-hidden="true"
 								>
 									<path
 										stroke-linecap="round"
@@ -204,6 +233,7 @@
 
 					<button
 						type="button"
+						role="menuitem"
 						onclick={() => {
 							sidebarProfileOpen = false;
 							authStore.logout();
@@ -219,6 +249,7 @@
 				type="button"
 				onclick={() => (sidebarProfileOpen = !sidebarProfileOpen)}
 				aria-label="User account menu"
+				aria-haspopup="menu"
 				aria-expanded={sidebarProfileOpen}
 				class="group gap-2.5 px-2 py-1.5 flex w-full cursor-pointer items-center justify-between rounded-xl border border-transparent text-left transition-all duration-180 hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
 			>
@@ -226,12 +257,13 @@
 					{#if authStore.user?.photoURL}
 						<img
 							src={authStore.user.photoURL}
-							alt={authStore.user.displayName || 'User'}
+							alt={authStore.user.displayName || 'User profile picture'}
 							class="h-8 w-8 rounded-full border border-border object-cover"
 						/>
 					{:else}
 						<div
 							class="h-8 w-8 text-xs font-bold flex shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"
+							aria-hidden="true"
 						>
 							{userInitials}
 						</div>
@@ -252,6 +284,7 @@
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
+					aria-hidden="true"
 				>
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
 				</svg>

@@ -1,0 +1,50 @@
+[
+	{
+		"id": "SUM-01",
+		"topic": "Operating Systems - Process Scheduling",
+		"text": "Operating systems manage computer hardware and software resources. The operating system acts as an intermediary between users and computer hardware, handling task scheduling, memory management, and file system I/O. In multi-tasking systems, the CPU scheduler decides which ready process receives processor time based on scheduling algorithms such as Round Robin, Shortest Job First, and Priority Scheduling.",
+		"gold_summary": "Operating systems manage hardware, memory, and I/O while scheduling ready processes on the CPU using algorithms like Round Robin and Priority Scheduling."
+	},
+	{
+		"id": "SUM-02",
+		"topic": "Compilers - Lexical Analysis",
+		"text": "A compiler is a specialized computer program that translates computer code written in one programming language into another language, usually machine code, to create an executable program. The first phase of compilation is lexical analysis, where a lexer reads source characters and groups them into meaningful token sequences like identifiers, keywords, operators, and literals according to regular grammar specifications.",
+		"gold_summary": "Compilers translate source code into machine code, beginning with lexical analysis where characters are grouped into tokens using regular grammars."
+	},
+	{
+		"id": "SUM-03",
+		"topic": "Computer Networks - TCP Congestion Control",
+		"text": "Transmission Control Protocol TCP provides reliable, ordered, and error-checked delivery of a stream of octets between applications running on hosts communicating via an IP network. TCP congestion control mechanisms prevent network collapse by dynamically adjusting the congestion window cwnd using Slow Start, Congestion Avoidance, Fast Retransmit, and Fast Recovery phases.",
+		"gold_summary": "TCP ensures reliable data delivery and manages network load by dynamically resizing its congestion window through Slow Start and Congestion Avoidance."
+	},
+	{
+		"id": "SUM-04",
+		"topic": "Database Systems - ACID Transactions",
+		"text": "In database systems, a transaction is a single logical unit of work that accesses and possibly modifies database contents. ACID properties guarantee database transactions are processed reliably: Atomicity ensures all operations succeed or none do; Consistency ensures valid state transitions; Isolation ensures concurrent execution produces the same state as serial execution; and Durability ensures committed updates persist across power failures.",
+		"gold_summary": "Database transactions maintain ACID properties (Atomicity, Consistency, Isolation, Durability) to ensure reliable state transitions and crash resilience."
+	},
+	{
+		"id": "SUM-05",
+		"topic": "Algorithms - Dijkstra's Shortest Path",
+		"text": "Dijkstra's algorithm is an algorithm for finding the shortest paths between nodes in a weighted graph with non-negative edge weights. For a given source node in the graph, the algorithm finds the shortest path between that node and every other. It works by maintaining a set of unvisited nodes and iteratively selecting the unvisited node with the smallest tentative distance using a min-priority queue.",
+		"gold_summary": "Dijkstra's algorithm finds single-source shortest paths in graphs with non-negative edge weights using a min-priority queue to iteratively relax distances."
+	},
+	{
+		"id": "SUM-06",
+		"topic": "Artificial Intelligence - Forward vs Backward Chaining",
+		"text": "Expert systems use inference engines to apply logical rules to a knowledge base of facts. Forward chaining starts with available data and applies inference rules to extract more data until a goal is reached, making it data-driven. In contrast, backward chaining starts with a goal hypothesis and works backwards through rules to determine what evidence supports the goal, making it goal-driven.",
+		"gold_summary": "Inference engines employ data-driven forward chaining to deduce facts from data, and goal-driven backward chaining to verify hypotheses against supporting evidence."
+	},
+	{
+		"id": "SUM-07",
+		"topic": "Computer Architecture - CPU Cache Hierarchy",
+		"text": "Modern microprocessors utilize multi-level cache memory hierarchies to bridge the performance gap between fast CPU registers and slower main RAM. Level 1 L1 cache is smallest and fastest, residing inside the core; Level 2 L2 cache offers larger capacity with slightly higher latency; and Level 3 L3 cache is shared across cores. Hardware prefetchers and cache coherence protocols like MESI maintain unified data views.",
+		"gold_summary": "Multi-level CPU caches (L1, L2, L3) balance speed and capacity between processor cores and RAM, coordinated by cache coherence protocols like MESI."
+	},
+	{
+		"id": "SUM-08",
+		"topic": "Operating Systems - Virtual Memory & Paging",
+		"text": "Virtual memory is a memory management technique providing an idealized abstraction of storage resources. The operating system divides virtual memory into uniform blocks called pages, which the Memory Management Unit MMU maps to physical RAM frames via page tables. When a requested page is not in RAM, a page fault occurs, triggering the OS to load the required page from disk swap space.",
+		"gold_summary": "Virtual memory abstracts storage into pages mapped to physical RAM frames via page tables, loading missing pages from disk upon page faults."
+	}
+]

@@ -36,6 +36,12 @@ jobs:
       - name: Run Unit Tests
         run: npm run test:unit -- --run
 
+      - name: Run Pipeline Integration Tests
+        run: npm run test:pipeline
+
+      - name: Run Firestore Security Rules Tests
+        run: npx firebase-tools emulators:exec --only firestore,auth "npm run test:rules"
+
       - name: Run NPM Security Audit
         run: npm audit --audit-level=high
 
@@ -44,7 +50,6 @@ jobs:
 
       - name: Run E2E Integration Tests
         run: npm run test:e2e
-        continue-on-error: true
 
   ml-backend-check:
     name: ML Backend Verification

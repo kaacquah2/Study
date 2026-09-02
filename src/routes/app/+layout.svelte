@@ -11,9 +11,13 @@
 	import MobileNav from '$lib/components/MobileNav.svelte';
 	import { chatStore } from '$lib/stores/chat.svelte';
 
-	// View Transitions API — smooth cross-page animations
+	// View Transitions API — smooth cross-page animations (respects prefers-reduced-motion)
 	onNavigate((navigation) => {
-		if (!document.startViewTransition) return;
+		if (
+			!document.startViewTransition ||
+			window.matchMedia('(prefers-reduced-motion: reduce)').matches
+		)
+			return;
 		return new Promise((resolve) => {
 			document.startViewTransition(async () => {
 				resolve();

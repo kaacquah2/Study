@@ -5,7 +5,20 @@
 	import HeroPanel from '$lib/components/HeroPanel.svelte';
 	import AuthForm from '$lib/components/AuthForm.svelte';
 
-	// If already logged in and explicit redirect param exists (e.g. redirected from protected page), redirect immediately
+	// Track whether the avatar image failed to load
+	let avatarBroken = $state(false);
+	$effect(() => {
+		// Reset when user changes (e.g. after sign-out / sign-in)
+		if (authStore.user?.photoURL) avatarBroken = false;
+	});
+
+	let userInitials = $derived.by(() => {
+		const name = authStore.user?.displayName;
+		if (name) return name.slice(0, 2).toUpperCase();
+		return authStore.user?.email?.slice(0, 2).toUpperCase() ?? '??';
+	});
+
+	// If already logged in and explicit redirect param exists, redirect immediately
 	$effect(() => {
 		const redirect = page.url.searchParams.get('redirect');
 		if (authStore.authResolved && authStore.user && redirect) {
@@ -15,7 +28,7 @@
 </script>
 
 <svelte:head>
-	<title>Sign In &mdash; AI Study Buddy</title>
+	<title>Sign In — AI Study Buddy</title>
 	<meta
 		name="description"
 		content="AI Study Buddy - Build interactive courses, test your knowledge with AI quizzes, and maintain your learning streak."
@@ -25,20 +38,29 @@
 <div class="md:flex-row flex min-h-screen flex-col bg-bg text-text">
 	<HeroPanel />
 
+	<!-- Auth panel — right side -->
 	<div
-		class="p-5 sm:p-10 md:w-1/2 md:p-10 lg:p-16 relative flex grow flex-col justify-between overflow-y-auto bg-surface"
+		class="relative flex grow flex-col justify-between overflow-y-auto p-6 sm:p-10 md:w-1/2 md:p-10 lg:p-14"
+		style="background: var(--bg);"
 	>
+		<!-- Subtle background texture -->
+		<div
+			class="pointer-events-none absolute inset-0 opacity-[0.025]"
+			style="background-image: radial-gradient(circle, var(--text) 1px, transparent 1px); background-size: 28px 28px;"
+		></div>
+
 		<!-- Mobile Header Logo -->
-		<div class="gap-2.5 md:hidden flex items-center">
+		<div class="relative z-10 flex items-center gap-2.5 md:hidden">
 			<div
-				class="h-9 w-9 text-white flex items-center justify-center rounded-lg bg-primary shadow-md"
+				class="h-9 w-9 flex items-center justify-center rounded-xl text-white"
+				style="background: var(--primary); box-shadow: 0 4px 12px var(--primary-glow);"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
-					stroke-width="2.5"
+					stroke-width="2"
 					stroke-linecap="round"
 					stroke-linejoin="round"
 					class="h-5 w-5"
@@ -48,48 +70,63 @@
 					<path d="M6 10h10" />
 				</svg>
 			</div>
-			<span class="font-display text-lg font-bold tracking-tight text-text">AI Study Buddy</span>
+			<span class="text-base font-bold tracking-tight text-text">AI Study Buddy</span>
 		</div>
 
 		{#if authStore.user}
-			<div class="max-w-md gap-6 py-8 md:py-0 mx-auto my-auto flex w-full flex-col">
+			<!-- Logged-in state -->
+			<div class="relative z-10 max-w-md mx-auto my-auto w-full py-8 md:py-0">
 				<div
-					class="rounded-2xl p-6 border border-primary/20 bg-primary-soft/30 text-center shadow-sm"
+					class="rounded-2xl p-6 text-center"
+					style="background: var(--surface); border: 1px solid var(--border-strong); border-top-color: rgba(107,92,246,0.3); box-shadow: var(--shadow-lg), 0 0 0 1px var(--border);"
 				>
-					<div
-						class="mb-3 h-14 w-14 text-base font-bold mx-auto flex items-center justify-center rounded-full bg-primary-soft text-primary"
-					>
-						{#if authStore.user.photoURL}
-							<img
-								src={authStore.user.photoURL}
-								alt="Avatar"
-								class="h-14 w-14 rounded-full object-cover"
-							/>
-						{:else}
-							{authStore.user.displayName
-								? authStore.user.displayName.slice(0, 2).toUpperCase()
-								: authStore.user.email?.slice(0, 2).toUpperCase() || '??'}
-						{/if}
-					</div>
-					<h3 class="font-display text-xl font-bold text-text">Welcome back!</h3>
-					<p class="mt-1 text-xs text-text-muted">
-						You are currently signed in as <span class="font-semibold text-text"
-							>{authStore.user.email}</span
+					<!-- Avatar -->
+					<div class="mb-4 relative inline-block">
+						<div
+							class="h-15 w-15 flex items-center justify-center rounded-full text-sm font-bold text-primary mx-auto"
+							style="background: var(--primary-soft); border: 2px solid var(--border-strong); box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--border);"
 						>
+							{#if authStore.user.photoURL && !avatarBroken}
+								<img
+									src={authStore.user.photoURL}
+									alt={authStore.user.displayName || 'Profile photo'}
+									class="h-15 w-15 rounded-full object-cover"
+									onerror={() => (avatarBroken = true)}
+								/>
+							{:else}
+								{userInitials}
+							{/if}
+						</div>
+						<!-- Online indicator -->
+						<span
+							class="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full block"
+							style="background: var(--success); border: 2px solid var(--surface); box-shadow: 0 0 6px var(--success);"
+						></span>
+					</div>
+
+					<h3 class="text-xl font-bold text-text tracking-tight">Welcome back!</h3>
+					<p class="mt-1.5 text-[12px] text-text-muted">
+						Signed in as <span class="font-semibold text-text">{authStore.user.email}</span>
 					</p>
 
-					<div class="mt-6 gap-3 flex flex-col">
+					<div class="mt-6 flex flex-col gap-3">
 						<a
 							href="/app"
-							class="gap-2 px-4 py-3.5 text-xs font-bold text-white sm:text-sm flex w-full items-center justify-center rounded-xl bg-primary shadow-md transition-all duration-180 hover:bg-primary-hover"
+							class="relative overflow-hidden flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold text-white transition-all duration-180"
+							style="background: var(--primary); box-shadow: var(--shadow-primary);"
 						>
+							<!-- Shine overlay -->
+							<span
+								class="pointer-events-none absolute inset-0"
+								style="background: linear-gradient(135deg, rgba(255,255,255,0.14) 0%, transparent 55%); border-radius: inherit;"
+							></span>
 							<span>Go to Dashboard</span>
-							<span>&rarr;</span>
+							<span>→</span>
 						</a>
 						<button
 							type="button"
 							onclick={() => authStore.logout()}
-							class="px-4 py-2.5 text-xs font-semibold w-full cursor-pointer rounded-xl border border-border bg-surface text-danger transition-colors duration-180 hover:bg-danger-soft"
+							class="w-full cursor-pointer rounded-xl border px-4 py-2.5 text-[12px] font-semibold transition-colors duration-180 hover:bg-danger-soft text-danger border-border bg-surface"
 						>
 							Sign Out / Switch Account
 						</button>
@@ -97,28 +134,22 @@
 				</div>
 			</div>
 		{:else}
-			<AuthForm />
+			<div class="relative z-10 flex grow flex-col justify-center">
+				<AuthForm />
+			</div>
 		{/if}
 
 		<!-- Footer Links -->
 		<div
-			class="mt-10 gap-4 font-medium md:mt-0 flex flex-wrap items-center justify-center text-center text-[11px] text-text-muted select-none"
+			class="relative z-10 mt-10 flex flex-wrap items-center justify-center gap-4 text-center text-[11px] font-medium text-text-subtle select-none md:mt-0"
 		>
 			<span>&copy; 2026 AI Study Buddy</span>
-			<span>&bull;</span>
-			<a href="#terms" onclick={(e) => e.preventDefault()} class="transition-colors hover:text-text"
-				>Terms</a
-			>
-			<span>&bull;</span>
-			<a
-				href="#privacy"
-				onclick={(e) => e.preventDefault()}
-				class="transition-colors hover:text-text">Privacy</a
-			>
-			<span>&bull;</span>
-			<a href="#help" onclick={(e) => e.preventDefault()} class="transition-colors hover:text-text"
-				>Help</a
-			>
+			<span style="opacity: 0.4;">&bull;</span>
+			<a href="#terms" onclick={(e) => e.preventDefault()} class="transition-colors hover:text-text-muted">Terms</a>
+			<span style="opacity: 0.4;">&bull;</span>
+			<a href="#privacy" onclick={(e) => e.preventDefault()} class="transition-colors hover:text-text-muted">Privacy</a>
+			<span style="opacity: 0.4;">&bull;</span>
+			<a href="#help" onclick={(e) => e.preventDefault()} class="transition-colors hover:text-text-muted">Help</a>
 		</div>
 	</div>
 </div>

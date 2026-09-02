@@ -84,52 +84,54 @@
 					? `Next target badge: ${b.name}, ${nextBadgeTarget?.hint}`
 					: `Locked badge: ${b.name}, ${b.requirement}`}
 
-			<button
-				type="button"
-				aria-label={badgeAriaLabel}
-				class="group gap-1.5 px-3.5 py-2 text-xs font-bold relative inline-flex cursor-help items-center rounded-xl border transition-all duration-180 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary {unlocked
-					? 'shadow-xs border-primary/40 bg-primary-soft/60 text-text'
-					: isNext
-						? 'border-amber-500/60 bg-amber-500/10 shadow-amber-500/10 ring-amber-500/20 text-text shadow-md ring-2'
-						: 'border-border/80 bg-surface-muted text-text-muted hover:border-border hover:text-text'}"
-			>
-				<span>{b.icon}</span>
-				<span>{b.name}</span>
-
-				{#if unlocked}
-					<span class="font-extrabold text-emerald-600 dark:text-emerald-400 text-[10px]">✓</span>
-				{:else if isNext}
-					<span
-						class="py-0.2 bg-amber-500 px-1.5 font-black text-slate-950 rounded-full text-[9px] uppercase"
-					>
-						NEXT
-					</span>
-				{:else}
-					<span class="text-[10px] opacity-60">🔒</span>
-				{/if}
-
-				<!-- Accessible Hover & Focus Tooltip -->
-				<div
-					class="mb-2 border-slate-700/60 bg-slate-900 px-3 py-1.5 font-semibold text-white shadow-xl pointer-events-none absolute bottom-full left-1/2 z-30 hidden -translate-x-1/2 rounded-xl border text-[11px] whitespace-nowrap transition-all group-hover:block group-focus-visible:block"
+			<div role="listitem">
+				<button
+					type="button"
+					aria-label={badgeAriaLabel}
+					class="group gap-1.5 px-3.5 py-2 text-xs font-bold relative inline-flex cursor-help items-center rounded-xl border transition-all duration-180 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary {unlocked
+						? 'shadow-xs border-primary/40 bg-primary-soft/60 text-text'
+						: isNext
+							? 'border-amber-500/60 bg-amber-500/10 shadow-amber-500/10 ring-amber-500/20 text-text shadow-md ring-2'
+							: 'border-border/80 bg-surface-muted text-text-muted hover:border-border hover:text-text'}"
 				>
+					<span>{b.icon}</span>
+					<span>{b.name}</span>
+
 					{#if unlocked}
-						<div class="gap-1 text-emerald-400 flex items-center">
-							<span>✓</span>
-							<span>Unlocked! ({b.name})</span>
-						</div>
+						<span class="font-extrabold text-emerald-600 dark:text-emerald-400 text-[10px]">✓</span>
 					{:else if isNext}
-						<div class="gap-1 text-amber-300 flex items-center">
-							<span>🎯</span>
-							<span>Next Target: {nextBadgeTarget?.hint}</span>
-						</div>
+						<span
+							class="py-0.2 bg-amber-500 px-1.5 font-black text-slate-950 rounded-full text-[9px] uppercase"
+						>
+							NEXT
+						</span>
 					{:else}
-						<div class="gap-1 text-slate-300 flex items-center">
-							<span>🔒</span>
-							<span>{b.requirement}</span>
-						</div>
+						<span class="text-[10px] opacity-60">🔒</span>
 					{/if}
-				</div>
-			</button>
+
+					<!-- Accessible Hover & Focus Tooltip -->
+					<div
+						class="mb-2 border-slate-700/60 bg-slate-900 px-3 py-1.5 font-semibold text-white shadow-xl pointer-events-none absolute bottom-full left-1/2 z-30 hidden -translate-x-1/2 rounded-xl border text-[11px] whitespace-nowrap transition-all group-hover:block group-focus-visible:block"
+					>
+						{#if unlocked}
+							<div class="gap-1 text-emerald-400 flex items-center">
+								<span>✓</span>
+								<span>Unlocked! ({b.name})</span>
+							</div>
+						{:else if isNext}
+							<div class="gap-1 text-amber-300 flex items-center">
+								<span>🎯</span>
+								<span>Next Target: {nextBadgeTarget?.hint}</span>
+							</div>
+						{:else}
+							<div class="gap-1 text-slate-300 flex items-center">
+								<span>🔒</span>
+								<span>{b.requirement}</span>
+							</div>
+						{/if}
+					</div>
+				</button>
+			</div>
 		{/each}
 	</div>
 </div>

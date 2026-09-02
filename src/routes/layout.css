@@ -1,33 +1,52 @@
-/* Font imports moved to design-tokens.css */
+/* Design tokens & Tailwind */
 @import '../lib/styles/design-tokens.css';
+@import 'tailwindcss';
 @theme {
+	/* ── Backgrounds ── */
 	--color-bg: var(--bg);
 	--color-surface: var(--surface);
 	--color-surface-muted: var(--surface-muted);
+	--color-surface-glass: var(--surface-glass);
+
+	/* ── Borders ── */
 	--color-border: var(--border);
+	--color-border-strong: var(--border-strong);
+
+	/* ── Text ── */
 	--color-text: var(--text);
 	--color-text-muted: var(--text-muted);
+	--color-text-subtle: var(--text-subtle);
+
+	/* ── Brand ── */
 	--color-primary: var(--primary);
 	--color-primary-soft: var(--primary-soft);
 	--color-primary-hover: var(--primary-hover);
+	--color-primary-glow: var(--primary-glow);
+
+	/* ── Accent ── */
 	--color-accent: var(--accent);
 	--color-accent-soft: var(--accent-soft);
 	--color-accent-text: var(--accent-text);
+
+	/* ── Semantic ── */
 	--color-success: var(--success);
 	--color-success-soft: var(--success-soft);
 	--color-danger: var(--danger);
 	--color-danger-soft: var(--danger-soft);
 
 	/* Semantic Mastery States (derived from FSRS data) */
-	--color-mastery-strong: var(--success); /* ≥80% — mastered */
+	--color-mastery-strong: var(--success);
 	--color-mastery-strong-soft: var(--success-soft);
-	--color-mastery-learning: var(--primary); /* 40–79% — reviewing */
+	--color-mastery-learning: var(--primary);
 	--color-mastery-learning-soft: var(--primary-soft);
-	--color-mastery-weak: var(--accent); /* 1–39% — learning/weak */
+	--color-mastery-weak: var(--accent);
 	--color-mastery-weak-soft: var(--accent-soft);
-	--color-mastery-none: var(--text-muted); /* 0% / not-started — gray */
+	--color-mastery-none: var(--text-muted);
 	--color-mastery-none-soft: var(--surface-muted);
+
+	/* ── Hero gradient ── */
 	--color-hero-from: var(--hero-from);
+	--color-hero-mid: var(--hero-mid);
 	--color-hero-to: var(--hero-to);
 
 	/* Heatmap Empty Cells */
@@ -42,18 +61,26 @@
 	--color-course-emerald: var(--c-emerald);
 	--color-course-emerald-soft: var(--c-emerald-soft);
 
-	/* Font definitions moved to design-tokens.css */
+	/* ── Fonts ── */
+	--font-display: 'Inter', system-ui, sans-serif;
+	--font-sans: 'Inter', system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', monospace;
 
-	/* Border Radii */
+	/* ── Radii ── */
+	--radius-xs: 6px;
 	--radius-sm: 8px;
 	--radius-md: 12px;
 	--radius-lg: 16px;
-	--radius-xl: 24px;
+	--radius-xl: 20px;
+	--radius-2xl: 28px;
 
-	/* Shadows */
-	--shadow-sm: 0 1px 2px rgb(29 35 64 / 0.04);
-	--shadow-md: 0 4px 16px rgb(29 35 64 / 0.06);
-	--shadow-lg: 0 12px 32px rgb(29 35 64 / 0.1);
+	/* ── Shadows ── */
+	--shadow-xs: var(--shadow-xs);
+	--shadow-sm: var(--shadow-sm);
+	--shadow-md: var(--shadow-md);
+	--shadow-lg: var(--shadow-lg);
+	--shadow-xl: var(--shadow-xl);
+	--shadow-primary: var(--shadow-primary);
 
 	/* Shimmer animation for loading states */
 	--animate-shimmer: shimmer 2s infinite linear;
@@ -73,70 +100,96 @@
 /* Light — default */
 :root,
 [data-theme='light'] {
-	--bg: #eef1f7; /* page */
-	--surface: #ffffff; /* cards */
-	--surface-muted: #f5f7fb; /* inset panels, option rows */
-	--border: #e3e7f0;
-	--text: #1d2340; /* headings */
-	--text-muted: #5c6287; /* body, captions */
-	--primary: #574fd6; /* buttons, active pill, logo, FR badges */
-	--primary-soft: #eeedfb; /* lesson/module icon tiles */
-	--primary-hover: #4740be;
-	--accent: #f5a524; /* STREAK ONLY */
-	--accent-soft: #fef1dc;
-	--accent-text: #b25e00;
-	--success: #166534;
-	--success-soft: #e6f7ee;
+	--bg: #f5f4fc;
+	--surface: #ffffff;
+	--surface-muted: #f1f0fa;
+	--surface-glass: rgba(255, 255, 255, 0.75);
+	--border: rgba(107, 92, 246, 0.12);
+	--border-strong: rgba(107, 92, 246, 0.22);
+	--text: #16131e;
+	--text-muted: #5f5882;
+	--text-subtle: #9d98bb;
+	--primary: #6b5cf6;
+	--primary-soft: #eeecfd;
+	--primary-hover: #5a4ce0;
+	--primary-glow: rgba(107, 92, 246, 0.28);
+	--accent: #e8940c;
+	--accent-soft: #fdf3dc;
+	--accent-text: #9a5f00;
+	--success: #15803d;
+	--success-soft: #e7f7ef;
 	--danger: #dc2626;
-	--danger-soft: #fdecec;
-	--hero-from: #6c63e8; /* login hero panel gradient */
-	--hero-to: #574fd6;
+	--danger-soft: #fdeaea;
+	--hero-from: #2a1f5c;
+	--hero-mid: #3d2a7a;
+	--hero-to: #1a1032;
 
-	/* Heatmap Empty Cells — high contrast against white card surface */
-	--heatmap-empty-bg: #d8dce9;
-	--heatmap-empty-border: #b0b6cc;
+	/* Heatmap Empty Cells */
+	--heatmap-empty-bg: #dddaf0;
+	--heatmap-empty-border: #b9b4d8;
 
 	/* Course Specific Accents */
-	--c-violet: #6d28d9;
+	--c-violet: #7c3aed;
 	--c-violet-soft: #f5f3ff;
 	--c-amber: #b45309;
 	--c-amber-soft: #fffbeb;
 	--c-emerald: #047857;
 	--c-emerald-soft: #ecfdf5;
+
+	/* Shadows (light mode) */
+	--shadow-xs: 0 1px 2px rgba(22, 19, 30, 0.04);
+	--shadow-sm: 0 1px 3px rgba(22, 19, 30, 0.06), 0 1px 2px rgba(22, 19, 30, 0.04);
+	--shadow-md: 0 4px 12px rgba(22, 19, 30, 0.08), 0 1px 3px rgba(22, 19, 30, 0.04);
+	--shadow-lg: 0 12px 28px rgba(22, 19, 30, 0.12), 0 4px 8px rgba(22, 19, 30, 0.06);
+	--shadow-xl: 0 24px 48px rgba(22, 19, 30, 0.14), 0 8px 16px rgba(22, 19, 30, 0.08);
+	--shadow-primary: 0 4px 16px rgba(107, 92, 246, 0.32);
 }
 
 /* Dark */
 [data-theme='dark'] {
-	--bg: #12141c;
-	--surface: #1a1d28;
-	--surface-muted: #222634;
-	--border: #2c3142;
-	--text: #eef0f7;
-	--text-muted: #9aa0bc;
-	--primary: #7c74f0;
-	--primary-soft: #262445;
-	--primary-hover: #8f88f5;
-	--accent: #f5a524;
-	--accent-soft: #3a2b10;
-	--accent-text: #f5a524;
+	--bg: #0d0d12;
+	--surface: #13121a;
+	--surface-muted: #1a1926;
+	--surface-glass: rgba(19, 18, 26, 0.82);
+	--border: rgba(255, 255, 255, 0.07);
+	--border-strong: rgba(255, 255, 255, 0.12);
+	--text: #eeecf7;
+	--text-muted: #8b86aa;
+	--text-subtle: #554f6d;
+	--primary: #8875f5;
+	--primary-soft: #201b42;
+	--primary-hover: #9986ff;
+	--primary-glow: rgba(136, 117, 245, 0.35);
+	--accent: #f5a624;
+	--accent-soft: #2e2008;
+	--accent-text: #f5a624;
 	--success: #34d399;
-	--success-soft: #10291f;
+	--success-soft: #0a2118;
 	--danger: #f87171;
-	--danger-soft: #2e1414;
-	--hero-from: #4a43b8;
-	--hero-to: #322c8c;
+	--danger-soft: #250f0f;
+	--hero-from: #3c2f82;
+	--hero-mid: #2c2065;
+	--hero-to: #1a1240;
 
-	/* Heatmap Empty Cells — subtle on dark surface */
-	--heatmap-empty-bg: #262a3a;
-	--heatmap-empty-border: #333849;
+	/* Heatmap Empty Cells */
+	--heatmap-empty-bg: #1d1c2a;
+	--heatmap-empty-border: #2a2840;
 
 	/* Course Specific Accents */
 	--c-violet: #a78bfa;
-	--c-violet-soft: #23153c;
+	--c-violet-soft: #1e1436;
 	--c-amber: #fbbf24;
-	--c-amber-soft: #38240a;
+	--c-amber-soft: #2a1a04;
 	--c-emerald: #34d399;
-	--c-emerald-soft: #0d2a1d;
+	--c-emerald-soft: #082018;
+
+	/* Shadows (dark mode) */
+	--shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+	--shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4);
+	--shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.7), 0 8px 16px rgba(0, 0, 0, 0.5);
+	--shadow-primary: 0 4px 20px rgba(136, 117, 245, 0.4);
 }
 
 /* Global resets for fonts and base styles */
@@ -146,9 +199,21 @@ body {
 	color: var(--text);
 	margin: 0;
 	padding: 0;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 	transition:
 		background-color 0.3s ease,
 		color 0.3s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	letter-spacing: -0.02em;
 }
 
 /* ─── View Transitions API ──────────────────────────────────────────────── */
@@ -400,17 +465,9 @@ body {
 	transform: rotateY(180deg);
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-	font-family: var(--font-display);
-}
-
 /* ─── Accessibility: Reduced Motion Support ──────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
+	/* 1. Global duration & iteration resets */
 	*,
 	::before,
 	::after {
@@ -418,5 +475,83 @@ h6 {
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
 		scroll-behavior: auto !important;
+	}
+
+	/* 2. View Transitions API pseudo-elements */
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+
+	/* 3. Slide, Fade, Pop, Bounce, Shake & Entrance utilities */
+	.anim-slide-up,
+	.anim-slide-right,
+	.anim-slide-left,
+	.anim-fade,
+	.anim-pop,
+	.anim-bounce,
+	.anim-shake,
+	.anim-swipe-left,
+	.anim-swipe-right {
+		animation: none !important;
+		transform: none !important;
+		opacity: 1 !important;
+	}
+
+	.stagger-1,
+	.stagger-2,
+	.stagger-3,
+	.stagger-4,
+	.stagger-5,
+	.stagger-6 {
+		animation-delay: 0ms !important;
+	}
+
+	/* 4. Pulse, Glow, Ping & Shimmer animations */
+	.anim-glow-pulse,
+	.anim-ring-pulse,
+	.animate-ping,
+	.animate-bounce {
+		animation: none !important;
+		transform: none !important;
+	}
+
+	.animate-pulse {
+		animation: none !important;
+		opacity: 0.8 !important;
+	}
+
+	/* Dampen continuous spin loaders */
+	.animate-spin {
+		animation-duration: 3s !important;
+	}
+
+	/* 5. Shimmer loading effect */
+	:root {
+		--animate-shimmer: none !important;
+	}
+
+	/* 6. Scaling & Translation interactions */
+	[class*='hover:scale-'],
+	[class*='hover:-translate-'],
+	[class*='active:scale-'] {
+		transform: none !important;
+		transition: none !important;
+	}
+
+	/* 7. 3D Flip Card: instantaneous state toggle without 3D rotation disorientation */
+	.flip-card {
+		perspective: none !important;
+	}
+	.flip-card-inner {
+		transform-style: flat !important;
+		transition: none !important;
+	}
+
+	/* 8. Ambient Background Canvas & Cursor Aura */
+	.cursor-aura,
+	.ambient-canvas {
+		display: none !important;
 	}
 }

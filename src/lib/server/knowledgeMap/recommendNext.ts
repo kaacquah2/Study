@@ -117,7 +117,7 @@ export function getRecommendedNext(
 				'Root module in knowledge graph'
 			],
 			actionLabel: 'Start First Lesson',
-			actionUrl: courseId ? `/app/courses/${courseId}/modules/${rootNode.moduleId}` : `/app/courses`
+			actionUrl: courseId ? `/app/courses/${courseId}/${rootNode.moduleId}` : `/app/courses`
 		};
 	}
 
@@ -182,7 +182,7 @@ export function getRecommendedNext(
 				`Active recall accuracy: ${m.masteryBreakdown.quizAccuracy}%`
 			],
 			actionLabel: 'Practice Weak Concept',
-			actionUrl: courseId ? `/app/courses/${courseId}/modules/${weakNode.moduleId}` : `/app/courses`
+			actionUrl: courseId ? `/app/courses/${courseId}/${weakNode.moduleId}` : `/app/courses`
 		};
 	}
 
@@ -236,9 +236,7 @@ export function getRecommendedNext(
 				reason: `Ready to progress: Prerequisites for "${title}" are satisfied.`,
 				evidence: bestEvidence,
 				actionLabel: 'Continue Learning',
-				actionUrl: courseId
-					? `/app/courses/${courseId}/modules/${bestNode.moduleId}`
-					: `/app/courses`
+				actionUrl: courseId ? `/app/courses/${courseId}/${bestNode.moduleId}` : `/app/courses`
 			};
 		}
 	}

@@ -116,26 +116,35 @@
 		<div class="gap-2 flex items-center">
 			{#if mistakes.length > 0 && !practiceMode}
 				<button
+					type="button"
 					onclick={() => {
 						practiceMode = true;
 						activePracticeIndex = 0;
 						userSelectedAnswer = null;
 						isAnswerChecked = false;
 					}}
-					class="text-primary-foreground gap-1.5 px-3.5 py-1.5 text-xs font-semibold flex items-center rounded-lg bg-primary shadow-sm transition-all hover:bg-primary/90"
+					aria-label={`Practice my mistakes (${mistakes.filter((m) => !m.resolved).length} unresolved questions)`}
+					class="text-primary-foreground gap-1.5 px-3.5 py-1.5 text-xs font-semibold flex cursor-pointer items-center rounded-lg bg-primary shadow-sm transition-all hover:bg-primary/90"
 				>
-					<Sparkles class="h-3.5 w-3.5" />
+					<Sparkles class="h-3.5 w-3.5" aria-hidden="true" />
 					Practice My Mistakes ({mistakes.filter((m) => !m.resolved).length})
 				</button>
 			{/if}
 
-			<div class="bg-card p-0.5 text-xs flex rounded-lg border border-border">
+			<div
+				class="bg-card p-0.5 text-xs flex rounded-lg border border-border"
+				role="tablist"
+				aria-label="Filter mistakes by resolution status"
+			>
 				<button
+					type="button"
+					role="tab"
+					aria-selected={selectedFilter === 'unresolved'}
 					onclick={() => {
 						selectedFilter = 'unresolved';
 						fetchMistakes();
 					}}
-					class="px-2.5 py-1 font-medium rounded-md transition-colors {selectedFilter ===
+					class="px-2.5 py-1 font-medium cursor-pointer rounded-md transition-colors {selectedFilter ===
 					'unresolved'
 						? 'bg-muted text-foreground'
 						: 'text-muted-foreground hover:text-foreground'}"
@@ -143,11 +152,15 @@
 					Unresolved
 				</button>
 				<button
+					type="button"
+					role="tab"
+					aria-selected={selectedFilter === 'resolved'}
 					onclick={() => {
 						selectedFilter = 'resolved';
 						fetchMistakes();
 					}}
-					class="px-2.5 py-1 font-medium rounded-md transition-colors {selectedFilter === 'resolved'
+					class="px-2.5 py-1 font-medium cursor-pointer rounded-md transition-colors {selectedFilter ===
+					'resolved'
 						? 'bg-muted text-foreground'
 						: 'text-muted-foreground hover:text-foreground'}"
 				>
@@ -158,14 +171,22 @@
 	</div>
 
 	{#if error}
-		<div class="border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-400 rounded-xl border">
+		<div
+			role="alert"
+			aria-live="polite"
+			class="border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-400 rounded-xl border"
+		>
 			{error}
 		</div>
 	{/if}
 
 	<!-- Practice Interactive Mode -->
 	{#if practiceMode && activePracticeItem}
-		<div class="bg-card p-6 rounded-xl border border-primary/30 shadow-lg">
+		<div
+			class="bg-card p-6 rounded-xl border border-primary/30 shadow-lg"
+			role="region"
+			aria-label="Mistake Practice Mode"
+		>
 			<div class="pb-3 flex items-center justify-between border-b border-border">
 				<div class="gap-2 flex items-center">
 					<span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-primary/10 text-primary">
@@ -178,27 +199,37 @@
 					{/if}
 				</div>
 				<button
+					type="button"
 					onclick={() => (practiceMode = false)}
-					class="text-muted-foreground hover:text-foreground text-xs font-medium"
+					aria-label="Exit practice mode"
+					class="text-muted-foreground hover:text-foreground text-xs font-medium cursor-pointer"
 				>
 					Exit Practice
 				</button>
 			</div>
 
 			<div class="my-5">
-				<p class="text-foreground text-base font-semibold">
+				<h3 id="practice-question-prompt" class="text-foreground text-base font-semibold">
 					{activePracticeItem.questionSnapshot.prompt}
-				</p>
+				</h3>
 			</div>
 
-			<div class="gap-2.5 flex flex-col">
+			<div
+				class="gap-2.5 flex flex-col"
+				role="radiogroup"
+				aria-labelledby="practice-question-prompt"
+			>
 				{#each activePracticeItem.questionSnapshot.options as option, idx (idx)}
 					{@const isSelected = userSelectedAnswer === idx}
 					{@const isCorrect = idx === activePracticeItem.questionSnapshot.correctIndex}
 					<button
+						type="button"
+						role="radio"
+						aria-checked={isSelected}
+						aria-disabled={isAnswerChecked}
 						disabled={isAnswerChecked}
 						onclick={() => (userSelectedAnswer = idx)}
-						class="p-3 text-sm flex items-center justify-between rounded-lg border text-left transition-all duration-150 {isAnswerChecked
+						class="p-3 text-sm flex cursor-pointer items-center justify-between rounded-lg border text-left transition-all duration-150 {isAnswerChecked
 							? isCorrect
 								? 'border-emerald-500 bg-emerald-500/10 font-medium text-emerald-700 dark:text-emerald-300'
 								: isSelected
@@ -210,14 +241,18 @@
 					>
 						<span>{option}</span>
 						{#if isAnswerChecked && isCorrect}
-							<Check class="h-4 w-4 text-emerald-500" />
+							<Check class="h-4 w-4 text-emerald-500" aria-label="Correct answer" />
 						{/if}
 					</button>
 				{/each}
 			</div>
 
 			{#if isAnswerChecked}
-				<div class="bg-muted/40 mt-5 p-4 text-xs rounded-lg border border-border">
+				<div
+					role="status"
+					aria-live="polite"
+					class="bg-muted/40 mt-5 p-4 text-xs rounded-lg border border-border"
+				>
 					<h4 class="text-foreground mb-1 font-semibold">Explanation:</h4>
 					<p class="text-muted-foreground leading-relaxed">
 						{activePracticeItem.questionSnapshot.explanation || 'No explanation provided.'}
@@ -228,16 +263,18 @@
 			<div class="mt-6 gap-3 flex justify-end">
 				{#if !isAnswerChecked}
 					<button
+						type="button"
 						disabled={userSelectedAnswer === null}
 						onclick={checkPracticeAnswer}
-						class="text-primary-foreground px-4 py-2 text-xs font-semibold rounded-lg bg-primary shadow-sm disabled:opacity-50"
+						class="text-primary-foreground px-4 py-2 text-xs font-semibold cursor-pointer rounded-lg bg-primary shadow-sm disabled:opacity-50"
 					>
 						Check Answer
 					</button>
 				{:else}
 					<button
+						type="button"
 						onclick={nextPracticeItem}
-						class="text-primary-foreground px-4 py-2 text-xs font-semibold rounded-lg bg-primary shadow-sm"
+						class="text-primary-foreground px-4 py-2 text-xs font-semibold cursor-pointer rounded-lg bg-primary shadow-sm"
 					>
 						{activePracticeIndex < mistakes.length - 1 ? 'Next Question →' : 'Finish Practice'}
 					</button>
@@ -300,8 +337,10 @@
 
 						{#if !mistake.resolved}
 							<button
+								type="button"
 								onclick={() => handleResolve(mistake.questionId)}
-								class="text-xs font-medium shrink-0 text-primary hover:underline"
+								aria-label={`Mark mistake as resolved: ${mistake.questionSnapshot.prompt.slice(0, 40)}`}
+								class="text-xs font-medium shrink-0 cursor-pointer text-primary hover:underline"
 							>
 								Mark Resolved
 							</button>

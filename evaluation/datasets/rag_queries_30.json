@@ -1,0 +1,221 @@
+[
+	{
+		"id": "Q-01",
+		"domain": "Computer Networks",
+		"query": "What is the purpose of subnetting an IPv4 network and how does a subnet mask work?",
+		"keywords": ["subnet", "ipv4", "mask", "network", "host", "broadcast"],
+		"gold_concept": "Subnetting divides a larger network into smaller subnetworks using subnet masks to separate network prefix and host ID bits."
+	},
+	{
+		"id": "Q-02",
+		"domain": "Computer Networks",
+		"query": "Explain the 3-way TCP handshake process for establishing a reliable connection.",
+		"keywords": ["tcp", "handshake", "syn", "ack", "sequence", "connection"],
+		"gold_concept": "TCP uses SYN, SYN-ACK, and ACK packets to synchronize sequence numbers and establish a full-duplex transmission control connection."
+	},
+	{
+		"id": "Q-03",
+		"domain": "Computer Networks",
+		"query": "What is the difference between broadcast, unicast, and multicast addressing in IPv4?",
+		"keywords": ["broadcast", "unicast", "multicast", "address", "packet", "transmission"],
+		"gold_concept": "Unicast sends to one host, broadcast sends to all hosts in the subnet (255.255.255.255), and multicast sends to a designated multicast group."
+	},
+	{
+		"id": "Q-04",
+		"domain": "Computer Networks",
+		"query": "What is the role of ARP Address Resolution Protocol in local Ethernet networks?",
+		"keywords": ["arp", "ethernet", "mac", "ip", "resolution", "address"],
+		"gold_concept": "ARP translates IPv4 network addresses into physical MAC addresses within a local data link layer broadcast domain."
+	},
+	{
+		"id": "Q-05",
+		"domain": "Computer Networks",
+		"query": "How does DNS domain name resolution work from root server to authoritative server?",
+		"keywords": ["dns", "root", "authoritative", "tld", "resolver", "query"],
+		"gold_concept": "Recursive resolvers query root DNS servers, Top-Level Domain (TLD) servers, and authoritative nameservers to resolve domain names to IP addresses."
+	},
+	{
+		"id": "Q-06",
+		"domain": "Computer Networks",
+		"query": "What is the difference between TCP congestion control and flow control mechanisms?",
+		"keywords": ["congestion", "flow", "window", "sliding", "bandwidth", "buffer"],
+		"gold_concept": "Flow control prevents sender from overwhelming receiver buffer (receive window), while congestion control prevents sender from overwhelming intermediate network links (congestion window)."
+	},
+	{
+		"id": "Q-07",
+		"domain": "Algorithms & Data Structures",
+		"query": "What is the worst-case and average-case time complexity of QuickSort algorithm?",
+		"keywords": ["quicksort", "worst-case", "average-case", "complexity", "partition", "pivot"],
+		"gold_concept": "QuickSort achieves O(n log n) average time complexity, but degrades to O(n^2) worst-case when the pivot chosen is consistently the smallest or largest element."
+	},
+	{
+		"id": "Q-08",
+		"domain": "Algorithms & Data Structures",
+		"query": "How does Dijkstra algorithm find the shortest path in a weighted graph and why does it fail with negative weights?",
+		"keywords": ["dijkstra", "shortest", "path", "negative", "greedy", "weight", "graph"],
+		"gold_concept": "Dijkstra uses a greedy priority queue to relax edges. It fails with negative weights because once a vertex is marked visited, its distance is finalized and cannot be reduced by subsequent negative cycles."
+	},
+	{
+		"id": "Q-09",
+		"domain": "Algorithms & Data Structures",
+		"query": "What is the difference between Breadth-First Search BFS and Depth-First Search DFS traversals?",
+		"keywords": ["bfs", "dfs", "queue", "stack", "traversal", "graph", "tree"],
+		"gold_concept": "BFS explores level-by-level using a FIFO queue (useful for shortest paths in unweighted graphs), while DFS explores as deep as possible along each branch using a LIFO stack or recursion."
+	},
+	{
+		"id": "Q-10",
+		"domain": "Algorithms & Data Structures",
+		"query": "Explain how an AVL tree maintains height balance through rotations.",
+		"keywords": ["avl", "balance", "rotation", "height", "tree", "binary"],
+		"gold_concept": "An AVL tree enforces that balance factors (left height - right height) remain in {-1, 0, +1} using single (LL, RR) or double (LR, RL) rotations upon insertion/deletion."
+	},
+	{
+		"id": "Q-11",
+		"domain": "Algorithms & Data Structures",
+		"query": "What is dynamic programming and how does memoization differ from tabulation?",
+		"keywords": ["dynamic", "programming", "memoization", "tabulation", "subproblem", "optimal"],
+		"gold_concept": "Dynamic programming solves problems with overlapping subproblems and optimal substructure; memoization is top-down caching, while tabulation is bottom-up iterative table filling."
+	},
+	{
+		"id": "Q-12",
+		"domain": "Algorithms & Data Structures",
+		"query": "How does a hash table handle hash collisions using chaining versus open addressing?",
+		"keywords": ["hash", "collision", "chaining", "probing", "bucket", "table"],
+		"gold_concept": "Separate chaining stores colliding entries in linked lists/trees at each bucket; open addressing finds alternative slots using linear probing, quadratic probing, or double hashing."
+	},
+	{
+		"id": "Q-13",
+		"domain": "Operating Systems",
+		"query": "Explain the four Coffman conditions necessary for a deadlock to occur in an operating system.",
+		"keywords": [
+			"deadlock",
+			"coffman",
+			"mutual",
+			"exclusion",
+			"hold",
+			"wait",
+			"preemption",
+			"circular"
+		],
+		"gold_concept": "The four Coffman conditions are: Mutual Exclusion, Hold and Wait, No Preemption, and Circular Wait."
+	},
+	{
+		"id": "Q-14",
+		"domain": "Operating Systems",
+		"query": "What is virtual memory and how does the Memory Management Unit MMU use page tables?",
+		"keywords": ["virtual", "memory", "mmu", "page", "table", "translation", "tlb"],
+		"gold_concept": "Virtual memory maps process logical addresses to physical RAM frames using page tables and Translation Lookaside Buffers (TLB) managed by hardware MMU."
+	},
+	{
+		"id": "Q-15",
+		"domain": "Operating Systems",
+		"query": "What is the difference between a process and a thread in modern operating systems?",
+		"keywords": ["process", "thread", "address", "space", "context", "switch", "stack"],
+		"gold_concept": "A process is an isolated execution unit with its own private virtual memory space; a thread is a lightweight execution stream sharing the memory space, code, and global variables of its parent process."
+	},
+	{
+		"id": "Q-16",
+		"domain": "Operating Systems",
+		"query": "How does the Round Robin CPU scheduling algorithm work with time quantum?",
+		"keywords": ["round", "robin", "scheduling", "quantum", "cpu", "preemption", "queue"],
+		"gold_concept": "Round Robin assigns a fixed time quantum per process in a FIFO ready queue, preempting the running process if it does not finish within the slice."
+	},
+	{
+		"id": "Q-17",
+		"domain": "Operating Systems",
+		"query": "What causes thrashing in virtual memory and how can the working set model prevent it?",
+		"keywords": ["thrashing", "page", "fault", "working", "set", "swapping", "memory"],
+		"gold_concept": "Thrashing occurs when the system spends more time servicing page faults and swapping than executing instructions; the working set model allocates enough frames to satisfy active locality."
+	},
+	{
+		"id": "Q-18",
+		"domain": "Operating Systems",
+		"query": "What are semaphores and mutexes and how do they solve critical section race conditions?",
+		"keywords": ["semaphore", "mutex", "critical", "section", "race", "lock", "synchronization"],
+		"gold_concept": "Mutexes provide binary locking for mutual exclusion with ownership; semaphores use integer counters (wait/signal) for resource counting and task synchronization."
+	},
+	{
+		"id": "Q-19",
+		"domain": "Database Systems",
+		"query": "Explain ACID properties in relational database management systems.",
+		"keywords": ["acid", "atomicity", "consistency", "isolation", "durability", "transaction"],
+		"gold_concept": "ACID stands for Atomicity (all-or-nothing), Consistency (preserves invariants), Isolation (concurrency control), and Durability (committed data survives crashes)."
+	},
+	{
+		"id": "Q-20",
+		"domain": "Database Systems",
+		"query": "What is the difference between clustered and non-clustered B-tree indexes?",
+		"keywords": ["clustered", "index", "btree", "leaf", "table", "pointer"],
+		"gold_concept": "A clustered index defines the physical order of data rows on disk (one per table), while non-clustered indexes store sorted key values pointing back to table rows."
+	},
+	{
+		"id": "Q-21",
+		"domain": "Database Systems",
+		"query": "What is database normalization and what are the requirements for Third Normal Form 3NF?",
+		"keywords": ["normalization", "3nf", "transitive", "dependency", "functional", "key"],
+		"gold_concept": "3NF requires the relation to be in 2NF and have no transitive functional dependencies of non-prime attributes on candidate keys (every attribute must depend directly on the key)."
+	},
+	{
+		"id": "Q-22",
+		"domain": "Database Systems",
+		"query": "How does write-ahead logging WAL guarantee durability and crash recovery?",
+		"keywords": ["wal", "logging", "durability", "redo", "undo", "recovery", "disk"],
+		"gold_concept": "Write-Ahead Logging writes all transaction log records to non-volatile disk before modifying dirty pages in main database storage, allowing REDO/UNDO on crash restart."
+	},
+	{
+		"id": "Q-23",
+		"domain": "Compilers",
+		"query": "What is the difference between lexical analysis lexing and syntax analysis parsing?",
+		"keywords": ["lexical", "lexer", "token", "syntax", "parser", "ast", "grammar"],
+		"gold_concept": "Lexing converts raw character streams into tokens using regular expressions / finite automata; parsing converts tokens into an Abstract Syntax Tree (AST) using Context-Free Grammars."
+	},
+	{
+		"id": "Q-24",
+		"domain": "Compilers",
+		"query": "Explain LL1 versus LR1 parser grammars and their lookahead mechanisms.",
+		"keywords": ["ll1", "lr1", "parser", "lookahead", "top-down", "bottom-up", "shift-reduce"],
+		"gold_concept": "LL(1) is a top-down predictive parser using 1 token lookahead; LR(1) is a bottom-up shift-reduce parser capable of parsing a strictly larger class of deterministic context-free languages."
+	},
+	{
+		"id": "Q-25",
+		"domain": "Compilers",
+		"query": "What is Intermediate Representation IR and why is Static Single Assignment SSA form used?",
+		"keywords": ["ir", "intermediate", "ssa", "static", "assignment", "optimization", "phi"],
+		"gold_concept": "Intermediate Representation is a machine-independent code representation; SSA ensures every variable is assigned exactly once, simplifying dataflow analysis and compiler optimizations."
+	},
+	{
+		"id": "Q-26",
+		"domain": "Artificial Intelligence",
+		"query": "Explain the difference between forward chaining and backward chaining in expert systems.",
+		"keywords": ["forward", "backward", "chaining", "inference", "rules", "facts", "goal"],
+		"gold_concept": "Forward chaining is data-driven, starting from known facts and applying rules to deduce new facts; backward chaining is goal-driven, starting with a hypothesis and working backwards."
+	},
+	{
+		"id": "Q-27",
+		"domain": "Artificial Intelligence",
+		"query": "How does the A* search algorithm use heuristics f(n) = g(n) + h(n) to find optimal paths?",
+		"keywords": ["astar", "heuristic", "optimal", "admissible", "search", "graph"],
+		"gold_concept": "A* evaluates nodes by f(n) = g(n) + h(n) where g(n) is the exact cost from start and h(n) is an admissible heuristic estimate to the goal, guaranteeing optimality if h(n) is admissible."
+	},
+	{
+		"id": "Q-28",
+		"domain": "Artificial Intelligence",
+		"query": "What is the difference between Supervised, Unsupervised, and Reinforcement Learning?",
+		"keywords": ["supervised", "unsupervised", "reinforcement", "labeled", "reward", "policy"],
+		"gold_concept": "Supervised learns mappings from labeled data, Unsupervised discovers latent patterns/clustering in unlabeled data, and Reinforcement learns policies by maximizing reward signals from an environment."
+	},
+	{
+		"id": "Q-29",
+		"domain": "Computer Architecture",
+		"query": "What are pipeline hazards in CPU design and how do structural, data, and control hazards differ?",
+		"keywords": ["pipeline", "hazard", "structural", "data", "control", "stall", "forwarding"],
+		"gold_concept": "Pipeline hazards prevent execution of the next instruction: structural (resource conflict), data (RAW, WAR, WAW dependencies mitigated by forwarding), and control (branch misprediction)."
+	},
+	{
+		"id": "Q-30",
+		"domain": "Computer Architecture",
+		"query": "Explain cache memory hierarchy L1, L2, L3 and cache coherence protocols like MESI.",
+		"keywords": ["cache", "hierarchy", "l1", "l2", "l3", "mesi", "coherence", "snoop"],
+		"gold_concept": "Cache hierarchies trade off speed and capacity; multi-core processors maintain consistent memory views across private caches using MESI (Modified, Exclusive, Shared, Invalid) snooping."
+	}
+]

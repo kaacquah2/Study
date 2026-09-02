@@ -132,15 +132,23 @@
 	};
 </script>
 
-<div class="max-w-md gap-6 py-8 md:py-0 mx-auto my-auto flex w-full flex-col">
-	<!-- Tabs -->
+<div class="max-w-md gap-8 py-8 md:py-0 mx-auto my-auto flex w-full flex-col">
+	<!-- Tabs: Linear-style bottom-border indicator -->
 	{#if !isResetPassword}
-		<div class="p-1 flex rounded-xl border border-border bg-surface-muted">
+		<div
+			class="flex"
+			style="border-bottom: 1px solid var(--border);"
+			role="tablist"
+			aria-label="Authentication mode"
+		>
 			<button
 				type="button"
-				class="py-2 text-xs font-bold flex-1 cursor-pointer rounded-lg transition-all duration-180 {!isSignUp
-					? 'bg-surface text-text shadow-sm'
-					: 'text-text-muted hover:text-text'}"
+				role="tab"
+				aria-selected={!isSignUp}
+				aria-controls="auth-form-panel"
+				class="relative pb-3 pr-6 text-sm font-semibold cursor-pointer transition-colors duration-180 {!isSignUp
+					? 'text-text'
+					: 'text-text-subtle hover:text-text-muted'}"
 				onclick={() => {
 					isSignUp = false;
 					authError = '';
@@ -148,12 +156,21 @@
 				}}
 			>
 				Sign In
+				{#if !isSignUp}
+					<span
+						class="absolute -bottom-px left-0 right-6 h-0.5 rounded-full"
+						style="background: var(--primary);"
+					></span>
+				{/if}
 			</button>
 			<button
 				type="button"
-				class="py-2 text-xs font-bold flex-1 cursor-pointer rounded-lg transition-all duration-180 {isSignUp
-					? 'bg-surface text-text shadow-sm'
-					: 'text-text-muted hover:text-text'}"
+				role="tab"
+				aria-selected={isSignUp}
+				aria-controls="auth-form-panel"
+				class="relative pb-3 pr-6 text-sm font-semibold cursor-pointer transition-colors duration-180 {isSignUp
+					? 'text-text'
+					: 'text-text-subtle hover:text-text-muted'}"
 				onclick={() => {
 					isSignUp = true;
 					authError = '';
@@ -161,22 +178,28 @@
 				}}
 			>
 				Create Account
+				{#if isSignUp}
+					<span
+						class="absolute -bottom-px left-0 right-6 h-0.5 rounded-full"
+						style="background: var(--primary);"
+					></span>
+				{/if}
 			</button>
 		</div>
 	{/if}
 
 	<!-- Form Heading -->
 	<div>
-		<h2 class="mb-1.5 font-display text-2xl font-bold lg:text-3xl text-text">
+		<h2 class="mb-1.5 text-2xl font-bold tracking-tight text-text lg:text-[1.75rem]">
 			{#if isResetPassword}
-				Reset password
+				Reset your password
 			{:else if isSignUp}
-				Start your learning journey
+				Create your account
 			{:else}
 				Welcome back
 			{/if}
 		</h2>
-		<p class="text-xs lg:text-sm text-text-muted">
+		<p class="text-sm text-text-muted">
 			{#if isResetPassword}
 				Enter your email address to receive password reset instructions.
 			{:else if isSignUp}
@@ -190,6 +213,8 @@
 	<!-- Alerts -->
 	{#if authError}
 		<div
+			role="alert"
+			aria-live="polite"
 			class="animate-shake gap-2.5 p-3.5 text-xs font-semibold shadow-xs flex items-start rounded-xl border border-danger/20 bg-danger-soft text-danger"
 		>
 			<span class="leading-relaxed">{authError}</span>
@@ -198,6 +223,8 @@
 
 	{#if successMessage}
 		<div
+			role="status"
+			aria-live="polite"
 			class="gap-2.5 p-3.5 text-xs font-semibold shadow-xs flex items-start rounded-xl border border-success/20 bg-success-soft text-success"
 		>
 			<span class="leading-relaxed">{successMessage}</span>
@@ -208,11 +235,18 @@
 	{#if !isResetPassword}
 		<button
 			type="button"
-			class="gap-3 px-4 py-3 text-xs font-semibold shadow-xs sm:text-sm flex w-full cursor-pointer items-center justify-center rounded-xl border border-border bg-surface text-text transition-all duration-180 hover:border-border/80 hover:bg-surface-muted focus:outline-none"
+			aria-label="Continue with Google authentication"
+			class="flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-180 hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+			style="border-color: var(--border-strong); background: var(--surface); color: var(--text); box-shadow: var(--shadow-xs);"
 			onclick={handleGoogleSignIn}
 			disabled={loading}
 		>
-			<svg class="h-4.5 w-4.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+			<svg
+				class="h-4.5 w-4.5 shrink-0"
+				viewBox="0 0 24 24"
+				xmlns="http://www.w3.org/2000/svg"
+				aria-hidden="true"
+			>
 				<path
 					d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
 					fill="#4285F4"
@@ -233,46 +267,52 @@
 			Continue with Google
 		</button>
 
-		<div class="my-1 flex items-center justify-center text-center select-none">
-			<div class="grow border-t border-border"></div>
-			<span class="mx-3 font-bold tracking-wider text-[10px] text-text-muted uppercase"
-				>or continue with email</span
-			>
-			<div class="grow border-t border-border"></div>
+		<div class="flex items-center gap-3 select-none" aria-hidden="true">
+			<div class="h-px flex-1" style="background: var(--border);"></div>
+			<span class="text-[11px] font-semibold tracking-wider uppercase" style="color: var(--text-subtle);">or</span>
+			<div class="h-px flex-1" style="background: var(--border);"></div>
 		</div>
 	{/if}
 
 	<!-- Form -->
-	<form class="gap-4 flex flex-col" onsubmit={handleSubmit}>
-		<div class="gap-1.5 flex flex-col">
-			<label for="email" class="text-xs font-bold tracking-wider text-text-muted uppercase">
-				Email Address
+	<form id="auth-form-panel" class="gap-4 flex flex-col" onsubmit={handleSubmit}>
+		<div class="flex flex-col gap-1.5">
+			<label for="email" class="text-xs font-semibold tracking-wide" style="color: var(--text-muted);">
+				Email address
 			</label>
 			<input
 				type="email"
 				id="email"
-				class="px-4 py-3 text-xs sm:text-sm w-full rounded-xl border bg-surface transition-colors duration-180 {emailError
-					? 'border-danger'
-					: 'border-border'}"
+				aria-required="true"
+				aria-invalid={!!emailError}
+				aria-describedby={emailError ? 'email-error-msg' : undefined}
+				class="w-full rounded-xl border px-4 py-3 text-sm transition-all duration-180 outline-none
+					{emailError ? 'border-danger' : ''}"
+				style="background: var(--surface); color: var(--text); border-color: {emailError ? 'var(--danger)' : 'var(--border-strong)'};
+					box-shadow: {emailError ? '0 0 0 3px rgba(220,38,38,0.12)' : 'none'};"
+				onfocus={(e) => { if (!emailError) (e.currentTarget as HTMLInputElement).style.boxShadow = '0 0 0 3px var(--primary-glow)'; (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--primary)'; }}
+				onblur={(e) => { validateForm(); if (!emailError) { (e.currentTarget as HTMLInputElement).style.boxShadow = 'none'; (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--border-strong)'; }}}
 				placeholder="alex@example.com"
 				bind:value={email}
-				onblur={() => validateForm()}
 				disabled={loading}
 			/>
 			{#if emailError}
-				<span class="pl-1 font-semibold text-[11px] text-danger">{emailError}</span>
+				<span id="email-error-msg" class="pl-1 text-[11px] font-semibold text-danger" role="alert"
+					>{emailError}</span
+				>
 			{/if}
 		</div>
 
 		{#if !isResetPassword}
-			<div class="gap-1.5 flex flex-col">
+			<div class="flex flex-col gap-1.5">
 				<div class="flex items-center justify-between">
-					<label for="password" class="text-xs font-bold tracking-wider text-text-muted uppercase">
+					<label for="password" class="text-xs font-semibold tracking-wide" style="color: var(--text-muted);">
 						Password
 					</label>
 					<button
 						type="button"
-						class="text-xs font-semibold cursor-pointer text-primary"
+						class="text-xs font-semibold cursor-pointer transition-colors hover:text-text"
+						style="color: var(--primary);"
 						onclick={() => {
 							isResetPassword = true;
 							authError = '';
@@ -286,39 +326,57 @@
 					<input
 						type={showPassword ? 'text' : 'password'}
 						id="password"
-						class="py-3 pr-10 pl-4 text-xs sm:text-sm w-full rounded-xl border bg-surface transition-colors duration-180 {passwordError
-							? 'border-danger'
-							: 'border-border'}"
+						aria-required="true"
+						aria-invalid={!!passwordError}
+						aria-describedby={passwordError ? 'password-error-msg' : undefined}
+						class="w-full rounded-xl border py-3 pl-4 pr-10 text-sm transition-all duration-180 outline-none"
+						style="background: var(--surface); color: var(--text); border-color: {passwordError ? 'var(--danger)' : 'var(--border-strong)'};
+							box-shadow: {passwordError ? '0 0 0 3px rgba(220,38,38,0.12)' : 'none'};"
+						onfocus={(e) => { if (!passwordError) { (e.currentTarget as HTMLInputElement).style.boxShadow = '0 0 0 3px var(--primary-glow)'; (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--primary)'; }}}
+						onblur={(e) => { validateForm(); if (!passwordError) { (e.currentTarget as HTMLInputElement).style.boxShadow = 'none'; (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--border-strong)'; }}}
 						placeholder="••••••••••••"
 						bind:value={password}
-						onblur={() => validateForm()}
 						disabled={loading}
 					/>
 					<button
 						type="button"
-						class="right-3 absolute cursor-pointer text-text-muted hover:text-text"
+						class="absolute right-3 cursor-pointer transition-colors"
+						style="color: var(--text-subtle);"
 						onclick={() => (showPassword = !showPassword)}
+						aria-label={showPassword ? 'Hide password' : 'Show password'}
+						aria-pressed={showPassword}
+						aria-controls="password"
 					>
-						{showPassword ? '👁️' : '🔒'}
+						<span aria-hidden="true">{showPassword ? '👁️' : '🔒'}</span>
 					</button>
 				</div>
 				{#if passwordError}
-					<span class="pl-1 font-semibold text-[11px] text-danger">{passwordError}</span>
+					<span
+						id="password-error-msg"
+						class="pl-1 text-[11px] font-semibold text-danger"
+						role="alert">{passwordError}</span
+					>
 				{/if}
 			</div>
 		{/if}
 
 		<button
 			type="submit"
-			class="mt-2 px-4 py-3.5 font-bold text-white w-full cursor-pointer rounded-xl bg-primary shadow-md transition-all duration-180 select-none hover:bg-primary-hover disabled:opacity-50"
+			class="relative mt-2 flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl px-4 py-3.5 text-sm font-semibold text-white transition-all duration-200 select-none hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+			style="background: var(--primary); box-shadow: var(--shadow-primary);"
 			disabled={loading}
 		>
+			<!-- Diagonal shine overlay -->
+			<span
+				class="pointer-events-none absolute inset-0"
+				style="background: linear-gradient(135deg, rgba(255,255,255,0.16) 0%, transparent 55%); border-radius: inherit;"
+			></span>
 			{#if loading}
 				Processing...
 			{:else if isResetPassword}
 				Send Reset Instructions
 			{:else}
-				{isSignUp ? 'Create Account' : 'Sign In to Dashboard'}
+				{isSignUp ? 'Create Account' : 'Sign In'}
 			{/if}
 		</button>
 	</form>

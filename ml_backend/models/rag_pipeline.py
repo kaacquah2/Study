@@ -73,8 +73,30 @@ class RAGPipeline:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         logger.info(f"Loading embedding model: {_EMBED_MODEL_ID}")
-        self._embed_model = SentenceTransformer(_EMBED_MODEL_ID)
-        self._dim = self._embed_model.get_sentence_embedding_dimension()
+        prefer_local = (
+            os.getenv("APP_ENV") == "production"
+            or os.getenv("TRANSFORMERS_OFFLINE") == "1"
+            or os.getenv("HF_HUB_OFFLINE") == "1"
+        )
+        try:
+            if prefer_local:
+                self._embed_model = SentenceTransformer(_EMBED_MODEL_ID, local_files_only=True)
+            else:
+                self._embed_model = SentenceTransformer(_EMBED_MODEL_ID)
+        except Exception as e:
+            if prefer_local and os.getenv("TRANSFORMERS_OFFLINE") != "1" and os.getenv("HF_HUB_OFFLINE") != "1":
+                logger.warning(
+                    f"RAG: Local embedding model load failed for '{_EMBED_MODEL_ID}' ({e}). "
+                    "Attempting online fallback download..."
+                )
+                self._embed_model = SentenceTransformer(_EMBED_MODEL_ID)
+            else:
+                logger.error(f"RAG: Failed to load embedding model '{_EMBED_MODEL_ID}': {e}")
+                raise
+
+        # Get sentence embedding dimension with strict integer type guarantee
+        raw_dim = getattr(self._embed_model, "get_sentence_embedding_dimension", lambda: 384)()
+        self._dim: int = int(raw_dim) if raw_dim is not None else 384
         self._index: Optional[faiss.IndexIDMap] = None
 
         # ── Stable document registry ─────────────────────────────────────────
@@ -137,7 +159,7 @@ class RAGPipeline:
             self._index.add_with_ids(embeddings, ids)
 
             for i, chunk in enumerate(chunks):
-                fid = int(start + i)
+                fid = start + i
                 self._id_to_doc[fid] = {
                     "text":    chunk,
                     "user_id": user_id,
@@ -182,7 +204,8 @@ class RAGPipeline:
                 return
 
             try:
-                self._index.remove_ids(np.array(target_ids, dtype="int64"))
+                selector = faiss.IDSelectorBatch(np.array(target_ids, dtype="int64"))
+                self._index.remove_ids(selector)
             except Exception as exc:
                 logger.warning(
                     f"[RAG] remove_ids failed ({exc}). "

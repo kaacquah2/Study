@@ -202,25 +202,32 @@ export async function pingMLBackend(timeoutMs = 3_000): Promise<MLBackendPingRes
 			console.error(
 				'[CRITICAL AUTH ERROR] ML_BACKEND_API_KEY mismatch! SvelteKit API key was rejected by the Python ML backend (401 Unauthorized).'
 			);
-			return { available: false, busy: false };
+			return { available: false, busy: false, status: 'AUTH_ERROR_401' };
 		}
 
 		if (!res.ok) {
 			recordFailure();
-			return { available: false, busy: false };
+			const errBody = await res.json().catch(() => ({}));
+			return {
+				available: false,
+				busy: errBody?.inference_busy === true,
+				status: errBody?.status || `HTTP_${res.status}`
+			};
 		}
 
 		recordSuccess();
 		const body = await res.json().catch(() => ({}));
+		const isReady = body?.status === 'ok' || body?.ready === true;
 		return {
-			available: true,
-			busy: body?.inference_busy === true
+			available: isReady,
+			busy: body?.inference_busy === true,
+			status: isReady ? 'OK' : body?.status || 'NOT_READY'
 		};
 	} catch (err) {
 		recordFailure();
 		const msg = err instanceof Error ? err.message : 'Unreachable';
 		console.warn(`[pingMLBackend] Could not reach ML backend at ${getMLBackendUrl()}: ${msg}`);
-		return { available: false, busy: false };
+		return { available: false, busy: false, status: 'UNREACHABLE' };
 	}
 }
 
@@ -240,7 +247,13 @@ export async function validateMLBackendConnection(): Promise<{ ok: boolean; stat
 		if (res.status === 401) {
 			return { ok: false, status: 'KEY_MISMATCH_401' };
 		}
-		return { ok: res.ok, status: res.ok ? 'OK' : `HTTP_${res.status}` };
+		if (!res.ok) {
+			const errBody = await res.json().catch(() => ({}));
+			return { ok: false, status: errBody?.status || `HTTP_${res.status}` };
+		}
+		const body = await res.json().catch(() => ({}));
+		const isReady = body?.status === 'ok' || body?.ready === true;
+		return { ok: isReady, status: isReady ? 'OK' : body?.status || `HTTP_${res.status}` };
 	} catch (err) {
 		return { ok: false, status: err instanceof Error ? err.message : 'UNREACHABLE' };
 	}
@@ -248,8 +261,10 @@ export async function validateMLBackendConnection(): Promise<{ ok: boolean; stat
 
 export interface MLBackendHealthData {
 	status: string;
+	ready?: boolean;
 	models_loaded: Record<string, boolean>;
 	inference_busy: boolean;
+	errors?: Record<string, string>;
 }
 
 /**
@@ -272,12 +287,14 @@ export async function getMLBackendHealth(timeoutMs = 5_000): Promise<MLBackendHe
 			signal: AbortSignal.timeout(timeoutMs)
 		});
 
-		if (!res.ok) {
+		if (!res.ok && res.status !== 503) {
 			recordFailure();
 			return null;
 		}
 
-		recordSuccess();
+		if (res.ok) {
+			recordSuccess();
+		}
 		const data = (await res.json()) as MLBackendHealthData;
 		return data;
 	} catch {

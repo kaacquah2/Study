@@ -169,8 +169,11 @@ class ChatResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
+    ready: bool = True
     models_loaded: dict[str, bool]
     inference_busy: bool = False
+    errors: Optional[dict[str, str]] = None
+    model_provenance: Optional[dict] = None
 
 
 # ── AI Completion ─────────────────────────────────────────────────────────────
@@ -182,4 +185,24 @@ class CompletionRequest(BaseModel):
 
 class CompletionResponse(BaseModel):
     text: str
+
+
+# ── Model Provenance & Manifest ────────────────────────────────────────────────
+
+class ModelProvenanceInfo(BaseModel):
+    model_id: str
+    tier: str  # "base_foundation" | "pretrained_specialized" | "fine_tuned_custom" | "local_checkpoint"
+    is_fine_tuned: bool
+    default_id: str
+    strategy: str
+    loaded: bool
+
+
+class ModelManifestResponse(BaseModel):
+    system_mode: str  # "base_foundation_development" | "fine_tuned_production"
+    fine_tuned_count: int
+    base_count: int
+    specialized_count: int
+    models: dict[str, ModelProvenanceInfo]
+    device_diagnostics: dict
 

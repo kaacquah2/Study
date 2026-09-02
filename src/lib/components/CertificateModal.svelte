@@ -24,9 +24,21 @@
 	}
 </script>
 
+<svelte:window
+	onkeydown={(e) => {
+		if (e.key === 'Escape' && isOpen) {
+			onClose();
+		}
+	}}
+/>
+
 {#if isOpen}
 	<div class="inset-0 bg-black/60 p-4 backdrop-blur-md fixed z-50 flex items-center justify-center">
 		<div
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+			aria-labelledby="certificate-modal-title"
 			class="max-w-2xl rounded-2xl border-slate-200 bg-white p-8 shadow-2xl dark:border-slate-800 dark:bg-slate-900 w-full border"
 		>
 			<!-- Printable Certificate Container -->
@@ -37,6 +49,7 @@
 				<!-- Decorative Ribbon Icon -->
 				<div
 					class="mb-4 h-16 w-16 bg-amber-500/10 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center rounded-full"
+					aria-hidden="true"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -60,7 +73,10 @@
 					Official Certificate of Completion
 				</p>
 
-				<h2 class="mt-2 mb-4 font-serif text-3xl font-bold text-slate-900 dark:text-white">
+				<h2
+					id="certificate-modal-title"
+					class="mt-2 mb-4 font-serif text-3xl font-bold text-slate-900 dark:text-white"
+				>
 					Certificate of Achievement
 				</h2>
 
@@ -104,14 +120,16 @@
 				<button
 					type="button"
 					onclick={onClose}
-					class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 rounded-lg"
+					aria-label="Close certificate modal"
+					class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer rounded-lg"
 				>
 					Close
 				</button>
 				<button
 					type="button"
 					onclick={handlePrint}
-					class="gap-1.5 bg-amber-500 px-5 py-2 text-xs font-semibold text-white hover:bg-amber-600 flex items-center rounded-lg shadow-md"
+					aria-label="Download or print certificate"
+					class="gap-1.5 bg-amber-500 px-5 py-2 text-xs font-semibold text-white hover:bg-amber-600 flex cursor-pointer items-center rounded-lg shadow-md"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -120,6 +138,7 @@
 						viewBox="0 0 24 24"
 						stroke="currentColor"
 						stroke-width="2"
+						aria-hidden="true"
 					>
 						<path
 							stroke-linecap="round"

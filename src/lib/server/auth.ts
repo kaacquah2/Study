@@ -7,8 +7,13 @@ export interface AuthenticatedUser {
 	name?: string | null;
 }
 
-interface CacheEntry {
+export interface UserCacheData {
 	exists: boolean;
+	isBanned: boolean;
+	bannedReason?: string | null;
+}
+
+interface CacheEntry extends UserCacheData {
 	expiresAt: number;
 }
 
@@ -17,7 +22,7 @@ const L1_USER_CACHE = new Map<string, CacheEntry>();
 const L1_TTL_MS = 15 * 60 * 1000; // 15 minutes bounded TTL
 const MAX_L1_ENTRIES = 5000;
 
-function getL1(uid: string): boolean | null {
+function getL1(uid: string): UserCacheData | null {
 	const entry = L1_USER_CACHE.get(uid);
 	if (!entry) return null;
 	if (Date.now() > entry.expiresAt) {
@@ -27,10 +32,14 @@ function getL1(uid: string): boolean | null {
 	// Refresh LRU insertion order on access
 	L1_USER_CACHE.delete(uid);
 	L1_USER_CACHE.set(uid, entry);
-	return entry.exists;
+	return {
+		exists: entry.exists,
+		isBanned: entry.isBanned,
+		bannedReason: entry.bannedReason
+	};
 }
 
-function setL1(uid: string, exists: boolean): void {
+function setL1(uid: string, data: UserCacheData): void {
 	if (L1_USER_CACHE.has(uid)) {
 		L1_USER_CACHE.delete(uid);
 	} else if (L1_USER_CACHE.size >= MAX_L1_ENTRIES) {
@@ -38,7 +47,7 @@ function setL1(uid: string, exists: boolean): void {
 		const oldestKey = L1_USER_CACHE.keys().next().value;
 		if (oldestKey) L1_USER_CACHE.delete(oldestKey);
 	}
-	L1_USER_CACHE.set(uid, { exists, expiresAt: Date.now() + L1_TTL_MS });
+	L1_USER_CACHE.set(uid, { ...data, expiresAt: Date.now() + L1_TTL_MS });
 }
 
 export function clearL1UserCache(): void {
@@ -46,11 +55,12 @@ export function clearL1UserCache(): void {
 }
 
 /**
- * Actively invalidates both L1 and L2 user existence caches (e.g. on user ban or account deletion).
+ * Actively invalidates both L1 and L2 user existence/session caches (e.g. on user ban, unban, or account deletion).
  */
 export async function invalidateUserSessionCache(uid: string): Promise<void> {
 	L1_USER_CACHE.delete(uid);
 	if (isRedisConfigured()) {
+		await redisDel(`user:state:${uid}`);
 		await redisDel(`user:exists:${uid}`);
 	}
 }
@@ -66,9 +76,9 @@ function isValidTimezone(tz: string): boolean {
 
 /**
  * Extracts and verifies the Firebase ID token from the request Authorization header.
- * Uses bounded L1 LRU and L2 Redis existence caching to bypass redundant Firestore reads.
+ * Uses bounded L1 LRU and L2 Redis state caching to enforce ban states and bypass redundant Firestore reads.
  * Automatically initializes the user document in Firestore if it doesn't exist.
- * Throws an error if authentication fails.
+ * Throws an error if authentication fails or user is banned.
  */
 export async function verifySessionUser(request: Request): Promise<AuthenticatedUser> {
 	const authHeader = request.headers.get('Authorization');
@@ -89,7 +99,12 @@ export async function verifySessionUser(request: Request): Promise<Authenticated
 
 	// 1. Fast L1 Memory Check
 	const l1Status = getL1(uid);
-	if (l1Status === true) {
+	if (l1Status) {
+		if (l1Status.isBanned) {
+			throw new Error(
+				`Unauthorized: User account is suspended${l1Status.bannedReason ? `: ${l1Status.bannedReason}` : ''}`
+			);
+		}
 		return {
 			uid,
 			email: decodedToken.email,
@@ -98,11 +113,16 @@ export async function verifySessionUser(request: Request): Promise<Authenticated
 	}
 
 	// 2. Fast L2 Redis Check
-	const redisKey = `user:exists:${uid}`;
+	const redisKey = `user:state:${uid}`;
 	if (isRedisConfigured()) {
-		const cachedExists = await redisGet<boolean>(redisKey);
-		if (cachedExists === true) {
-			setL1(uid, true);
+		const cachedState = await redisGet<UserCacheData>(redisKey);
+		if (cachedState && cachedState.exists) {
+			setL1(uid, cachedState);
+			if (cachedState.isBanned) {
+				throw new Error(
+					`Unauthorized: User account is suspended${cachedState.bannedReason ? `: ${cachedState.bannedReason}` : ''}`
+				);
+			}
 			return {
 				uid,
 				email: decodedToken.email,
@@ -116,6 +136,7 @@ export async function verifySessionUser(request: Request): Promise<Authenticated
 	const maxRetries = 3;
 	let lastDbError: unknown = null;
 	let profileInitialized = false;
+	let userCacheData: UserCacheData | null = null;
 
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
 		try {
@@ -138,6 +159,7 @@ export async function verifySessionUser(request: Request): Promise<Authenticated
 					displayName: decodedToken.name || null,
 					photoURL: decodedToken.picture || null,
 					theme: theme,
+					isBanned: false,
 					streak: {
 						current: 0,
 						longest: 0,
@@ -146,6 +168,14 @@ export async function verifySessionUser(request: Request): Promise<Authenticated
 					},
 					createdAt: FieldValue.serverTimestamp()
 				});
+				userCacheData = { exists: true, isBanned: false };
+			} else {
+				const userData = userDoc.data();
+				userCacheData = {
+					exists: true,
+					isBanned: userData?.isBanned === true,
+					bannedReason: userData?.bannedReason || null
+				};
 			}
 			profileInitialized = true;
 			break;
@@ -157,18 +187,24 @@ export async function verifySessionUser(request: Request): Promise<Authenticated
 		}
 	}
 
-	if (!profileInitialized) {
+	if (!profileInitialized || !userCacheData) {
 		const message = lastDbError instanceof Error ? lastDbError.message : String(lastDbError);
 		throw new Error(`Firestore user profile initialization failed: ${message}`, {
 			cause: lastDbError
 		});
 	}
 
-	// Cache successful existence in L2 Redis (24h TTL) and L1 Memory
+	// Cache user state in L2 Redis (24h TTL) and L1 Memory
 	if (isRedisConfigured()) {
-		await redisSet(redisKey, true, 86400);
+		await redisSet(redisKey, userCacheData, 86400);
 	}
-	setL1(uid, true);
+	setL1(uid, userCacheData);
+
+	if (userCacheData.isBanned) {
+		throw new Error(
+			`Unauthorized: User account is suspended${userCacheData.bannedReason ? `: ${userCacheData.bannedReason}` : ''}`
+		);
+	}
 
 	return {
 		uid,

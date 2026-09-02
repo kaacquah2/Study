@@ -3,6 +3,7 @@ Pytest unit test suite for the Python ML Backend.
 Run via: pytest ml_backend/test_ml_backend.py
 """
 
+import os
 import sys
 import asyncio
 from pathlib import Path
@@ -153,22 +154,136 @@ def test_outline_json_codeblock_parsing():
 
 def test_healthcheck_lock_status():
     """Verify that healthcheck correctly reports inference_busy via per-model active counts."""
+    from fastapi import Response
     from main import healthcheck
+    import main
     from models.model_registry import inference_start, inference_end
 
-    res_idle = asyncio.run(healthcheck())
-    assert res_idle.inference_busy is False
+    with patch.object(main, "_EAGER_WARMUP", False):
+        res_idle = asyncio.run(healthcheck(response=Response()))
+        assert res_idle.inference_busy is False
+        assert res_idle.ready is True
 
-    # Simulate an in-flight inference call
-    inference_start("test-model-busy-check")
-    try:
-        res_busy = asyncio.run(healthcheck())
-        assert res_busy.inference_busy is True
-    finally:
-        inference_end("test-model-busy-check")
+        # Simulate an in-flight inference call
+        inference_start("test-model-busy-check")
+        try:
+            res_busy = asyncio.run(healthcheck(response=Response()))
+            assert res_busy.inference_busy is True
+        finally:
+            inference_end("test-model-busy-check")
 
-    res_idle_again = asyncio.run(healthcheck())
-    assert res_idle_again.inference_busy is False
+        res_idle_again = asyncio.run(healthcheck(response=Response()))
+        assert res_idle_again.inference_busy is False
+
+
+def test_healthcheck_status_codes_and_errors():
+    """Verify that healthcheck sets HTTP 503 and populates errors when models fail or are warming up."""
+    from fastapi import Response
+    from main import healthcheck
+    import main
+
+    # Case 1: Healthy & Ready (lazy mode or loaded models) -> 200 OK
+    with patch.object(main, "_EAGER_WARMUP", False), \
+         patch.dict(main._MODEL_STATUS, {k: "ready" for k in main._MODEL_STATUS}, clear=True):
+        resp_ok = Response()
+        res = asyncio.run(healthcheck(response=resp_ok))
+        assert resp_ok.status_code == 200
+        assert res.ready is True
+        assert res.status == "ok"
+        assert res.errors is None
+
+    # Case 2: Eager warmup in progress -> 503 Service Unavailable + status='warming_up'
+    with patch.object(main, "_EAGER_WARMUP", True), \
+         patch.dict(main._MODEL_STATUS, {"summarizer": "pending"}, clear=True):
+        resp_warm = Response()
+        res_warm = asyncio.run(healthcheck(response=resp_warm))
+        assert resp_warm.status_code == 503
+        assert res_warm.ready is False
+        assert res_warm.status == "warming_up"
+
+    # Case 3: Error in model load -> 503 Service Unavailable + error map
+    with patch.dict(main._MODEL_STATUS, {"summarizer": "error: CUDA out of memory"}, clear=True):
+        resp_err = Response()
+        res_err = asyncio.run(healthcheck(response=resp_err))
+        assert resp_err.status_code == 503
+        assert res_err.ready is False
+        assert res_err.status == "unhealthy"
+        assert res_err.errors is not None
+        assert "summarizer" in res_err.errors
+
+
+def test_health_liveness_probe():
+    """Verify that /health/live returns HTTP 200 with status='alive'."""
+    from main import health_liveness
+
+    res = asyncio.run(health_liveness())
+    assert isinstance(res, dict)
+    assert res["status"] == "alive"
+    assert "uptime_seconds" in res
+
+
+def test_health_readiness_probe_lazy_mode():
+    """Verify that /health/ready returns HTTP 200 when eager warmup is false and no errors exist."""
+    import json
+    from main import health_readiness
+    import main
+
+    with patch.object(main, "_EAGER_WARMUP", False), \
+         patch.dict(main._MODEL_STATUS, {k: "pending" for k in main._MODEL_STATUS}, clear=True):
+        res = asyncio.run(health_readiness())
+        assert res.status_code == 200
+        body = json.loads(bytes(res.body))
+        assert body["ready"] is True
+        assert body["status"] == "ready"
+
+
+def test_health_readiness_probe_eager_warming_up():
+    """Verify that /health/ready returns HTTP 503 while eager warmup models are still pending."""
+    import json
+    from main import health_readiness
+    import main
+
+    with patch.object(main, "_EAGER_WARMUP", True), \
+         patch.dict(main._MODEL_STATUS, {"summarizer": "pending", "paraphraser": "pending"}, clear=True):
+        res = asyncio.run(health_readiness())
+        assert res.status_code == 503
+        body = json.loads(bytes(res.body))
+        assert body["ready"] is False
+        assert body["status"] == "warming_up"
+
+
+def test_health_readiness_probe_error_state():
+    """Verify that /health/ready returns HTTP 503 when a model load has failed."""
+    import json
+    from main import health_readiness
+    import main
+
+    with patch.object(main, "_EAGER_WARMUP", True), \
+         patch.dict(main._MODEL_STATUS, {"summarizer": "error: OOM", "paraphraser": "ready"}, clear=True):
+        res = asyncio.run(health_readiness())
+        assert res.status_code == 503
+        body = json.loads(bytes(res.body))
+        assert body["ready"] is False
+        assert body["status"] == "unhealthy"
+        assert "errors" in body
+        assert "summarizer" in body["errors"]
+
+
+def test_health_probe_alias_dispatches():
+    """Verify that /health dispatches to readiness or liveness based on query parameter."""
+    import json
+    from main import health_probe
+    from fastapi.responses import JSONResponse
+
+    # Liveness probe
+    live_res = asyncio.run(health_probe(probe="liveness"))
+    assert isinstance(live_res, dict)
+    assert live_res["status"] == "alive"
+
+    # Readiness probe (default)
+    ready_res = asyncio.run(health_probe(probe="readiness"))
+    assert isinstance(ready_res, JSONResponse)
+
 
 
 def test_summarize_request_length_bounds_validation():
@@ -237,9 +352,10 @@ def test_rag_pipeline_thread_lock():
     import threading
     from models.rag_pipeline import RAGPipeline
 
-    rag_inst = RAGPipeline()
-    assert hasattr(rag_inst, "_lock")
-    assert isinstance(rag_inst._lock, type(threading.Lock()))
+    with patch("sentence_transformers.SentenceTransformer"):
+        rag_inst = RAGPipeline()
+        assert hasattr(rag_inst, "_lock")
+        assert isinstance(rag_inst._lock, type(threading.Lock()))
 
 
 def test_model_loading_on_demand():
@@ -264,3 +380,192 @@ def test_model_loading_on_demand():
         res = asyncio.run(summarize(mock_request, req, response=Response()))
         assert mock_load.called
         assert res.summary == "Summarized text result"
+
+
+def test_download_all_models_success():
+    """Verify download_all_models executes all model caches and offline verifications without errors."""
+    from download_models import download_all_models
+
+    mock_st_instance = MagicMock()
+    mock_st_instance.encode.return_value = [0.1, 0.2, 0.3]
+
+    mock_tok_instance = MagicMock()
+    mock_tok_instance.return_value = {"input_ids": [1, 2, 3]}
+
+    with patch("sentence_transformers.SentenceTransformer", return_value=mock_st_instance) as mock_st, \
+         patch("transformers.AutoTokenizer.from_pretrained", return_value=mock_tok_instance) as mock_tok, \
+         patch("transformers.AutoModelForSeq2SeqLM.from_pretrained") as mock_seq2seq, \
+         patch("transformers.AutoConfig.from_pretrained") as mock_cfg, \
+         patch("time.sleep"):
+        
+        mock_cfg.return_value.is_encoder_decoder = False
+        with patch("transformers.AutoModelForCausalLM.from_pretrained") as mock_causal:
+            failures = download_all_models()
+            assert failures == []
+            assert mock_st.called
+            assert mock_tok.called
+            assert mock_seq2seq.called
+
+
+def test_download_with_retry_succeeds_after_transient_failure():
+    """Verify download_with_retry retries on transient errors and succeeds."""
+    from download_models import download_with_retry
+
+    calls = []
+    def flaky_cache(model_id, name):
+        calls.append(1)
+        if len(calls) < 2:
+            raise ConnectionResetError("Connection reset by peer")
+        return None
+
+    with patch("time.sleep"):
+        download_with_retry(flaky_cache, "test-model", "TestModel", max_retries=3, initial_delay=0.01)
+    assert len(calls) == 2
+
+
+def test_download_with_retry_exhausts_and_raises():
+    """Verify download_with_retry raises RuntimeError when all retries are exhausted."""
+    from download_models import download_with_retry
+
+    def failing_cache(model_id, name):
+        raise TimeoutError("HuggingFace Hub timeout")
+
+    with patch("time.sleep"):
+        with pytest.raises(RuntimeError) as exc_info:
+            download_with_retry(failing_cache, "test-model", "TestModel", max_retries=3, initial_delay=0.01)
+        assert "after 3 attempts" in str(exc_info.value)
+
+
+def test_download_all_models_offline_verification_failure_reported():
+    """Verify download_all_models captures failure when offline verification fails after download."""
+    from download_models import download_all_models
+
+    mock_st_instance = MagicMock()
+    mock_tok_instance = MagicMock()
+    mock_tok_instance.return_value = {"input_ids": [1, 2, 3]}
+
+    def st_side_effect(model_id, local_files_only=False):
+        if local_files_only:
+            raise FileNotFoundError("Local weights not found for model in offline cache")
+        return mock_st_instance
+
+    with patch("sentence_transformers.SentenceTransformer", side_effect=st_side_effect), \
+         patch("transformers.AutoTokenizer.from_pretrained", return_value=mock_tok_instance), \
+         patch("transformers.AutoModelForSeq2SeqLM.from_pretrained"), \
+         patch("transformers.AutoConfig.from_pretrained"), \
+         patch("transformers.AutoModelForCausalLM.from_pretrained"), \
+         patch("time.sleep"):
+        failures = download_all_models()
+        assert len(failures) >= 1
+        name, model_id, err = failures[0]
+        assert name == "Embeddings"
+        assert "Offline verification failure" in err
+
+
+def test_download_models_main_exits_on_failure():
+    """Verify that main() exits with code 1 when model downloads fail."""
+    from download_models import main
+
+    with patch("download_models.download_all_models", return_value=[("Summarizer", "test-model", "Network error")]):
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 1
+
+
+def test_model_registry_prefers_local_files_in_production():
+    """Verify model_registry uses local_files_only when APP_ENV=production."""
+    from models.model_registry import get_pipeline, _pipelines
+
+    _pipelines.clear()
+    with patch.dict(os.environ, {"APP_ENV": "production"}), \
+         patch("models.model_registry.pipeline") as mock_pipeline:
+        mock_pipe_instance = MagicMock()
+        mock_pipeline.return_value = mock_pipe_instance
+
+        pipe = get_pipeline("summarization", "mock-production-model")
+        assert pipe == mock_pipe_instance
+        mock_pipeline.assert_called_once()
+        _, kwargs = mock_pipeline.call_args
+        assert kwargs.get("model_kwargs", {}).get("local_files_only") is True
+
+
+def test_classify_model_tier():
+    """Verify classification of base foundation vs specialized vs fine-tuned custom models."""
+    from models.model_registry import classify_model_tier
+
+    # Base foundation model default
+    tier, is_ft = classify_model_tier("google/flan-t5-base", "google/flan-t5-base", is_specialized_baseline=False)
+    assert tier == "base_foundation"
+    assert is_ft is False
+
+    # Pre-trained specialized baseline
+    tier, is_ft = classify_model_tier("valhalla/t5-small-qg-prepend", "valhalla/t5-small-qg-prepend", is_specialized_baseline=True)
+    assert tier == "pretrained_specialized"
+    assert is_ft is False
+
+    # Custom HuggingFace model override
+    tier, is_ft = classify_model_tier("my-org/flan-t5-custom-study-summarizer", "google/flan-t5-base", is_specialized_baseline=False)
+    assert tier == "fine_tuned_custom"
+    assert is_ft is True
+
+
+def test_get_model_provenance_manifest_defaults():
+    """Verify manifest output with default environment variables."""
+    from models.model_registry import get_model_provenance_manifest
+
+    with patch.dict(os.environ, {}, clear=False):
+        manifest = get_model_provenance_manifest({"summarizer": True})
+        assert "system_mode" in manifest
+        assert "models" in manifest
+        assert manifest["models"]["summarizer"]["default_id"] == "google/flan-t5-base"
+        assert manifest["models"]["summarizer"]["loaded"] is True
+        assert manifest["models"]["summarizer"]["tier"] in ("base_foundation", "local_checkpoint", "fine_tuned_custom")
+
+
+def test_get_model_provenance_manifest_fine_tuned_override():
+    """Verify manifest detects fine_tuned_production mode when custom model IDs are set."""
+    from models.model_registry import get_model_provenance_manifest
+
+    with patch.dict(os.environ, {"SUMMARIZER_MODEL_ID": "study-org/flan-t5-fine-tuned-v1"}):
+        manifest = get_model_provenance_manifest()
+        assert manifest["models"]["summarizer"]["is_fine_tuned"] is True
+        assert manifest["models"]["summarizer"]["tier"] == "fine_tuned_custom"
+        assert manifest["system_mode"] == "fine_tuned_production"
+        assert manifest["fine_tuned_count"] >= 1
+
+
+def test_models_info_endpoint():
+    """Verify that /models/info returns 200 and schema-valid ModelManifestResponse."""
+    from fastapi.testclient import TestClient
+    from main import app
+    import main
+
+    client = TestClient(app)
+    headers = {"X-API-Key": main._API_KEY} if main._API_KEY else {}
+    response = client.get("/models/info", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert "system_mode" in data
+    assert "models" in data
+    assert "summarizer" in data["models"]
+    assert "chat_assistant" in data["models"]
+    assert "device_diagnostics" in data
+
+
+def test_healthcheck_includes_model_provenance():
+    """Verify that /healthcheck includes model_provenance summary."""
+    from fastapi.testclient import TestClient
+    from main import app
+    import main
+
+    client = TestClient(app)
+    headers = {"X-API-Key": main._API_KEY} if main._API_KEY else {}
+    with patch.object(main, "_EAGER_WARMUP", False):
+        response = client.get("/healthcheck", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert "model_provenance" in data
+        assert "system_mode" in data["model_provenance"]
+        assert "fine_tuned_count" in data["model_provenance"]
+
+

@@ -3,6 +3,7 @@ import { json } from '@sveltejs/kit';
 import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
 import { z } from 'zod';
+import { enqueueModuleGenerationJob } from '$lib/server/ai/generationQueue';
 
 const RetryModuleZod = z.object({
 	courseId: z.string()
@@ -64,26 +65,12 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			);
 		}
 
-		// Trigger background module generation immediately
-		const authHeader = request.headers.get('Authorization');
-		const origin = new URL(request.url).origin;
-
-		(async () => {
-			try {
-				const headers: Record<string, string> = {
-					'Content-Type': 'application/json'
-				};
-				if (authHeader) headers['Authorization'] = authHeader;
-
-				await fetch(`${origin}/api/modules/${moduleId}/generate`, {
-					method: 'POST',
-					headers,
-					body: JSON.stringify({ courseId })
-				});
-			} catch (e) {
-				console.error(`[Retry Handler] Module ${moduleId} generation trigger error:`, e);
-			}
-		})().catch((err) => console.error('[Retry Handler] Async error:', err));
+		// Enqueue durable background module generation immediately
+		await enqueueModuleGenerationJob({
+			courseId,
+			moduleId,
+			userId: user.uid
+		});
 
 		return json({ status: 'pending', message: 'Module retry dispatched' }, { status: 202 });
 	} catch (err) {

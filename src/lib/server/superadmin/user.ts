@@ -1,5 +1,9 @@
 import { adminDb, adminAuth, FieldValue } from '$lib/server/admin';
-import { verifySessionUser, type AuthenticatedUser } from '$lib/server/auth';
+import {
+	verifySessionUser,
+	invalidateUserSessionCache,
+	type AuthenticatedUser
+} from '$lib/server/auth';
 
 export interface UserRecord {
 	uid: string;
@@ -208,7 +212,7 @@ export async function getUserDetails(
 
 	const coursesSnap = await adminDb
 		.collection('courses')
-		.where('userId', '==', uid)
+		.where('ownerUid', '==', uid)
 		.limit(100)
 		.get();
 
@@ -297,4 +301,5 @@ export async function updateUserAdminState(
 	}
 
 	await userDocRef.update(firestoreUpdates);
+	await invalidateUserSessionCache(targetUid);
 }

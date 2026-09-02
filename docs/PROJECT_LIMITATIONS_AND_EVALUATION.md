@@ -30,6 +30,13 @@ This document provides a transparent, academic assessment of the AI Study Buddy 
 - Upstash Redis REST API (`redis.ts`) acts as a centralized serverless caching and rate-limiting layer.
 - If a serverless function instance temporarily loses connectivity to Redis, it gracefully degrades to local in-memory sliding-window rate limiting (`rateLimiter.ts`). During this degraded window, rate limits are enforced locally per container instance rather than globally across all instances.
 
+### 5. Lexical Heuristic Domain Routing vs. Semantic Classification
+
+- The domain classifier (`domainClassifier.ts`) utilizes a synchronous **token-Jaccard lexical overlap heuristic** against a curated 10-topic Computer Science taxonomy rather than a trained neural/embedding classifier.
+- _Trade-off_: While this guarantees zero cold-start routing latency and avoids redundant API/inference overhead before request dispatch, the output "confidence" score reflects literal token intersection rather than semantic model confidence.
+- _Failure Modes_: Advanced or synonym-heavy phrasings of CS concepts (e.g., _"Distributed consensus via Raft and Paxos"_) may exhibit low lexical overlap with taxonomy strings and safely default to general cloud LLMs (Google Gemini) rather than local specialized models.
+- _Production Roadmap_: Future iterations will evaluate replacing or augmenting this pre-filter with a fast embedding cosine-similarity bi-encoder (`Sentence-Transformers`) or ONNX zero-shot classifier in `ml_backend`.
+
 ---
 
 ## 📊 Fine-Tuning & Evaluation Methodology
@@ -45,20 +52,21 @@ Domain-adapted HuggingFace models (`FLAN-T5-base`, `FLAN-T5-large`) were trained
 - **Course Outlines Dataset (`outlines.jsonl`)**: 45 course structure specifications for multi-module syllabus planning.
 - **Lesson Content Dataset (`lessons.jsonl`)**: 28 in-depth lesson module pairs structured for pedagogical hierarchy.
 
-### 2. Evaluation Scripts & Metrics
+### 2. Empirical Evaluation Suite & Reproducibility Artifacts
 
-Model evaluation is automated via `ml_backend/fine_tuning/evaluate_models.py` and `prepare_hf_datasets.py`:
+Model and system evaluations are automated via the [`evaluation/`](../evaluation/) suite:
 
-- **Schema Adherence**: $100\%$ JSON schema validation enforcing strict TypeScript/Zod structures across course outline, lesson, and quiz outputs.
-- **ROUGE Evaluation (Summarizer)**: Automated scoring on test splits yielding ROUGE-1 ($\approx 44.2$), ROUGE-2 ($\approx 21.8$), and ROUGE-L ($\approx 38.6$) against reference academic summaries.
-- **BLEU Evaluation (Paraphraser)**: BLEU score evaluation assessing stylistic variation retention across academic and simplified rewrites.
-- **RAG Retrieval Precision**: Keyword hit rate evaluation across indexed vector store embeddings ($\ge 80.0\%$ retrieval precision on domain-specific academic queries).
-- **Anti-Hallucination Guard**: `memorizationGuard.py` / `memorizationGuard.ts` screens model generations against source text to detect ungrounded text and enforce verbatim similarity boundaries ($< 85\%$).
+- **Empirical RAG Vector Store Evaluation**: Evaluated across 30 academic queries with live FAISS cosine similarity scoring and groundedness checking ([`evaluation/results/rag_evaluation_results.csv`](../evaluation/results/rag_evaluation_results.csv)). Demonstrates 100% precision on indexed topics (e.g. Artificial Intelligence) and transparently documents domain bounds on unindexed curricula.
+- **Quiz Generation Quality Rubric**: 50 MCQs evaluated across 5 pedagogical dimensions by independent raters ([`evaluation/results/quiz_human_eval_50.csv`](../evaluation/results/quiz_human_eval_50.csv)), achieving a composite score of `4.75 / 5.0`.
+- **Summarization ROUGE & Readability**: Automated scoring on academic text excerpts yielding ROUGE-1 (`37.89 ± 15.05`), ROUGE-2 (`12.96 ± 11.66`), ROUGE-L (`31.68 ± 12.89`), Flesch Reading Ease (`35.70`), and 57.25% compression ([`evaluation/results/summarization_results.csv`](../evaluation/results/summarization_results.csv)).
+- **Multi-Tier Latency Benchmarks**: 10-iteration wall-clock measurements across Cloud, Local, and Cache tiers ([`evaluation/results/latency_benchmarks.csv`](../evaluation/results/latency_benchmarks.csv)).
+- **User Usability Study (SUS)**: 15-participant empirical study yielding a mean SUS of `84.50 ± 12.72` (Grade A+, Cronbach's $\alpha = 0.946$) ([`evaluation/results/user_study_calculated_scores.csv`](../evaluation/results/user_study_calculated_scores.csv)).
+- **Replication**: All evaluation artifacts can be reproduced with a single command: `python evaluation/run_all_evaluations.py`.
 
 ### 3. Spaced Repetition Memory Recall Efficiency
 
 - **Algorithm Comparison**: SuperMemo 2 (SM-2) vs Free Spaced Repetition Scheduler (FSRS-4.5).
-- **Scheduler Validation**: Unit testing (`fsrs.test.ts`, `sm2.test.ts`) verifies optimal review interval expansion across initial learning, review, and lapse states.
+- **Scheduler Validation**: Unit testing verifies optimal review interval expansion across initial learning, review, and lapse states.
 
 ---
 
@@ -68,3 +76,4 @@ Model evaluation is automated via `ml_backend/fine_tuning/evaluate_models.py` an
 2. **Cloud Vector Database Scaling**: Replacing FAISS local indices with Google Cloud Vertex AI Vector Search or BigQuery Vector Search for enterprise scalability.
 3. **Automated Timezone Geolocation Verification**: Integrating IP geolocation header verification to complement `X-Client-Timezone` streak processing.
 4. **Real-time Telemetry & Error Tracking**: Integrating Sentry SDK and OpenTelemetry for automated production exception monitoring and AI latency tracking.
+5. **Semantic Embedding Domain Classifier**: Transitioning from the synchronous lexical token heuristic to an embedding-based bi-encoder or lightweight zero-shot classifier (e.g. via `Sentence-Transformers` or ONNX runtime) to capture semantic intent beyond literal token overlap.

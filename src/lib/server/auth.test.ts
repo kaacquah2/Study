@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { verifySessionUser, clearL1UserCache } from './auth';
+import { verifySessionUser, clearL1UserCache, invalidateUserSessionCache } from './auth';
 import { adminAuth, adminDb } from './admin';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import type { CollectionReference } from 'firebase-admin/firestore';
@@ -37,7 +37,7 @@ vi.mock('./redis', () => ({
 }));
 
 describe('verifySessionUser Unit Tests', () => {
-	const mockUserDoc = { exists: true, data: () => ({ uid: 'user123' }) };
+	const mockUserDoc = { exists: true, data: () => ({ uid: 'user123', isBanned: false }) };
 
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -51,7 +51,9 @@ describe('verifySessionUser Unit Tests', () => {
 		} as unknown as DecodedIdToken);
 
 		const mockDocRef = {
-			get: vi.fn().mockResolvedValue({ exists: true, data: () => ({ uid: 'cached_user' }) }),
+			get: vi
+				.fn()
+				.mockResolvedValue({ exists: true, data: () => ({ uid: 'cached_user', isBanned: false }) }),
 			set: vi.fn().mockResolvedValue(undefined)
 		};
 		vi.mocked(adminDb.collection).mockReturnValue({
@@ -129,7 +131,89 @@ describe('verifySessionUser Unit Tests', () => {
 		expect(mockDocRef.set).not.toHaveBeenCalled();
 	});
 
-	it('initializes default user profile doc if user profile does not exist', async () => {
+	it('throws error when user is banned and includes suspension reason', async () => {
+		vi.mocked(adminAuth.verifyIdToken).mockResolvedValue({
+			uid: 'banned_user',
+			email: 'banned@knust.edu.gh'
+		} as unknown as DecodedIdToken);
+
+		const mockDocRef = {
+			get: vi.fn().mockResolvedValue({
+				exists: true,
+				data: () => ({
+					uid: 'banned_user',
+					isBanned: true,
+					bannedReason: 'Terms of service violation'
+				})
+			}),
+			set: vi.fn().mockResolvedValue(undefined)
+		};
+		vi.mocked(adminDb.collection).mockReturnValue({
+			doc: () => mockDocRef
+		} as unknown as CollectionReference);
+
+		const req = new Request('http://localhost/api/test', {
+			headers: { Authorization: 'Bearer valid-token' }
+		});
+
+		// First call: hits Firestore and throws ban error
+		await expect(verifySessionUser(req)).rejects.toThrow(
+			'Unauthorized: User account is suspended: Terms of service violation'
+		);
+		expect(mockDocRef.get).toHaveBeenCalledTimes(1);
+
+		// Second call: served from L1 cache (zero additional Firestore reads) and still throws ban error
+		await expect(verifySessionUser(req)).rejects.toThrow(
+			'Unauthorized: User account is suspended: Terms of service violation'
+		);
+		expect(mockDocRef.get).toHaveBeenCalledTimes(1);
+	});
+
+	it('invalidates user session cache so updated ban state takes effect immediately', async () => {
+		vi.mocked(adminAuth.verifyIdToken).mockResolvedValue({
+			uid: 'toggle_user',
+			email: 'toggle@knust.edu.gh'
+		} as unknown as DecodedIdToken);
+
+		let isBanned = true;
+		const mockDocRef = {
+			get: vi.fn().mockImplementation(async () => ({
+				exists: true,
+				data: () => ({
+					uid: 'toggle_user',
+					isBanned,
+					bannedReason: isBanned ? 'Temporary lock' : null
+				})
+			})),
+			set: vi.fn().mockResolvedValue(undefined)
+		};
+		vi.mocked(adminDb.collection).mockReturnValue({
+			doc: () => mockDocRef
+		} as unknown as CollectionReference);
+
+		const req = new Request('http://localhost/api/test', {
+			headers: { Authorization: 'Bearer valid-token' }
+		});
+
+		// 1. Initial banned call
+		await expect(verifySessionUser(req)).rejects.toThrow(
+			'Unauthorized: User account is suspended: Temporary lock'
+		);
+		expect(mockDocRef.get).toHaveBeenCalledTimes(1);
+
+		// 2. Unban user in database
+		isBanned = false;
+
+		// 3. Actively invalidate cache
+		await invalidateUserSessionCache('toggle_user');
+
+		// 4. Next call should re-fetch from database and succeed
+		const user = await verifySessionUser(req);
+		expect(user.uid).toBe('toggle_user');
+		expect(mockDocRef.get).toHaveBeenCalledTimes(2);
+	});
+
+	it('initializes default user profile doc with isBanned: false if user profile does not exist', async () => {
 		vi.mocked(adminAuth.verifyIdToken).mockResolvedValue({
 			uid: 'newuser',
 			email: 'new@knust.edu.gh',
@@ -158,6 +242,7 @@ describe('verifySessionUser Unit Tests', () => {
 			displayName: 'New User',
 			photoURL: 'https://example.com/pic.png',
 			theme: 'light',
+			isBanned: false,
 			streak: {
 				current: 0,
 				longest: 0,
@@ -267,7 +352,10 @@ describe('verifySessionUser Unit Tests', () => {
 			get: vi
 				.fn()
 				.mockRejectedValueOnce(new Error('Transient error'))
-				.mockResolvedValueOnce({ exists: true, data: () => ({ uid: 'user_retry_db' }) }),
+				.mockResolvedValueOnce({
+					exists: true,
+					data: () => ({ uid: 'user_retry_db', isBanned: false })
+				}),
 			set: vi.fn().mockResolvedValue(undefined)
 		};
 		vi.mocked(adminDb.collection).mockReturnValue({

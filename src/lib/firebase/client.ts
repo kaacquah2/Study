@@ -1,6 +1,14 @@
+import { browser } from '$app/environment';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import {
+	getFirestore,
+	initializeFirestore,
+	persistentLocalCache,
+	persistentMultipleTabManager,
+	connectFirestoreEmulator,
+	type Firestore
+} from 'firebase/firestore';
 import {
 	PUBLIC_FIREBASE_API_KEY,
 	PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -21,11 +29,23 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
-const db = getFirestore(app);
+
+let db: Firestore;
+if (browser) {
+	try {
+		db = initializeFirestore(app, {
+			localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+		});
+	} catch {
+		db = getFirestore(app);
+	}
+} else {
+	db = getFirestore(app);
+}
 
 // Connect to local emulators only when explicitly enabled (e.g. PUBLIC_FIREBASE_USE_EMULATOR=true)
 const useEmulator = import.meta.env.PUBLIC_FIREBASE_USE_EMULATOR === 'true';
-if (import.meta.env.DEV && useEmulator) {
+if (useEmulator) {
 	const isEmulated = (auth as unknown as { _emulatorConfig?: unknown })._emulatorConfig;
 	if (!isEmulated) {
 		connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });

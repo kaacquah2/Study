@@ -210,6 +210,9 @@
 
 {#if visible}
 	<div
+		role="toolbar"
+		aria-label="Study Lens contextual tools"
+		aria-live="polite"
 		class="animate-pop-in gap-1 rounded-2xl p-1.5 shadow-2xl backdrop-blur-md fixed z-50 flex items-center border border-border/80 bg-surface/95"
 		style="left: {posX}px; top: {posY}px;"
 	>
@@ -217,30 +220,33 @@
 			<button
 				type="button"
 				onclick={handleExplain}
+				aria-label="Explain this highlighted text simply"
 				class="gap-1 px-2.5 py-1.5 font-bold inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
 				title="Explain this highlighted text simply"
 			>
-				<span>💡</span>
+				<span aria-hidden="true">💡</span>
 				<span>Explain</span>
 			</button>
 
 			<button
 				type="button"
 				onclick={handleExample}
+				aria-label="Provide a practical example of highlighted text"
 				class="gap-1 px-2.5 py-1.5 font-bold inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
 				title="Give a concrete example"
 			>
-				<span>🧪</span>
+				<span aria-hidden="true">🧪</span>
 				<span>Example</span>
 			</button>
 
 			<button
 				type="button"
 				onclick={handleQuizMe}
+				aria-label="Quiz me on highlighted text"
 				class="gap-1 px-2.5 py-1.5 font-bold inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
 				title="Test my understanding on this sentence"
 			>
-				<span>❓</span>
+				<span aria-hidden="true">❓</span>
 				<span>Quiz Me</span>
 			</button>
 
@@ -248,10 +254,13 @@
 				type="button"
 				onclick={handleGenerateFlashcard}
 				disabled={isCreatingCard}
+				aria-label={isCreatingCard
+					? 'Saving flashcard...'
+					: 'Convert highlighted text into FSRS memory flashcard'}
 				class="gap-1 px-2.5 py-1.5 font-bold hover:bg-amber-500/15 hover:text-amber-500 inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text transition-colors active:scale-95 disabled:opacity-50"
 				title="Convert into FSRS memory flashcard"
 			>
-				<span>🗂️</span>
+				<span aria-hidden="true">🗂️</span>
 				<span>{isCreatingCard ? 'Saving...' : 'Flashcard'}</span>
 			</button>
 
@@ -268,6 +277,7 @@
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
+					aria-hidden="true"
 				>
 					<path
 						stroke-linecap="round"
@@ -293,6 +303,12 @@
 		to {
 			opacity: 1;
 			transform: scale(1) translateY(0);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.animate-pop-in {
+			animation: none !important;
+			transform: none !important;
 		}
 	}
 </style>

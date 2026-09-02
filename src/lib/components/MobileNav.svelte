@@ -12,23 +12,36 @@
 	let { currentPath, navItems, mobileMenuOpen, onCloseMenu }: Props = $props();
 </script>
 
+<svelte:window
+	onkeydown={(e) => {
+		if (e.key === 'Escape' && mobileMenuOpen) {
+			onCloseMenu();
+		}
+	}}
+/>
+
 <!-- Mobile Sliding Drawer -->
 {#if mobileMenuOpen}
 	<div class="inset-0 md:hidden fixed z-40 flex">
 		<button
 			type="button"
-			aria-label="Close menu backdrop"
+			aria-label="Close navigation menu backdrop"
 			class="inset-0 bg-black/50 backdrop-blur-xs fixed border-none"
 			onclick={onCloseMenu}
 		></button>
-		<div class="w-72 p-6 shadow-2xl relative z-50 flex flex-col justify-between bg-surface">
+		<div
+			role="dialog"
+			aria-modal="true"
+			aria-label="Mobile navigation menu"
+			class="w-72 p-6 shadow-2xl relative z-50 flex flex-col justify-between bg-surface"
+		>
 			<div class="gap-6 flex flex-col">
 				<div class="flex items-center justify-between">
 					<span class="font-display text-base font-bold text-text">Navigation</span>
 					<button
 						type="button"
 						onclick={onCloseMenu}
-						class="p-2 text-text-muted hover:text-text"
+						class="p-2 cursor-pointer text-text-muted hover:text-text"
 						aria-label="Close navigation menu"
 					>
 						&times;
@@ -43,9 +56,10 @@
 							onCloseMenu();
 							chatStore.toggle();
 						}}
-						class="gap-3 px-4 py-3 text-xs font-bold flex items-center rounded-xl border border-primary/30 bg-primary-soft/50 text-primary"
+						aria-label="Open AI Study Tutor"
+						class="gap-3 px-4 py-3 text-xs font-bold flex cursor-pointer items-center rounded-xl border border-primary/30 bg-primary-soft/50 text-primary"
 					>
-						<span>✨</span>
+						<span aria-hidden="true">✨</span>
 						<span>AI Study Tutor</span>
 					</button>
 
@@ -56,6 +70,7 @@
 						<a
 							href={item.href}
 							onclick={onCloseMenu}
+							aria-current={active ? 'page' : undefined}
 							class="gap-3 px-4 py-3 text-xs font-bold flex items-center rounded-xl transition-all {active
 								? 'text-white bg-primary'
 								: 'text-text-muted hover:bg-surface-muted hover:text-text'}"
@@ -66,6 +81,7 @@
 								fill="none"
 								viewBox="0 0 24 24"
 								stroke="currentColor"
+								aria-hidden="true"
 							>
 								<path
 									stroke-linecap="round"
@@ -80,6 +96,7 @@
 					<a
 						href="/app/settings"
 						onclick={onCloseMenu}
+						aria-current={currentPath === '/app/settings' ? 'page' : undefined}
 						class="gap-3 px-4 py-3 text-xs font-bold flex items-center rounded-xl text-text-muted hover:bg-surface-muted hover:text-text"
 					>
 						<svg
@@ -88,6 +105,7 @@
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
+							aria-hidden="true"
 						>
 							<path
 								stroke-linecap="round"
@@ -123,6 +141,7 @@
 	<!-- 1. Home / Dashboard -->
 	<a
 		href="/app"
+		aria-current={currentPath === '/app' ? 'page' : undefined}
 		class="min-h-11 min-w-14 gap-0.5 font-bold flex flex-col items-center justify-center text-[10px] transition-colors {currentPath ===
 		'/app'
 			? 'text-primary'
@@ -134,6 +153,7 @@
 			fill="none"
 			viewBox="0 0 24 24"
 			stroke="currentColor"
+			aria-hidden="true"
 		>
 			<path
 				stroke-linecap="round"
@@ -148,6 +168,7 @@
 	<!-- 2. Practice & Review -->
 	<a
 		href="/app/review"
+		aria-current={currentPath.startsWith('/app/review') ? 'page' : undefined}
 		class="min-h-11 min-w-14 gap-0.5 font-bold flex flex-col items-center justify-center text-[10px] transition-colors {currentPath.startsWith(
 			'/app/review'
 		)
@@ -160,6 +181,7 @@
 			fill="none"
 			viewBox="0 0 24 24"
 			stroke="currentColor"
+			aria-hidden="true"
 		>
 			<path
 				stroke-linecap="round"
@@ -176,10 +198,11 @@
 		type="button"
 		onclick={() => chatStore.toggle()}
 		aria-label="Toggle AI Tutor"
-		class="min-h-11 min-w-14 gap-0.5 font-black flex flex-col items-center justify-center text-[10px] text-primary transition-transform active:scale-95"
+		class="min-h-11 min-w-14 gap-0.5 font-black flex cursor-pointer flex-col items-center justify-center text-[10px] text-primary transition-transform active:scale-95"
 	>
 		<div
 			class="h-7 w-7 text-white flex items-center justify-center rounded-full bg-primary shadow-md shadow-primary/30"
+			aria-hidden="true"
 		>
 			<span class="text-xs">✨</span>
 		</div>
@@ -189,6 +212,7 @@
 	<!-- 4. Knowledge Map -->
 	<a
 		href="/app/knowledge-map"
+		aria-current={currentPath.startsWith('/app/knowledge-map') ? 'page' : undefined}
 		class="min-h-11 min-w-14 gap-0.5 font-bold flex flex-col items-center justify-center text-[10px] transition-colors {currentPath.startsWith(
 			'/app/knowledge-map'
 		)
@@ -201,6 +225,7 @@
 			fill="none"
 			viewBox="0 0 24 24"
 			stroke="currentColor"
+			aria-hidden="true"
 		>
 			<path
 				stroke-linecap="round"
@@ -215,6 +240,7 @@
 	<!-- 5. Study Library -->
 	<a
 		href="/app/knowledge"
+		aria-current={currentPath.startsWith('/app/knowledge') ? 'page' : undefined}
 		class="min-h-11 min-w-14 gap-0.5 font-bold flex flex-col items-center justify-center text-[10px] transition-colors {currentPath.startsWith(
 			'/app/knowledge'
 		)
@@ -227,6 +253,7 @@
 			fill="none"
 			viewBox="0 0 24 24"
 			stroke="currentColor"
+			aria-hidden="true"
 		>
 			<path
 				stroke-linecap="round"

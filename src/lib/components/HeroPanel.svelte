@@ -3,30 +3,55 @@
 </script>
 
 <div
-	class="from-indigo-900 via-indigo-800 to-purple-950 p-8 text-white md:flex md:w-1/2 lg:p-12 relative hidden flex-col justify-between overflow-y-auto bg-linear-to-br select-none"
+	class="relative hidden md:flex md:w-1/2 flex-col justify-between overflow-hidden select-none text-white"
+	style="background: linear-gradient(155deg, #1a1240 0%, #2a1f5c 35%, #1e1648 60%, #0d0d20 100%);"
 >
-	<!-- Ambient lighting -->
+	<!-- Dot-grid noise overlay -->
 	<div
-		class="inset-0 absolute bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.25),transparent_50%)]"
+		class="absolute inset-0 opacity-[0.07]"
+		style="background-image: radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px); background-size: 24px 24px;"
 	></div>
-	<div class="-bottom-32 -left-32 h-96 w-96 bg-indigo-500/20 blur-3xl absolute rounded-full"></div>
-	<div class="-right-24 h-72 w-72 bg-purple-500/15 blur-3xl absolute top-1/3 rounded-full"></div>
 
-	<!-- Top Header -->
-	<div class="z-10 flex items-center justify-between">
-		<div class="gap-3 flex items-center">
+	<!-- Luminance orbs — asymmetric placement -->
+	<div
+		class="absolute -top-32 -right-32 h-120 w-120 rounded-full opacity-40"
+		style="background: radial-gradient(circle at center, #7c5cf6 0%, transparent 65%); filter: blur(60px);"
+	></div>
+	<div
+		class="absolute bottom-0 -left-24 h-72 w-72 rounded-full opacity-25"
+		style="background: radial-gradient(circle at center, #4f46e5 0%, transparent 70%); filter: blur(50px);"
+	></div>
+	<div
+		class="absolute top-1/2 right-1/3 h-48 w-48 rounded-full opacity-15"
+		style="background: radial-gradient(circle at center, #a78bfa 0%, transparent 70%); filter: blur(40px);"
+	></div>
+
+	<!-- Animated drifting particles (CSS only) -->
+	<div class="absolute inset-0 overflow-hidden pointer-events-none">
+		<div class="hero-particle" style="--x: 18%; --y: 22%; --dur: 12s; --delay: 0s;"></div>
+		<div class="hero-particle" style="--x: 72%; --y: 65%; --dur: 18s; --delay: -4s;"></div>
+		<div class="hero-particle" style="--x: 45%; --y: 80%; --dur: 14s; --delay: -8s;"></div>
+		<div class="hero-particle" style="--x: 85%; --y: 35%; --dur: 20s; --delay: -2s;"></div>
+	</div>
+
+	<!-- Content wrapper -->
+	<div class="relative z-10 flex flex-col justify-between h-full p-8 lg:p-12">
+
+		<!-- Top: Logo + Brand -->
+		<div class="flex items-center gap-3">
 			<div
-				class="h-11 w-11 bg-white text-indigo-700 shadow-xl shadow-indigo-950/40 flex items-center justify-center rounded-xl"
+				class="h-10 w-10 flex items-center justify-center rounded-xl shrink-0"
+				style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); backdrop-filter: blur(8px);"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
-					stroke-width="2.5"
+					stroke-width="2"
 					stroke-linecap="round"
 					stroke-linejoin="round"
-					class="h-6 w-6"
+					class="h-5 w-5 text-white"
 				>
 					<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
 					<path d="M6 6h10" />
@@ -35,125 +60,166 @@
 				</svg>
 			</div>
 			<div>
-				<span class="font-display text-xl font-bold tracking-tight text-white">AI Study Buddy</span>
-				<span class="font-medium tracking-wide text-indigo-200/80 block text-[11px]"
-					>Intelligent Learning Platform</span
-				>
+				<span class="text-[15px] font-bold tracking-tight text-white block leading-tight">AI Study Buddy</span>
+				<span class="text-[11px] font-medium text-white/50 tracking-wide block">Intelligent Learning Platform</span>
 			</div>
 		</div>
-	</div>
 
-	<!-- Center Callout -->
-	<div class="py-4 lg:py-8 z-10 my-auto">
-		<div
-			class="mb-6 gap-2 border-indigo-300/20 bg-indigo-500/15 px-3.5 py-1.5 text-xs font-semibold text-indigo-200 backdrop-blur-md inline-flex items-center rounded-full border"
-		>
-			<span class="h-2 w-2 relative flex">
-				<span
-					class="animate-ping bg-emerald-400 absolute inline-flex h-full w-full rounded-full opacity-75"
-				></span>
-				<span class="h-2 w-2 bg-emerald-500 relative inline-flex rounded-full"></span>
-			</span>
-			AI Course Generator & Active Recall Engine
-		</div>
-
-		<h1 class="mb-4 font-display text-3xl leading-tight font-bold lg:text-4xl">
-			Learn anything effortlessly.<br />One streak at a time.
-		</h1>
-		<p class="mb-8 font-sans text-sm leading-relaxed text-indigo-100/85 lg:text-base">
-			Enter any subject to generate tailored courses, step-by-step lessons, interactive quizzes, and
-			AI tutor assistance on demand.
-		</p>
-
-		<!-- Live Product UI Mockup -->
-		<div
-			class="rounded-2xl border-white/15 bg-white/10 p-5 shadow-2xl backdrop-blur-xl hover:border-white/25 border transition-all duration-300"
-		>
-			<div class="mb-4 border-white/10 pb-3 flex items-center justify-between border-b">
-				<div class="gap-2.5 flex items-center">
-					<div
-						class="h-8 w-8 bg-indigo-500/30 text-xs font-semibold text-indigo-200 flex items-center justify-center rounded-lg"
-					>
-						ML
-					</div>
-					<div>
-						<h4 class="text-xs font-bold text-white">Neural Networks & Deep Learning</h4>
-						<p class="text-indigo-200/70 text-[11px]">Module 2 of 4 &bull; In Progress</p>
-					</div>
-				</div>
-				<div
-					class="gap-1.5 border-amber-400/30 bg-amber-500/20 px-2.5 py-1 font-bold text-amber-300 flex items-center rounded-full border text-[11px]"
-				>
-					<span>🔥 7 Day Streak</span>
-				</div>
+		<!-- Center: Hero copy + mockup -->
+		<div class="my-auto py-6 lg:py-10">
+			<!-- Status pill -->
+			<div
+				class="mb-7 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide"
+				style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); backdrop-filter: blur(10px); color: rgba(255,255,255,0.75);"
+			>
+				<span class="relative h-2 w-2 flex">
+					<span
+						class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+						style="background: #4ade80;"
+					></span>
+					<span class="relative inline-flex rounded-full h-2 w-2" style="background: #22c55e;"></span>
+				</span>
+				AI Course Generator &amp; Active Recall Engine
 			</div>
 
-			<div class="mb-3">
-				<div class="mb-1 font-semibold flex justify-between text-[11px]">
-					<span class="text-indigo-200/80">Course Completion</span>
-					<span class="text-emerald-400">65%</span>
-				</div>
-				<div class="h-2 bg-black/20 w-full overflow-hidden rounded-full">
-					<div
-						class="from-indigo-400 to-emerald-400 h-full w-[65%] rounded-full bg-linear-to-r"
-					></div>
-				</div>
-			</div>
+			<h1 class="mb-4 text-3xl lg:text-[2.4rem] font-bold leading-[1.15] tracking-tight text-white">
+				Learn anything<br />effortlessly.
+			</h1>
+			<p class="mb-8 text-sm leading-relaxed lg:text-[0.925rem]" style="color: rgba(255,255,255,0.58);">
+				Enter any subject to generate tailored courses, step-by-step lessons, interactive quizzes, and AI tutor assistance on demand.
+			</p>
 
-			<div class="space-y-2 text-xs">
-				<div class="bg-white/5 p-2.5 text-white/90 flex items-center justify-between rounded-lg">
-					<div class="gap-2 flex items-center">
-						<span
-							class="h-4 w-4 bg-emerald-500/30 font-bold text-emerald-300 flex items-center justify-center rounded-full text-[10px]"
-							>✓</span
+			<!-- Product UI Mockup — true glassmorphic surface -->
+			<div
+				class="rounded-2xl p-5 transition-all duration-300 hover:-translate-y-0.5"
+				style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.13); border-top-color: rgba(255,255,255,0.22); backdrop-filter: blur(20px); box-shadow: 0 20px 48px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);"
+			>
+				<!-- Course header -->
+				<div class="flex items-center justify-between mb-4 pb-3" style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+					<div class="flex items-center gap-2.5">
+						<div
+							class="h-8 w-8 flex items-center justify-center rounded-lg text-xs font-bold"
+							style="background: rgba(139,117,245,0.25); color: rgba(196,185,255,0.9);"
 						>
-						<span class="text-xs font-medium">01. Perceptrons & Activation Functions</span>
+							ML
+						</div>
+						<div>
+							<h4 class="text-[12px] font-semibold text-white leading-tight">Neural Networks &amp; Deep Learning</h4>
+							<p class="text-[10px] mt-0.5" style="color: rgba(255,255,255,0.4);">Module 2 of 4 &bull; In Progress</p>
+						</div>
 					</div>
-					<span class="font-semibold text-emerald-400 text-[10px]">Passed</span>
-				</div>
-				<div
-					class="border-indigo-400/30 bg-indigo-500/20 p-2.5 text-white flex items-center justify-between rounded-lg border"
-				>
-					<div class="gap-2 flex items-center">
-						<span
-							class="h-4 w-4 bg-indigo-400 font-bold text-indigo-950 flex items-center justify-center rounded-full text-[10px]"
-							>►</span
-						>
-						<span class="text-xs font-semibold">02. Backpropagation & Gradient Descent</span>
-					</div>
-					<span class="rounded bg-indigo-500/40 px-2 py-0.5 font-bold text-indigo-200 text-[10px]"
-						>Quiz Ready</span
+					<div
+						class="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold"
+						style="background: rgba(245,166,36,0.15); border: 1px solid rgba(245,166,36,0.25); color: #f5c36a;"
 					>
+						🔥 7 Day Streak
+					</div>
 				</div>
-			</div>
-		</div>
-	</div>
 
-	<!-- Footer Feature Grid -->
-	<div class="border-white/15 pt-6 z-10 border-t">
-		<div class="gap-4 grid grid-cols-3">
-			<div class="flex flex-col">
-				<div class="font-display text-lg font-bold text-white">&lt; 5s</div>
-				<div class="font-semibold tracking-wider text-indigo-200/70 text-[10px] uppercase">
-					Course Creation
+				<!-- Progress bar -->
+				<div class="mb-3.5">
+					<div class="flex justify-between items-center mb-1.5 text-[10px] font-medium">
+						<span style="color: rgba(255,255,255,0.5);">Course Completion</span>
+						<span style="color: #5eead4;">65%</span>
+					</div>
+					<div class="h-1.5 w-full rounded-full overflow-hidden" style="background: rgba(0,0,0,0.3);">
+						<div
+							class="h-full rounded-full w-[65%]"
+							style="background: linear-gradient(90deg, #818cf8 0%, #34d399 100%);"
+						></div>
+					</div>
 				</div>
-			</div>
-			<div class="flex flex-col">
-				<div class="font-display text-lg font-bold text-white">AI Tutor</div>
-				<div class="font-semibold tracking-wider text-indigo-200/70 text-[10px] uppercase">
-					24/7 Explanations
-				</div>
-			</div>
-			<div class="flex flex-col">
-				<div class="font-display text-lg font-bold text-white">100%</div>
-				<div class="font-semibold tracking-wider text-indigo-200/70 text-[10px] uppercase">
-					Personalized
+
+				<!-- Lessons list -->
+				<div class="space-y-1.5 text-[11px]">
+					<div
+						class="flex items-center justify-between px-3 py-2 rounded-lg"
+						style="background: rgba(255,255,255,0.04);"
+					>
+						<div class="flex items-center gap-2">
+							<span
+								class="h-4 w-4 flex items-center justify-center rounded-full text-[9px] font-bold"
+								style="background: rgba(52,211,153,0.2); color: #34d399;"
+							>✓</span>
+							<span class="font-medium" style="color: rgba(255,255,255,0.75);">01. Perceptrons &amp; Activation Functions</span>
+						</div>
+						<span class="font-semibold text-[9px]" style="color: #34d399;">Passed</span>
+					</div>
+					<div
+						class="flex items-center justify-between px-3 py-2 rounded-lg"
+						style="background: rgba(139,117,245,0.14); border: 1px solid rgba(139,117,245,0.22);"
+					>
+						<div class="flex items-center gap-2">
+							<span
+								class="h-4 w-4 flex items-center justify-center rounded-full text-[9px] font-bold"
+								style="background: rgba(139,117,245,0.4); color: #c4b5fd;"
+							>▶</span>
+							<span class="font-semibold text-white">02. Backpropagation &amp; Gradient Descent</span>
+						</div>
+						<span
+							class="px-2 py-0.5 rounded text-[9px] font-bold"
+							style="background: rgba(139,117,245,0.3); color: #c4b5fd;"
+						>Quiz Ready</span>
+					</div>
 				</div>
 			</div>
 		</div>
-		<div class="mt-6 text-indigo-200/50 flex justify-between text-[11px]">
-			<span>AI Study Buddy &bull; Smart Learning Companion</span>
-			<span>Protected & Secure</span>
+
+		<!-- Bottom: Stats strip -->
+		<div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.5rem;">
+			<div class="grid grid-cols-3 gap-4 mb-4">
+				<div class="flex flex-col">
+					<span class="text-lg font-bold text-white tracking-tight">&lt; 5s</span>
+					<span class="text-[9px] font-semibold tracking-widest uppercase mt-0.5" style="color: rgba(255,255,255,0.38);">Course Creation</span>
+				</div>
+				<div class="flex flex-col">
+					<span class="text-lg font-bold text-white tracking-tight">AI Tutor</span>
+					<span class="text-[9px] font-semibold tracking-widest uppercase mt-0.5" style="color: rgba(255,255,255,0.38);">24/7 Explanations</span>
+				</div>
+				<div class="flex flex-col">
+					<span class="text-lg font-bold text-white tracking-tight">100%</span>
+					<span class="text-[9px] font-semibold tracking-widest uppercase mt-0.5" style="color: rgba(255,255,255,0.38);">Personalized</span>
+				</div>
+			</div>
+			<div class="flex justify-between text-[10px]" style="color: rgba(255,255,255,0.28);">
+				<span>AI Study Buddy &bull; Smart Learning Companion</span>
+				<span>Protected &amp; Secure</span>
+			</div>
 		</div>
 	</div>
 </div>
+
+<style>
+	/* Drifting ambient particles */
+	.hero-particle {
+		position: absolute;
+		left: var(--x);
+		top: var(--y);
+		width: 3px;
+		height: 3px;
+		border-radius: 50%;
+		background: rgba(167, 139, 250, 0.6);
+		animation: particle-drift var(--dur) ease-in-out infinite var(--delay);
+	}
+
+	@keyframes particle-drift {
+		0%, 100% {
+			transform: translate(0, 0) scale(1);
+			opacity: 0.6;
+		}
+		33% {
+			transform: translate(12px, -18px) scale(1.4);
+			opacity: 0.9;
+		}
+		66% {
+			transform: translate(-8px, 10px) scale(0.8);
+			opacity: 0.4;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.hero-particle {
+			animation: none;
+		}
+	}
+</style>

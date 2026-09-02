@@ -3,16 +3,30 @@
 Self-hosted Python FastAPI server that powers all AI features in the AI Study Buddy application.
 Replaces the Google Gemini API with open-weight, locally-served models.
 
-## Models Used
+## Architectural Framework: Dual-Mode Operation
 
-| Feature            | Model                                                                           | Strategy                              |
-| ------------------ | ------------------------------------------------------------------------------- | ------------------------------------- |
-| Summarization      | `google/flan-t5-base` (fine-tuned)                                              | seq2seq, fine-tuned on study material |
-| Paraphrasing       | `google/flan-t5-base` (fine-tuned)                                              | seq2seq, style-conditioned            |
-| Outline Generation | `google/flan-t5-large` (base)                                                   | RAG + instruction prompting           |
-| Lesson Generation  | `google/flan-t5-large` (base)                                                   | RAG + per-page generation             |
-| Quiz Generation    | `valhalla/t5-small-qg-prepend` + `potsawee/t5-large-generation-race-Distractor` | 3-stage pipeline                      |
-| AI Study Assistant | `TinyLlama/TinyLlama-1.1B-Chat-v1.0` (base)                                     | RAG + ChatML format                   |
+The ML backend operates in two transparent modes depending on deployment configuration:
+
+1. **Mode A: Out-of-the-Box / Development (Default)**
+   - Uses canonical open-weight base foundation models (`google/flan-t5-base`, `google/flan-t5-large`, `TinyLlama/TinyLlama-1.1B-Chat-v1.0`) combined with prompt engineering and FAISS vector RAG.
+   - Requires zero custom training or private Hugging Face weights to run immediately.
+2. **Mode B: Domain-Adapted Production (Fine-Tuned)**
+   - Uses domain-adapted checkpoints trained on academic study corpora using the included [`fine_tuning/`](fine_tuning/) pipelines.
+   - Point the corresponding environment variables in `.env` (`SUMMARIZER_MODEL_ID`, `PARAPHRASER_MODEL_ID`, etc.) to your custom Hugging Face Hub repository or local checkpoint directory.
+
+The server dynamically detects model provenance at boot and exposes runtime classification via `GET /models/info` and `GET /healthcheck`.
+
+## Models Used & Provenance
+
+| Feature            | Default Baseline Model                                                          | Provenance Tier          | Fine-Tuning Strategy / Recipe                                 |
+| ------------------ | ------------------------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------- |
+| Summarization      | `google/flan-t5-base`                                                           | Base Foundation Fallback | `fine_tuning/01_summarizer_finetune.py` (SciTLDR / SAMSum)    |
+| Paraphrasing       | `google/flan-t5-base`                                                           | Base Foundation Fallback | `fine_tuning/02_paraphraser_finetune.py` (Style conditioning) |
+| Outline Generation | `google/flan-t5-large`                                                          | Base Foundation Model    | `fine_tuning/03_outline_finetune.py` + RAG Context            |
+| Lesson Generation  | `google/flan-t5-large`                                                          | Base Foundation Model    | `fine_tuning/04_lesson_finetune.py` + RAG Context             |
+| Quiz Generation    | `valhalla/t5-small-qg-prepend` + `potsawee/t5-large-generation-race-Distractor` | Pretrained Specialized   | 3-Stage Pipeline (QG + DG + Reranking)                        |
+| AI Study Assistant | `TinyLlama/TinyLlama-1.1B-Chat-v1.0`                                            | Base Chat Foundation     | RAG + ChatML Prompt Format                                    |
+| Vector Embeddings  | `sentence-transformers/all-MiniLM-L6-v2`                                        | Pretrained Specialized   | Dense FAISS Bi-Encoder                                        |
 
 ## Local Development Setup
 
@@ -118,17 +132,23 @@ PARAPHRASER_MODEL_ID=your-username/flan-t5-study-paraphraser
 
 ## API Endpoints
 
-| Method | Endpoint       | Description                |
-| ------ | -------------- | -------------------------- |
-| GET    | `/healthcheck` | Server + model load status |
-| POST   | `/summarize`   | Summarize study text       |
-| POST   | `/paraphrase`  | Paraphrase text with style |
-| POST   | `/outline`     | Generate course outline    |
-| POST   | `/lesson`      | Generate lesson pages      |
-| POST   | `/quiz`        | Generate MCQ quiz          |
-| POST   | `/chat`        | AI study assistant         |
-| POST   | `/documents`   | Add docs to RAG index      |
-| DELETE | `/documents`   | Clear RAG index            |
+| Method | Endpoint        | Description                                                                               | Auth Required |
+| ------ | --------------- | ----------------------------------------------------------------------------------------- | ------------- |
+| GET    | `/health/live`  | Unauthenticated HTTP liveness probe (returns 200 OK process heartbeat)                    | No            |
+| GET    | `/health/ready` | Unauthenticated ML readiness probe (returns 200 OK when ready, 503 while warming/errored) | No            |
+| GET    | `/health`       | Container probe alias (defaults to readiness, `?probe=liveness` supported)                | No            |
+| GET    | `/healthcheck`  | Protected server + detailed model load diagnostic (200 OK when ready, 503 when warming)   | `X-API-Key`   |
+| GET    | `/models/info`  | Protected model manifest, provenance classification, and device telemetry                 | `X-API-Key`   |
+| GET    | `/metrics`      | Protected operational metrics, VRAM/RAM utilization, and device telemetry                 | `X-API-Key`   |
+| POST   | `/summarize`    | Summarize study text                                                                      | `X-API-Key`   |
+| POST   | `/paraphrase`   | Paraphrase text with style                                                                | `X-API-Key`   |
+| POST   | `/outline`      | Generate course outline                                                                   | `X-API-Key`   |
+| POST   | `/lesson`       | Generate lesson pages                                                                     | `X-API-Key`   |
+| POST   | `/quiz`         | Generate MCQ quiz                                                                         | `X-API-Key`   |
+| POST   | `/chat`         | AI study assistant                                                                        | `X-API-Key`   |
+| POST   | `/chat/stream`  | AI study assistant SSE stream                                                             | `X-API-Key`   |
+| POST   | `/documents`    | Add docs to RAG index                                                                     | `X-API-Key`   |
+| DELETE | `/documents`    | Clear RAG index                                                                           | `X-API-Key`   |
 
 Full interactive API docs: `http://localhost:8000/docs`
 

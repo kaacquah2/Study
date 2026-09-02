@@ -1,0 +1,38 @@
+{
+	"study_name": "System Usability Scale (SUS) & Qualitative Empirical Study",
+	"sample_size_participants": 15,
+	"sus_metrics": {
+		"mean_sus_score": 84.5,
+		"std_dev": 12.72,
+		"std_error_mean": 3.28,
+		"ci_95_percent": [78.06, 90.94],
+		"min_score": 60.0,
+		"max_score": 100.0,
+		"industry_benchmark_threshold": 68.0,
+		"sus_grade": "A+",
+		"percentile_rank": "96-100th",
+		"cronbach_alpha_reliability": 0.946
+	},
+	"qualitative_ai_ratings": {
+		"Q-AI1_citations_trust": {
+			"description": "The AI Study Tutor citations helped me trust answer accuracy",
+			"mean": 4.52,
+			"std": 0.29
+		},
+		"Q-AI2_knowledge_map_clarity": {
+			"description": "Knowledge Map gave a clear understanding of weak topics",
+			"mean": 4.5,
+			"std": 0.24
+		},
+		"Q-AI3_mistake_bank_value": {
+			"description": "Practicing errors in Mistake Notebook reinforced weak concepts",
+			"mean": 4.68,
+			"std": 0.19
+		},
+		"Q-AI4_next_step_accuracy": {
+			"description": "Recommended next action (What should I study next?) was accurate",
+			"mean": 4.37,
+			"std": 0.26
+		}
+	}
+}

@@ -3,6 +3,7 @@ import { json } from '@sveltejs/kit';
 import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
 import { z } from 'zod';
+import { enqueueModuleGenerationJob } from '$lib/server/ai/generationQueue';
 
 const AddModuleZod = z.object({
 	title: z.string().min(2).max(120).optional(),
@@ -76,6 +77,13 @@ export const POST: RequestHandler = async ({ params, request }) => {
 				'progress.total': currentCount + 1,
 				updatedAt: FieldValue.serverTimestamp()
 			});
+		});
+
+		// Enqueue durable background generation for the newly added module
+		await enqueueModuleGenerationJob({
+			courseId,
+			moduleId: newModuleId,
+			userId: user.uid
 		});
 
 		return json(

@@ -1,0 +1,16 @@
+{
+	"evaluation_name": "Summarization Quality & Readability Evaluation",
+	"sample_size": 8,
+	"metrics": {
+		"mean_rouge_1": 37.89,
+		"std_rouge_1": 15.05,
+		"mean_rouge_2": 12.96,
+		"std_rouge_2": 11.66,
+		"mean_rouge_l": 31.68,
+		"std_rouge_l": 12.89,
+		"mean_flesch_reading_ease": 35.7,
+		"std_flesch_reading_ease": 17.18,
+		"mean_compression_ratio_percent": 57.25,
+		"std_compression_ratio_percent": 7.13
+	}
+}

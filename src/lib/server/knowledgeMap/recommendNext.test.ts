@@ -35,7 +35,7 @@ describe('getRecommendedNext', () => {
 		expect(res?.priority).toBe(4);
 		expect(res?.type).toBe('continue_learning');
 		expect(res?.reason).toContain('foundational topic');
-		expect(res?.actionUrl).toBe('/app/courses/course-123/modules/mod-1');
+		expect(res?.actionUrl).toBe('/app/courses/course-123/mod-1');
 		expect(res?.evidence.length).toBeGreaterThan(0);
 	});
 

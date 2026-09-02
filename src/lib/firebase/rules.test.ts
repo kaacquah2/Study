@@ -12,22 +12,41 @@ import {
 import { describe, it, beforeAll, afterAll, beforeEach, expect } from 'vitest';
 import fs from 'fs';
 
-let testEnv: RulesTestEnvironment | undefined;
+let testEnv: RulesTestEnvironment;
 
-describe('Firestore Security Rules', () => {
+async function checkEmulatorAvailable(host: string, port: number): Promise<boolean> {
+	try {
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 1000);
+		await fetch(`http://${host}:${port}`, { signal: controller.signal });
+		clearTimeout(timeout);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+const host = process.env.FIRESTORE_EMULATOR_HOST?.split(':')[0] || '127.0.0.1';
+const port = parseInt(process.env.FIRESTORE_EMULATOR_HOST?.split(':')[1] || '8085', 10);
+const emulatorAvailable = await checkEmulatorAvailable(host, port);
+
+if (!emulatorAvailable) {
+	console.warn(
+		`[Firestore Rules Tests] Firestore emulator is not running at ${host}:${port}. Skipping security rules tests. ` +
+			'To run rules tests, execute: npm run test:rules:emulator'
+	);
+}
+
+describe.runIf(emulatorAvailable)('Firestore Security Rules', () => {
 	beforeAll(async () => {
-		try {
-			testEnv = await initializeTestEnvironment({
-				projectId: 'ai-study-buddy-knust',
-				firestore: {
-					rules: fs.readFileSync('firestore.rules', 'utf8'),
-					host: '127.0.0.1',
-					port: 8085
-				}
-			});
-		} catch {
-			console.warn('Firestore emulator not running on 127.0.0.1:8085; skipping rules tests.');
-		}
+		testEnv = await initializeTestEnvironment({
+			projectId: 'ai-study-buddy-knust',
+			firestore: {
+				rules: fs.readFileSync('firestore.rules', 'utf8'),
+				host,
+				port
+			}
+		});
 	});
 
 	afterAll(async () => {
@@ -43,10 +62,6 @@ describe('Firestore Security Rules', () => {
 	});
 
 	it('allows owner to read their own profile, but denies others', async () => {
-		if (!testEnv) {
-			expect(true).toBe(true);
-			return;
-		}
 		const aliceDb = testEnv.authenticatedContext('alice').firestore();
 		const bobDb = testEnv.authenticatedContext('bob').firestore();
 
@@ -69,10 +84,6 @@ describe('Firestore Security Rules', () => {
 	});
 
 	it('allows owner to update theme, but denies updating streak (server-authoritative)', async () => {
-		if (!testEnv) {
-			expect(true).toBe(true);
-			return;
-		}
 		const aliceDb = testEnv.authenticatedContext('alice').firestore();
 
 		await testEnv.withSecurityRulesDisabled(async (context) => {
@@ -99,10 +110,6 @@ describe('Firestore Security Rules', () => {
 	});
 
 	it('allows owner to read their course, but denies others and denies client writes', async () => {
-		if (!testEnv) {
-			expect(true).toBe(true);
-			return;
-		}
 		const aliceDb = testEnv.authenticatedContext('alice').firestore();
 		const bobDb = testEnv.authenticatedContext('bob').firestore();
 
@@ -133,10 +140,6 @@ describe('Firestore Security Rules', () => {
 	});
 
 	it('allows authenticated users to read unrevoked shared courses, but denies write', async () => {
-		if (!testEnv) {
-			expect(true).toBe(true);
-			return;
-		}
 		const aliceDb = testEnv.authenticatedContext('alice').firestore();
 		const unauthDb = testEnv.unauthenticatedContext().firestore();
 
@@ -179,10 +182,6 @@ describe('Firestore Security Rules', () => {
 	});
 
 	it('enforces ownership for flashcards and blocks cross-user access', async () => {
-		if (!testEnv) {
-			expect(true).toBe(true);
-			return;
-		}
 		const aliceDb = testEnv.authenticatedContext('alice').firestore();
 		const bobDb = testEnv.authenticatedContext('bob').firestore();
 
@@ -211,10 +210,6 @@ describe('Firestore Security Rules', () => {
 	});
 
 	it('enforces membership access for studyGroups and restricts client writes', async () => {
-		if (!testEnv) {
-			expect(true).toBe(true);
-			return;
-		}
 		const aliceDb = testEnv.authenticatedContext('alice').firestore();
 		const bobDb = testEnv.authenticatedContext('bob').firestore();
 
@@ -242,10 +237,6 @@ describe('Firestore Security Rules', () => {
 	});
 
 	it('handles peerQuestions lifecycle security (pending submission vs approved reading)', async () => {
-		if (!testEnv) {
-			expect(true).toBe(true);
-			return;
-		}
 		const aliceDb = testEnv.authenticatedContext('alice').firestore();
 		const bobDb = testEnv.authenticatedContext('bob').firestore();
 

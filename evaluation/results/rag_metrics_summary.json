@@ -1,0 +1,62 @@
+{
+	"evaluation_name": "RAG Retrieval & Groundedness Evaluation",
+	"timestamp_utc": "live_run",
+	"sample_size": 30,
+	"embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+	"metrics": {
+		"retrieval_precision_at_3_percent": 36.67,
+		"hits_count": 11,
+		"total_count": 30,
+		"answer_groundedness_rate_percent": 50.0,
+		"grounded_count": 15,
+		"hallucination_rate_percent": 50.0,
+		"mean_query_context_cosine_sim": 0.4542,
+		"std_query_context_cosine_sim": 0.1127,
+		"min_query_context_cosine_sim": 0.2691,
+		"max_query_context_cosine_sim": 0.7911
+	},
+	"domain_breakdown": {
+		"Algorithms & Data Structures": {
+			"queries": 6,
+			"hits": 2,
+			"precision_percent": 33.33,
+			"mean_cosine": 0.4201
+		},
+		"Artificial Intelligence": {
+			"queries": 3,
+			"hits": 3,
+			"precision_percent": 100.0,
+			"mean_cosine": 0.5824
+		},
+		"Compilers": {
+			"queries": 3,
+			"hits": 1,
+			"precision_percent": 33.33,
+			"mean_cosine": 0.3684
+		},
+		"Computer Architecture": {
+			"queries": 2,
+			"hits": 0,
+			"precision_percent": 0.0,
+			"mean_cosine": 0.4618
+		},
+		"Computer Networks": {
+			"queries": 6,
+			"hits": 2,
+			"precision_percent": 33.33,
+			"mean_cosine": 0.3787
+		},
+		"Database Systems": {
+			"queries": 4,
+			"hits": 2,
+			"precision_percent": 50.0,
+			"mean_cosine": 0.5661
+		},
+		"Operating Systems": {
+			"queries": 6,
+			"hits": 1,
+			"precision_percent": 16.67,
+			"mean_cosine": 0.4654
+		}
+	}
+}

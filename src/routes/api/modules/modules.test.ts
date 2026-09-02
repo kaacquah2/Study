@@ -3,16 +3,14 @@ import { POST as completeModuleHandler } from './[id]/complete/+server';
 import { POST as generateModuleHandler } from './[id]/generate/+server';
 import { verifySessionUser } from '$lib/server/auth';
 import { adminDb } from '$lib/server/admin';
-import { generateLessonV2 } from '$lib/server/ai/provider';
+import { enqueueModuleGenerationJob } from '$lib/server/ai/generationQueue';
 
 vi.mock('$lib/server/auth', () => ({
 	verifySessionUser: vi.fn()
 }));
 
-vi.mock('$lib/server/ai/provider', () => ({
-	generateLesson: vi.fn(),
-	generateLessonV2: vi.fn(),
-	generateQuiz: vi.fn()
+vi.mock('$lib/server/ai/generationQueue', () => ({
+	enqueueModuleGenerationJob: vi.fn()
 }));
 
 vi.mock('$lib/server/admin', () => {
@@ -185,7 +183,9 @@ describe('/api/modules/[id] Integration Tests', () => {
 			vi.mocked(verifySessionUser).mockResolvedValue({ uid: 'user1' });
 
 			const mockTransaction = {
-				get: vi.fn().mockResolvedValue({ exists: false })
+				get: vi.fn().mockImplementation(() => {
+					return Promise.resolve({ exists: false });
+				})
 			};
 
 			vi.mocked(adminDb.runTransaction).mockImplementation(async (cb) =>
@@ -208,49 +208,26 @@ describe('/api/modules/[id] Integration Tests', () => {
 			expect(json.error.code).toBe('NOT_FOUND');
 		});
 
-		it('successfully processes lesson markdown with H2 subheadings without security validation failure', async () => {
+		it('returns 429 when hourly module generation limit is reached', async () => {
 			vi.mocked(verifySessionUser).mockResolvedValue({ uid: 'user1' });
 
+			const hourStr = Math.floor(Date.now() / 3600000).toString();
 			const mockTransaction = {
 				get: vi.fn().mockImplementation(() => {
 					return Promise.resolve({
 						exists: true,
 						data: () => ({
-							ownerUid: 'user1',
-							status: 'pending',
-							type: 'lesson',
-							title: 'Variables',
-							learningObjective: 'Understand variables',
-							keyPoints: ['Syntax']
+							modulesThisHour: 30,
+							hour: hourStr
 						})
 					});
 				}),
-				update: vi.fn(),
 				set: vi.fn()
 			};
 
 			vi.mocked(adminDb.runTransaction).mockImplementation(async (cb) =>
 				cb(mockTransaction as never)
 			);
-
-			vi.mocked(generateLessonV2).mockResolvedValue({
-				result: {
-					pages: [
-						{
-							order: 1,
-							heading: 'Variables',
-							subheading: null,
-							blocks: [
-								{
-									type: 'text',
-									markdown: '## Section Overview\n\nVariables store values in memory.'
-								}
-							]
-						}
-					]
-				},
-				provider: 'gemini'
-			});
 
 			const request = new Request('http://localhost/api/modules/mod1/generate', {
 				method: 'POST',
@@ -264,11 +241,11 @@ describe('/api/modules/[id] Integration Tests', () => {
 			} as unknown as Parameters<typeof generateModuleHandler>[0]);
 			const json = await response.json();
 
-			expect(response.status).toBe(200);
-			expect(json.status).toBe('ready');
+			expect(response.status).toBe(429);
+			expect(json.error.code).toBe('RATE_LIMIT_EXCEEDED');
 		});
 
-		it('updates module status to failed and returns 500 when generateLesson throws an error', async () => {
+		it('successfully enqueues module generation into the durable queue and returns 202 Accepted', async () => {
 			vi.mocked(verifySessionUser).mockResolvedValue({ uid: 'user1' });
 
 			const mockTransaction = {
@@ -280,12 +257,11 @@ describe('/api/modules/[id] Integration Tests', () => {
 							status: 'pending',
 							type: 'lesson',
 							title: 'Variables',
-							learningObjective: 'Understand variables',
-							keyPoints: ['Syntax']
+							modulesThisHour: 2,
+							hour: Math.floor(Date.now() / 3600000).toString()
 						})
 					});
 				}),
-				update: vi.fn(),
 				set: vi.fn()
 			};
 
@@ -293,11 +269,18 @@ describe('/api/modules/[id] Integration Tests', () => {
 				cb(mockTransaction as never)
 			);
 
-			// Mock generateLessonV2 throwing an AI generation error
-			const { MLBackendError } = await import('$lib/server/ai/client');
-			vi.mocked(generateLessonV2).mockRejectedValue(
-				new MLBackendError('AI Generation Failed', 500, '/lesson')
-			);
+			vi.mocked(enqueueModuleGenerationJob).mockResolvedValue({
+				jobId: 'job_mod_mod1_123',
+				jobType: 'module',
+				userId: 'user1',
+				courseId: 'c1',
+				moduleId: 'mod1',
+				status: 'queued',
+				attempts: 0,
+				maxAttempts: 3,
+				createdAt: Date.now(),
+				updatedAt: Date.now()
+			});
 
 			const request = new Request('http://localhost/api/modules/mod1/generate', {
 				method: 'POST',
@@ -311,8 +294,14 @@ describe('/api/modules/[id] Integration Tests', () => {
 			} as unknown as Parameters<typeof generateModuleHandler>[0]);
 			const json = await response.json();
 
-			expect(response.status).toBe(500);
-			expect(json.error.code).toBe('GENERATION_FAILED');
+			expect(response.status).toBe(202);
+			expect(json.status).toBe('queued');
+			expect(json.jobId).toBe('job_mod_mod1_123');
+			expect(enqueueModuleGenerationJob).toHaveBeenCalledWith({
+				courseId: 'c1',
+				moduleId: 'mod1',
+				userId: 'user1'
+			});
 		});
 	});
 });

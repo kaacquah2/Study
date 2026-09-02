@@ -7,11 +7,16 @@
 	];
 </script>
 
-<div class="p-1 shadow-xs inline-flex rounded-full border border-border bg-surface-muted">
+<div
+	class="p-1 shadow-xs inline-flex rounded-full border border-border bg-surface-muted"
+	role="group"
+	aria-label="Theme selector"
+>
 	{#each themes as { id, label } (id)}
 		<button
 			type="button"
 			aria-label={`Switch to ${label} theme`}
+			aria-pressed={themeStore.current === id}
 			class="gap-1.5 px-3.5 py-1.5 text-xs font-semibold flex cursor-pointer items-center rounded-full transition-all duration-180 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 {themeStore.current ===
 			id
 				? 'text-white shadow-xs bg-primary'
@@ -26,6 +31,7 @@
 					viewBox="0 0 24 24"
 					stroke="currentColor"
 					stroke-width="2"
+					aria-hidden="true"
 				>
 					<path
 						stroke-linecap="round"
@@ -41,6 +47,7 @@
 					viewBox="0 0 24 24"
 					stroke="currentColor"
 					stroke-width="2"
+					aria-hidden="true"
 				>
 					<path
 						stroke-linecap="round"

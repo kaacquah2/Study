@@ -13,6 +13,8 @@ export interface UserProfile {
 	role?: 'user' | 'admin' | 'superadmin';
 	isAdmin?: boolean;
 	isSuperAdmin?: boolean;
+	isBanned?: boolean;
+	bannedReason?: string | null;
 	badges?: string[];
 	longestStreak?: number;
 	onboardingComplete?: boolean;
@@ -42,6 +44,14 @@ class AuthStore {
 				if (cachedProfile) {
 					try {
 						this.profile = JSON.parse(cachedProfile);
+						if (localStorage.getItem('study_buddy_mock_auth') === 'true') {
+							this.user = {
+								uid: this.profile?.uid || 'mock-user-1',
+								email: this.profile?.email || 'test@example.com',
+								displayName: this.profile?.displayName || 'Test User'
+							} as FirebaseUser;
+							this.authResolved = true;
+						}
 					} catch (e) {
 						console.error('Failed to parse cached profile', e);
 					}
@@ -57,15 +67,15 @@ class AuthStore {
 			}, 4000);
 
 			onAuthStateChanged(auth, (firebaseUser) => {
-				this.user = firebaseUser;
-
-				// Clean up previous profile listener
-				if (this.unsubscribeProfile) {
-					this.unsubscribeProfile();
-					this.unsubscribeProfile = null;
-				}
-
 				if (firebaseUser) {
+					this.user = firebaseUser;
+
+					// Clean up previous profile listener
+					if (this.unsubscribeProfile) {
+						this.unsubscribeProfile();
+						this.unsubscribeProfile = null;
+					}
+
 					localStorage.setItem('study_buddy_has_session', 'true');
 
 					// Listen to Firestore profile updates
@@ -92,7 +102,12 @@ class AuthStore {
 							this.authResolved = true;
 						}
 					);
+				} else if (localStorage.getItem('study_buddy_mock_auth') === 'true' && this.user) {
+					// Preserve mock user in fast client UI tests
+					this.loading = false;
+					this.authResolved = true;
 				} else {
+					this.user = null;
 					this.profile = null;
 					this.loading = false;
 					this.authResolved = true;

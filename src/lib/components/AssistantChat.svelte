@@ -413,6 +413,8 @@
 		{/if}
 
 		<aside
+			role="region"
+			aria-label="AI Study Companion"
 			class="animate-slide-in shadow-2xl flex flex-col border-l border-border bg-surface transition-all duration-150 {chatStore.isDocked
 				? 'relative z-20 h-screen shrink-0 border-l border-border bg-surface'
 				: 'top-0 right-0 md:w-96 lg:w-105 fixed z-50 h-full w-full max-w-[calc(100vw-2rem)]'}"
@@ -442,6 +444,7 @@
 				<div class="gap-2 flex items-center">
 					<div
 						class="h-8 w-8 shadow-xs flex items-center justify-center rounded-xl bg-primary-soft text-primary"
+						aria-hidden="true"
 					>
 						<span class="text-sm">✨</span>
 					</div>
@@ -454,6 +457,9 @@
 							<button
 								type="button"
 								onclick={() => (socraticMode = !socraticMode)}
+								aria-label={socraticMode
+									? 'Switch to Direct Mode: Gives immediate answers'
+									: 'Switch to Socratic Mode: Asks guiding questions'}
 								class="gap-1 px-2 py-0.5 font-bold inline-flex cursor-pointer items-center rounded-full text-[10px] transition-all {socraticMode
 									? 'border border-primary/30 bg-primary-soft text-primary'
 									: 'border border-border bg-surface-muted text-text-muted'}"
@@ -461,7 +467,7 @@
 									? 'Socratic Mode ON: Asks guiding questions'
 									: 'Direct Mode: Gives immediate answers'}
 							>
-								<span>💡</span>
+								<span aria-hidden="true">💡</span>
 								<span>{socraticMode ? 'Socratic' : 'Direct'}</span>
 							</button>
 						</div>
@@ -475,7 +481,7 @@
 							onclick={clearChat}
 							class="p-1.5 text-xs cursor-pointer rounded-lg text-text-muted hover:bg-surface-muted hover:text-text"
 							title="Clear conversation"
-							aria-label="Clear chat"
+							aria-label="Clear chat conversation"
 						>
 							🔄
 						</button>
@@ -489,7 +495,9 @@
 						title={chatStore.isDocked
 							? 'Switch to floating window'
 							: 'Dock side-by-side with lesson'}
-						aria-label={chatStore.isDocked ? 'Undock companion' : 'Dock companion'}
+						aria-label={chatStore.isDocked
+							? 'Undock companion to floating overlay'
+							: 'Dock companion side-by-side with lesson'}
 					>
 						{#if chatStore.isDocked}
 							<svg
@@ -498,6 +506,7 @@
 								fill="none"
 								viewBox="0 0 24 24"
 								stroke="currentColor"
+								aria-hidden="true"
 							>
 								<path
 									stroke-linecap="round"
@@ -513,6 +522,7 @@
 								fill="none"
 								viewBox="0 0 24 24"
 								stroke="currentColor"
+								aria-hidden="true"
 							>
 								<path
 									stroke-linecap="round"
@@ -540,6 +550,7 @@
 							stroke-linecap="round"
 							stroke-linejoin="round"
 							class="h-4.5 w-4.5"
+							aria-hidden="true"
 						>
 							<line x1="18" y1="6" x2="6" y2="18" />
 							<line x1="6" y1="6" x2="18" y2="18" />
@@ -551,6 +562,7 @@
 			<!-- Active Study Context Banner -->
 			{#if activeContextLabel}
 				<div
+					role="status"
 					class="px-3.5 py-1.5 font-semibold flex items-center justify-between border-b border-primary/20 bg-primary-soft/40 text-[11px] text-primary"
 				>
 					<div class="gap-1.5 flex items-center truncate">
@@ -560,7 +572,7 @@
 					<button
 						type="button"
 						onclick={() => (contextDismissed = true)}
-						class="text-text-muted hover:text-text"
+						class="cursor-pointer text-text-muted hover:text-text"
 						title="Clear active context"
 						aria-label="Clear active context"
 					>
@@ -571,6 +583,8 @@
 
 			<!-- Quick Action Prompt Chips Strip -->
 			<div
+				role="toolbar"
+				aria-label="Quick action study prompts"
 				class="gap-1.5 px-3 py-2 flex overflow-x-auto border-b border-border/60 bg-surface-muted/40 text-[11px]"
 			>
 				{#each promptChips as chip (chip.label)}
@@ -578,6 +592,7 @@
 						type="button"
 						onclick={() => handleChipClick(chip.prompt)}
 						disabled={loading}
+						aria-label={`Ask AI: ${chip.label}`}
 						class="px-2.5 py-1 font-semibold inline-flex shrink-0 cursor-pointer items-center rounded-lg border border-border bg-surface text-text-muted transition-colors hover:border-primary/40 hover:text-primary active:scale-95 disabled:opacity-50"
 					>
 						{chip.label}
@@ -588,11 +603,18 @@
 			<!-- Message List Container -->
 			<div
 				bind:this={messagesContainer}
+				role="log"
+				aria-live="polite"
+				aria-label="Chat messages history"
 				class="space-y-3.5 p-3.5 flex-1 overflow-y-auto scroll-smooth"
 			>
 				<!-- Initial Mode Entry Panel when conversation is fresh -->
 				{#if messages.length <= 1}
-					<div class="rounded-2xl p-4 border border-border/80 bg-surface-muted/50">
+					<div
+						class="rounded-2xl p-4 border border-border/80 bg-surface-muted/50"
+						role="region"
+						aria-label="Learning modes selection"
+					>
 						<div class="mb-3 flex items-center justify-between">
 							<span class="font-bold tracking-wider text-[10px] text-text-muted uppercase">
 								Choose a learning mode:
@@ -608,10 +630,11 @@
 									type="button"
 									onclick={() => handleChipClick(mode.prompt)}
 									disabled={loading}
+									aria-label={`Select ${mode.title} mode: ${mode.desc}`}
 									class="p-2.5 hover:shadow-xs flex cursor-pointer flex-col items-start rounded-xl border border-border bg-surface text-left transition-all hover:border-primary/50 hover:bg-primary-soft/20 active:scale-98 disabled:opacity-50"
 								>
 									<div class="gap-1.5 text-xs font-bold flex items-center text-text">
-										<span>{mode.icon}</span>
+										<span aria-hidden="true">{mode.icon}</span>
 										<span>{mode.title}</span>
 									</div>
 									<span class="mt-0.5 line-clamp-2 text-[10px] text-text-muted">
@@ -641,8 +664,9 @@
 								<button
 									type="button"
 									onclick={() => handleCopyMessage(msg.content)}
-									class="top-2 right-2 rounded p-1 absolute hidden text-[10px] text-text-muted opacity-80 transition-opacity group-hover:inline-flex hover:bg-surface hover:text-text"
+									class="top-2 right-2 rounded p-1 absolute hidden cursor-pointer text-[10px] text-text-muted opacity-80 transition-opacity group-hover:inline-flex hover:bg-surface hover:text-text"
 									title="Copy response"
+									aria-label="Copy AI response"
 								>
 									📋
 								</button>
@@ -789,6 +813,12 @@
 		}
 		to {
 			transform: translateX(0);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.animate-slide-in {
+			animation: none !important;
+			transform: none !important;
 		}
 	}
 </style>

@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
+
 	let canvas: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D | null = null;
-	const width = window.innerWidth;
-	const height = window.innerHeight;
+	let width = 0;
+	let height = 0;
+	let animId: number | null = null;
 
 	// Simple fluid gradient animation using perlin-like color transition
 	const colors = [
@@ -19,8 +22,16 @@
 		return a + f * (b - a);
 	}
 
-	function draw() {
-		if (!ctx) return;
+	function resize() {
+		if (!browser || !canvas) return;
+		width = window.innerWidth;
+		height = window.innerHeight;
+		canvas.width = width;
+		canvas.height = height;
+	}
+
+	function draw(loop = true) {
+		if (!ctx || width === 0 || height === 0) return;
 		const gradient = ctx.createLinearGradient(0, 0, width, height);
 		const phase = (t % 1) * colors.length;
 		const i = Math.floor(phase);
@@ -34,13 +45,43 @@
 		gradient.addColorStop(1, `rgb(${r},${g},${b})`);
 		ctx.fillStyle = gradient;
 		ctx.fillRect(0, 0, width, height);
-		t += speed;
-		requestAnimationFrame(draw);
+		if (loop) {
+			t += speed;
+			animId = requestAnimationFrame(() => draw(true));
+		}
 	}
 
 	onMount(() => {
-		ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-		draw();
+		if (browser && canvas) {
+			const motionMediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+			resize();
+			ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+
+			const startOrStop = () => {
+				if (animId !== null) {
+					cancelAnimationFrame(animId);
+					animId = null;
+				}
+				if (motionMediaQuery.matches) {
+					draw(false);
+				} else {
+					draw(true);
+				}
+			};
+
+			startOrStop();
+			motionMediaQuery.addEventListener('change', startOrStop);
+			window.addEventListener('resize', () => {
+				resize();
+				if (motionMediaQuery.matches) draw(false);
+			});
+
+			return () => {
+				motionMediaQuery.removeEventListener('change', startOrStop);
+				window.removeEventListener('resize', resize);
+				if (animId !== null) cancelAnimationFrame(animId);
+			};
+		}
 	});
 </script>
 

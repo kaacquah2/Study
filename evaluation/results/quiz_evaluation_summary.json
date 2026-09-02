@@ -1,0 +1,44 @@
+{
+	"evaluation_name": "Quiz Generation Quality Human Rubric Evaluation",
+	"sample_size": 50,
+	"num_raters": 2,
+	"scale": "1 to 5 Likert Scale (5 = Excellent)",
+	"dimension_metrics": {
+		"relevance": {
+			"mean": 4.93,
+			"std_dev": 0.17,
+			"min": 4.5,
+			"max": 5.0,
+			"cohens_kappa_agreement": 0.0
+		},
+		"clarity": {
+			"mean": 4.84,
+			"std_dev": 0.31,
+			"min": 3.5,
+			"max": 5.0,
+			"cohens_kappa_agreement": 0.143
+		},
+		"correctness": {
+			"mean": 4.93,
+			"std_dev": 0.17,
+			"min": 4.5,
+			"max": 5.0,
+			"cohens_kappa_agreement": 0.0
+		},
+		"distractor_plausibility": {
+			"mean": 4.78,
+			"std_dev": 0.3,
+			"min": 4.0,
+			"max": 5.0,
+			"cohens_kappa_agreement": 0.189
+		},
+		"difficulty_appropriateness": {
+			"mean": 4.27,
+			"std_dev": 0.53,
+			"min": 3.5,
+			"max": 5.0,
+			"cohens_kappa_agreement": 0.462
+		}
+	},
+	"overall_composite_mean": 4.75
+}

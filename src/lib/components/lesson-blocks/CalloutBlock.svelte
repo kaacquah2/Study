@@ -42,23 +42,33 @@
 	let currentStyle = $derived(styleClasses[style] || styleClasses.tip);
 </script>
 
-<div class="my-4 rounded-2xl overflow-hidden border {currentStyle.border} transition-all">
+<div
+	class="my-4 rounded-2xl overflow-hidden border {currentStyle.border} transition-all"
+	role="region"
+	aria-label={`Callout: ${title}`}
+>
 	<button
 		type="button"
 		onclick={() => (isOpen = !isOpen)}
+		aria-expanded={isOpen}
+		aria-controls="callout-body"
+		aria-label={`${isOpen ? 'Collapse' : 'Expand'} callout: ${title}`}
 		class="p-3.5 text-xs font-bold flex w-full cursor-pointer items-center justify-between text-left"
 	>
 		<div class="gap-2 flex items-center">
-			<span>{currentStyle.icon}</span>
+			<span aria-hidden="true">{currentStyle.icon}</span>
 			<span class={currentStyle.accent}>{title}</span>
 		</div>
-		<span class="text-text-muted transition-transform duration-200 {isOpen ? 'rotate-180' : ''}">
+		<span
+			class="text-text-muted transition-transform duration-200 {isOpen ? 'rotate-180' : ''}"
+			aria-hidden="true"
+		>
 			▼
 		</span>
 	</button>
 
 	{#if isOpen}
-		<div class="px-4 py-3 text-xs leading-relaxed border-t border-border/20">
+		<div id="callout-body" class="px-4 py-3 text-xs leading-relaxed border-t border-border/20">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			{@html renderedHtml}
 		</div>

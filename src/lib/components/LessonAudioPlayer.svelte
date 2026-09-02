@@ -139,12 +139,15 @@
 
 {#if supported}
 	<div
+		role="region"
+		aria-label="Lesson audio player"
 		class="gap-3 rounded-2xl p-4 backdrop-blur-sm flex flex-col border border-primary/20 bg-surface-muted/40 shadow-sm transition-all"
 	>
 		<div class="gap-3 flex items-center justify-between">
 			<div class="gap-2 flex items-center">
 				<div
 					class="h-9 w-9 flex items-center justify-center rounded-xl bg-primary-soft text-primary"
+					aria-hidden="true"
 				>
 					<svg
 						class="h-5 w-5"
@@ -162,7 +165,7 @@
 				</div>
 				<div>
 					<h4 class="text-xs font-bold text-text">{title}</h4>
-					<p class="text-[11px] text-text-muted">
+					<p class="text-[11px] text-text-muted" aria-live="polite">
 						{#if isPlaying}
 							Reading sentence {currentSentenceIndex + 1} of {sentences.length} ({progressPercent}%)
 						{:else if isPaused}
@@ -182,8 +185,9 @@
 						onclick={playAudio}
 						class="h-8 w-8 text-white flex cursor-pointer items-center justify-center rounded-xl bg-primary shadow-sm transition-all hover:bg-primary-hover active:scale-95"
 						title="Play Narration"
+						aria-label={isPaused ? 'Resume narration audio' : 'Play lesson narration audio'}
 					>
-						<svg class="h-4 w-4 fill-current" viewBox="0 0 24 24">
+						<svg class="h-4 w-4 fill-current" viewBox="0 0 24 24" aria-hidden="true">
 							<path d="M8 5v14l11-7z" />
 						</svg>
 					</button>
@@ -193,8 +197,9 @@
 						onclick={pauseAudio}
 						class="h-8 w-8 bg-amber-500 text-white hover:bg-amber-600 flex cursor-pointer items-center justify-center rounded-xl shadow-sm transition-all active:scale-95"
 						title="Pause"
+						aria-label="Pause narration audio"
 					>
-						<svg class="h-4 w-4 fill-current" viewBox="0 0 24 24">
+						<svg class="h-4 w-4 fill-current" viewBox="0 0 24 24" aria-hidden="true">
 							<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
 						</svg>
 					</button>
@@ -206,8 +211,9 @@
 					disabled={!isPlaying && !isPaused && currentSentenceIndex === 0}
 					class="h-8 w-8 flex cursor-pointer items-center justify-center rounded-xl border border-border bg-surface text-text-muted transition-colors hover:border-danger hover:text-danger disabled:cursor-not-allowed disabled:opacity-40"
 					title="Stop"
+					aria-label="Stop narration audio"
 				>
-					<svg class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+					<svg class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
 						<path d="M6 6h12v12H6z" />
 					</svg>
 				</button>
@@ -217,12 +223,14 @@
 		<!-- Options & Progress -->
 		<div class="gap-4 pt-2 text-xs flex items-center justify-between border-t border-border/40">
 			<!-- Speed selector -->
-			<div class="gap-1.5 flex items-center">
+			<div class="gap-1.5 flex items-center" role="group" aria-label="Audio playback speed">
 				<span class="font-bold tracking-wider text-[10px] text-text-muted uppercase">Speed:</span>
 				{#each [0.75, 1, 1.25, 1.5] as sRate (sRate)}
 					<button
 						type="button"
 						onclick={() => handleRateChange(sRate)}
+						aria-label={`Playback speed ${sRate}x`}
+						aria-pressed={rate === sRate}
 						class="px-2 py-0.5 font-bold rounded-lg text-[10px] transition-colors {rate === sRate
 							? 'text-white bg-primary'
 							: 'bg-surface text-text-muted hover:text-text'}"
@@ -237,6 +245,7 @@
 				<div class="max-w-50 gap-1 flex flex-col">
 					<select
 						bind:value={selectedVoiceURI}
+						aria-label="Select narrator voice"
 						class="px-2 py-0.5 w-full truncate rounded-lg border border-border bg-surface text-[10px] text-text"
 					>
 						{#each availableVoices.filter((v) => v.lang.startsWith('en')) as voice (voice.voiceURI)}
@@ -251,6 +260,7 @@
 		{#if isPlaying && sentences[currentSentenceIndex]}
 			<div
 				class="p-2.5 text-xs rounded-xl border border-primary/30 bg-primary-soft/30 text-primary"
+				aria-live="polite"
 			>
 				<span class="font-bold">Reading:</span> "{sentences[currentSentenceIndex]}"
 			</div>

@@ -76,14 +76,14 @@
 			if (result.isSelfClaim) {
 				successMsg = 'This is already your course.';
 				setTimeout(() => {
-					goto(resolve(`/courses/${result.courseId}`)).catch(() => {
+					goto(resolve(`/app/courses/${result.courseId}`)).catch(() => {
 						claiming = false;
 					});
 				}, 1500);
 			} else {
 				successMsg = 'Course successfully added to your dashboard!';
 				setTimeout(() => {
-					goto(resolve(`/courses/${result.courseId}`)).catch(() => {
+					goto(resolve(`/app/courses/${result.courseId}`)).catch(() => {
 						claiming = false;
 					});
 				}, 1500);

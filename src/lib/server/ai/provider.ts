@@ -203,7 +203,7 @@ async function executeAI<T>(
 		}
 
 		if (enableConfidenceRouting && inDomain) {
-			// ── IN-DOMAIN CS ROUTING: T1 ml_backend (fine-tuned), T2 Gemini, T3 Ollama ──
+			// ── IN-DOMAIN CS ROUTING: T1 ml_backend (Local RAG / Domain-Adapted), T2 Gemini, T3 Ollama ──
 			const ping = await getCachedPing();
 			if (ping.available && !ping.busy) {
 				try {

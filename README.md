@@ -24,6 +24,7 @@ Developed as a Final Year Project for the Department of Computer Science at **Kw
 - 🏛️ **[System Architecture Document (`docs/ARCHITECTURE.md`)](docs/ARCHITECTURE.md):** Learning Intelligence Engine pipeline, `LearningEvent` schema, heuristic mastery formula derivation, adaptation rules, and multi-model registry.
 - 🔬 **[Evaluation Framework (`docs/EVALUATION.md`)](docs/EVALUATION.md):** RAG retrieval precision, answer groundedness, hallucination mitigation, and quiz generation quality rubrics.
 - ⚡ **[Performance Benchmarks (`docs/BENCHMARKS.md`)](docs/BENCHMARKS.md):** End-to-end latency benchmarks across cloud and local inference tiers, memory profiles, and caching ratios.
+- 🧪 **[Reproducible Evaluation Suite (`evaluation/README.md`)](evaluation/README.md):** Fully reproducible benchmarking datasets, evaluation scripts, raw CSV score sheets, and automated runner.
 - 👥 **[User Study Protocol (`docs/USER_STUDY.md`)](docs/USER_STUDY.md):** Ethical experiment guidelines, informed consent, and 10-item System Usability Scale (SUS) survey.
 - 🎬 **[Examiner Demonstration Script (`docs/DEMO_SCRIPT.md`)](docs/DEMO_SCRIPT.md):** 12-step structured demonstration narrative.
 - 🔒 **[Privacy & Retention Policy (`docs/PRIVACY.md`)](docs/PRIVACY.md):** Data retention, vector isolation, and GDPR-compliant cascade deletion workflows.
@@ -415,9 +416,9 @@ Detailed REST API specifications for all routes (`/api/courses`, `/api/modules`,
 
 ## 🧪 Testing & Code Quality Commands
 
-The repository features 100% test passing verification across type checks, linting, unit tests, Python backend tests, and End-to-End browser suites:
+The repository contains automated test suites and static analysis tools across type checks, linting, unit tests, Python backend tests, and End-to-End browser suites. When dependencies are installed, execute:
 
-- **Type Checking (0 errors, 0 warnings):**
+- **Type Checking (0 errors target):**
   ```bash
   npm run check
   ```

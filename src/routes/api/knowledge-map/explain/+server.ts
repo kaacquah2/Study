@@ -106,7 +106,7 @@ export const GET: RequestHandler = async ({ request, url }) => {
 			recommendations.push({
 				action: 'review_lesson',
 				label: 'Review Lesson Text',
-				url: `/app/courses/${courseId}/modules/${moduleId}`
+				url: `/app/courses/${courseId}/${moduleId}`
 			});
 		}
 

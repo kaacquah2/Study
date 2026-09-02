@@ -7,6 +7,7 @@
 	import Onboarding from '$lib/components/Onboarding.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { chatStore } from '$lib/stores/chat.svelte';
+	import { toastStore } from '$lib/stores/toast.svelte';
 	import { db, auth } from '$lib/firebase/client';
 	import { collection, query, where, onSnapshot } from 'firebase/firestore';
 	import { goto } from '$app/navigation';
@@ -173,8 +174,29 @@
 		};
 	});
 
+	let retryCount = $state(0);
+
+	const retryFetch = () => {
+		loadError = '';
+		loading = true;
+		retryCount++;
+		fetchDueReviews();
+	};
+
+	// Handle automatic reconnect on network restore
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		const handleOnline = () => {
+			if (loadError) retryFetch();
+			else fetchDueReviews();
+		};
+		window.addEventListener('online', handleOnline);
+		return () => window.removeEventListener('online', handleOnline);
+	});
+
 	$effect(() => {
 		if (authStore.user) {
+			void retryCount;
 			const q = query(collection(db, 'courses'), where('ownerUid', '==', authStore.user.uid));
 
 			const unsub = onSnapshot(
@@ -200,6 +222,7 @@
 
 					courses = fetched;
 					loading = false;
+					loadError = '';
 				},
 				(error) => {
 					console.error('Firestore courses error:', error);
@@ -233,6 +256,32 @@
 	const handleOpenShare = async (courseId: string) => {
 		shareUrl = `${window.location.origin}/shared/${courseId}`;
 		showShareModal = true;
+	};
+
+	let forkingCourseId = $state<string | null>(null);
+
+	const handleForkCourse = async (courseId: string) => {
+		if (forkingCourseId) return;
+		forkingCourseId = courseId;
+		try {
+			const idToken = await auth.currentUser?.getIdToken();
+			const res = await fetch(`/api/courses/${courseId}/fork`, {
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${idToken}`,
+					'Content-Type': 'application/json'
+				}
+			});
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.error?.message || 'Failed to duplicate course');
+			toastStore.success('Course duplicated! Opening your copy...');
+			goto(`/app/courses/${data.courseId}`);
+		} catch (err) {
+			console.error('Fork course error:', err);
+			toastStore.error('Could not duplicate course. Please try again.');
+		} finally {
+			forkingCourseId = null;
+		}
 	};
 </script>
 
@@ -446,9 +495,16 @@
 			</div>
 		{:else if loadError}
 			<div
-				class="rounded-2xl p-6 text-xs font-bold border border-danger/20 bg-danger-soft text-center text-danger"
+				class="gap-3 rounded-2xl p-6 text-xs font-bold flex flex-col items-center justify-center border border-danger/20 bg-danger-soft text-center text-danger"
 			>
-				{loadError}
+				<span>{loadError}</span>
+				<button
+					type="button"
+					onclick={() => retryFetch()}
+					class="px-4 py-2 font-semibold text-white rounded-xl bg-danger shadow-sm transition hover:bg-danger/90"
+				>
+					🔄 Try Again
+				</button>
 			</div>
 		{:else if courses.length === 0}
 			<EmptyState
@@ -553,6 +609,7 @@
 									moduleCount={course.moduleCount}
 									progress={course.progress}
 									onShare={() => handleOpenShare(course.id || '')}
+									onFork={() => handleForkCourse(course.id || '')}
 								/>
 							</div>
 						{/each}
@@ -578,6 +635,7 @@
 									moduleCount={course.moduleCount}
 									progress={course.progress}
 									onShare={() => handleOpenShare(course.id || '')}
+									onFork={() => handleForkCourse(course.id || '')}
 								/>
 							</div>
 						{/each}

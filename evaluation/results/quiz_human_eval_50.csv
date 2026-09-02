@@ -1,0 +1,51 @@
+question_id,course,topic,bloom_taxonomy,rater1_relevance,rater2_relevance,mean_relevance,rater1_clarity,rater2_clarity,mean_clarity,rater1_correctness,rater2_correctness,mean_correctness,rater1_distractor,rater2_distractor,mean_distractor,rater1_difficulty,rater2_difficulty,mean_difficulty,overall_question_mean
+QZ-01,Computer Networks,IPv4 Subnetting,Apply,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4.9
+QZ-02,Computer Networks,Transport Layer,Understand,5,5,5.0,5,4,4.5,5,5,5.0,5,5,5.0,4,4,4.0,4.7
+QZ-03,Computer Networks,Data Link Layer,Remember,5,4,4.5,5,5,5.0,5,5,5.0,5,4,4.5,4,3,3.5,4.5
+QZ-04,Computer Networks,Routing Protocols,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5.0
+QZ-05,Computer Networks,Network Security,Understand,5,5,5.0,5,4,4.5,5,5,5.0,5,5,5.0,4,4,4.0,4.7
+QZ-06,Computer Networks,Application Layer,Understand,5,5,5.0,5,4,4.5,5,5,5.0,5,5,5.0,4,3,3.5,4.6
+QZ-07,Computer Networks,TCP Congestion Control,Analyze,5,5,5.0,5,4,4.5,5,4,4.5,5,5,5.0,5,5,5.0,4.8
+QZ-08,Computer Networks,Network Layer,Remember,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,4,4,4.0,4.7
+QZ-09,Computer Networks,Wireless Networks,Understand,5,4,4.5,5,5,5.0,5,4,4.5,5,5,5.0,4,4,4.0,4.6
+QZ-10,Computer Networks,IPv6 Architecture,Remember,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,3,3.5,4.7
+QZ-11,Algorithms,Sorting Algorithms,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
+QZ-12,Algorithms,Graph Algorithms,Apply,5,5,5.0,5,4,4.5,5,5,5.0,5,4,4.5,5,5,5.0,4.8
+QZ-13,Algorithms,Binary Search Trees,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
+QZ-14,Algorithms,Dynamic Programming,Analyze,5,5,5.0,5,4,4.5,5,5,5.0,5,4,4.5,5,5,5.0,4.8
+QZ-15,Algorithms,Greedy Algorithms,Apply,5,5,5.0,5,4,4.5,5,4,4.5,5,5,5.0,5,5,5.0,4.8
+QZ-16,Algorithms,Hash Tables,Understand,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,4,3,3.5,4.6
+QZ-17,Algorithms,Heaps & Priority Queues,Apply,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,4.9
+QZ-18,Algorithms,Complexity Theory,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
+QZ-19,Algorithms,String Matching,Analyze,5,4,4.5,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4.9
+QZ-20,Algorithms,Graph Traversals,Remember,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4,3,3.5,4.6
+QZ-21,Operating Systems,Deadlocks,Understand,5,4,4.5,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.7
+QZ-22,Operating Systems,CPU Scheduling,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,5,4,4.5,4.8
+QZ-23,Operating Systems,Memory Management,Understand,5,5,5.0,5,4,4.5,5,5,5.0,5,5,5.0,4,4,4.0,4.7
+QZ-24,Operating Systems,Page Replacement,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5.0
+QZ-25,Operating Systems,Process Synchronization,Apply,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,5,4,4.5,4.8
+QZ-26,Operating Systems,File Systems,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4,4,4.0,4.7
+QZ-27,Operating Systems,Threads & Concurrency,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,4.9
+QZ-28,Operating Systems,Inter-Process Communication,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
+QZ-29,Operating Systems,I/O Management,Remember,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4,4,4.0,4.7
+QZ-30,Operating Systems,Virtualization,Understand,5,4,4.5,5,5,5.0,5,5,5.0,5,4,4.5,4,4,4.0,4.6
+QZ-31,Database Systems,Transactions & ACID,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
+QZ-32,Database Systems,Relational Normalization,Apply,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,4.9
+QZ-33,Database Systems,Indexing,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4.9
+QZ-34,Database Systems,Concurrency Control,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4,4,4.0,4.7
+QZ-35,Database Systems,SQL & Query Execution,Apply,5,5,5.0,5,4,4.5,5,5,5.0,5,4,4.5,5,5,5.0,4.8
+QZ-36,Database Systems,Isolation Levels,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4.9
+QZ-37,Database Systems,Distributed Databases,Understand,5,5,5.0,4,3,3.5,5,5,5.0,5,5,5.0,4,4,4.0,4.5
+QZ-38,Database Systems,NoSQL Architectures,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,3,3.5,4.7
+QZ-39,Database Systems,Query Optimization,Analyze,5,4,4.5,5,5,5.0,5,5,5.0,4,4,4.0,5,5,5.0,4.7
+QZ-40,Database Systems,Storage Engines,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
+QZ-41,Compilers,Lexical Analysis,Understand,5,5,5.0,5,4,4.5,5,5,5.0,4,4,4.0,4,4,4.0,4.5
+QZ-42,Compilers,Syntax Analysis,Understand,5,4,4.5,5,4,4.5,5,5,5.0,5,4,4.5,4,3,3.5,4.4
+QZ-43,Compilers,Parsing Techniques,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,4.9
+QZ-44,Compilers,Semantic Analysis,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
+QZ-45,Compilers,Code Optimization,Analyze,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,5,5,5.0,4.9
+QZ-46,Artificial Intelligence,Search Algorithms,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
+QZ-47,Artificial Intelligence,Machine Learning,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,3,3.5,4.7
+QZ-48,Artificial Intelligence,Neural Networks,Analyze,5,5,5.0,5,5,5.0,5,4,4.5,4,4,4.0,5,4,4.5,4.6
+QZ-49,Computer Architecture,Pipelining,Analyze,5,5,5.0,4,4,4.0,5,5,5.0,5,5,5.0,5,4,4.5,4.7
+QZ-50,Computer Architecture,Memory Hierarchy,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8

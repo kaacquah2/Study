@@ -1,8 +1,8 @@
 /**
  * Domain Classifier Calibration Script
  *
- * Evaluates embedding/taxonomy similarity against a labeled benchmark dataset
- * of CS-core vs Non-CS topics to calibrate the optimal confidence threshold.
+ * Evaluates token-Jaccard lexical overlap similarity against a labeled benchmark dataset
+ * of CS-core vs Non-CS topics to calibrate the optimal lexical confidence threshold.
  *
  * Run with: npx tsx scripts/calibrate_domain_classifier.ts
  */
