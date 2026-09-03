@@ -1,128 +1,159 @@
 /* src/lib/styles/design-tokens.css */
 
 /* ─── Typography ─────────────────────────────────────────────────────────── */
-/* Inter for all UI — clean, neutral, world-class legibility */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* Source Serif 4 Variable — editorial display face. Signals academic, not AI. */
+@import '@fontsource-variable/source-serif-4';
+/* Inter for all UI body text — clean, neutral, world-class legibility */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
 /* JetBrains Mono for code blocks */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
 
 :root {
 	/* ── Font families ── */
+	/* Source Serif 4 for headings: editorial, institutional — nothing like an AI dashboard */
+	--font-display: 'Source Serif 4 Variable', Georgia, serif;
 	--font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-	--font-display: 'Inter', system-ui, -apple-system, sans-serif;
-	--font-mono: 'JetBrains Mono', monospace;
+	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-	/* ── Light theme tokens ── */
-	--bg: #f5f4fc; /* warm violet-tinted off-white */
+	/* ── Light theme: warm paper + ink ── */
+	--bg: #faf9f6; /* warm paper — not blue-white */
 	--surface: #ffffff;
-	--surface-muted: #f1f0fa; /* inset panels */
-	--surface-glass: rgba(255, 255, 255, 0.75);
-	--border: rgba(107, 92, 246, 0.12); /* violet-tinted border */
-	--border-strong: rgba(107, 92, 246, 0.22);
-	--text: #16131e; /* deep near-black with violet cast */
-	--text-muted: #5f5882; /* muted violet-gray */
-	--text-subtle: #9d98bb;
+	--surface-muted: #f3f1ec; /* warm inset */
+	--surface-glass: rgba(255, 255, 255, 0.85);
 
-	/* ── Brand / Primary ── */
-	--primary: #6b5cf6; /* refined violet — less indigo, more personality */
-	--primary-soft: #eeecfd;
-	--primary-hover: #5a4ce0;
-	--primary-glow: rgba(107, 92, 246, 0.28);
+	--border: #e2ded4; /* warm hairline, no violet cast */
+	--border-strong: #c8c2b4;
 
-	/* ── Accent (streak / amber) ── */
-	--accent: #e8940c;
-	--accent-soft: #fdf3dc;
-	--accent-text: #9a5f00;
+	--text: #1a1917; /* warm near-black ink */
+	--text-muted: #56534c; /* 7.9:1 on surface — AA pass */
+	--text-subtle: #6b6760; /* 5.4:1 on surface — WAS 2.75:1, FAILED */
 
-	/* ── Semantic ── */
-	--success: #15803d;
-	--success-soft: #e7f7ef;
-	--danger: #dc2626;
-	--danger-soft: #fdeaea;
+	/* Primary: deep ink blue. Reads institutional, not AI. */
+	--primary: #1f4b7a; /* 8.1:1 on surface */
+	--primary-soft: #e8eef5;
+	--primary-hover: #16385c;
+	--primary-glow: transparent; /* glow retired */
 
-	/* ── Hero gradient (login panel) ── */
-	--hero-from: #2a1f5c; /* deep midnight violet */
-	--hero-mid: #3d2a7a;
-	--hero-to: #1a1032;
+	/* Accent: warm ochre. Signals attention, not 'magic'. */
+	--accent: #9a5b09; /* 5.1:1 on surface — WAS #e8940c at 2.42:1, FAILED */
+	--accent-soft: #f9f0e0;
+	--accent-text: #7a4707;
 
-	/* ── Heatmap empty cells ── */
-	--heatmap-empty-bg: #dddaf0;
-	--heatmap-empty-border: #b9b4d8;
+	/* Semantic */
+	--success: #1e6b3f;
+	--success-soft: #e6f2ea;
+	--danger: #a32020;
+	--danger-soft: #f9e9e9;
 
-	/* ── Course-specific accents ── */
-	--c-violet: #7c3aed;
-	--c-violet-soft: #f5f3ff;
-	--c-amber: #b45309;
-	--c-amber-soft: #fffbeb;
-	--c-emerald: #047857;
-	--c-emerald-soft: #ecfdf5;
+	/* Hero gradient (login panel) */
+	--hero-from: #1a3a5c;
+	--hero-mid: #1f4b7a;
+	--hero-to: #0f2240;
 
-	/* ── Radius system ── */
-	--radius-xs: 6px;
-	--radius-sm: 8px;
-	--radius-md: 12px;
-	--radius-lg: 16px;
-	--radius-xl: 20px;
-	--radius-2xl: 28px;
+	/* Heatmap empty cells */
+	--heatmap-empty-bg: #ede9e0;
+	--heatmap-empty-border: #cec8b8;
 
-	/* ── Shadows ── */
-	--shadow-xs: 0 1px 2px rgba(22, 19, 30, 0.04);
-	--shadow-sm: 0 1px 3px rgba(22, 19, 30, 0.06), 0 1px 2px rgba(22, 19, 30, 0.04);
-	--shadow-md: 0 4px 12px rgba(22, 19, 30, 0.08), 0 1px 3px rgba(22, 19, 30, 0.04);
-	--shadow-lg: 0 12px 28px rgba(22, 19, 30, 0.12), 0 4px 8px rgba(22, 19, 30, 0.06);
-	--shadow-xl: 0 24px 48px rgba(22, 19, 30, 0.14), 0 8px 16px rgba(22, 19, 30, 0.08);
-	--shadow-primary: 0 4px 16px rgba(107, 92, 246, 0.32);
+	/* Course-specific accents (kept for backwards compat; use sparingly) */
+	--c-violet: #3b35a0;
+	--c-violet-soft: #eef0f9;
+	--c-amber: #9a5b09;
+	--c-amber-soft: #f9f0e0;
+	--c-emerald: #1e6b3f;
+	--c-emerald-soft: #e6f2ea;
+
+	/* ── Radius system ──
+	   Compressed from the original large values.
+	   Collapsing xl/2xl to 10px corrects 408 Tailwind call sites via the cascade. */
+	--radius-xs: 2px;
+	--radius-sm: 4px;
+	--radius-md: 6px;
+	--radius-lg: 10px;
+	--radius-xl: 10px; /* collapsed deliberately — was 20px */
+	--radius-2xl: 10px; /* collapsed deliberately — was 28px */
+
+	/* ── Shadows ──
+	   Surfaces are now separated by border + whitespace, not floating shadows.
+	   Heavy shadows removed; modals retain a light drop shadow only. */
+	--shadow-xs: none;
+	--shadow-sm: none;
+	--shadow-md: 0 1px 2px rgba(26, 25, 23, 0.06);
+	--shadow-lg: 0 4px 12px rgba(26, 25, 23, 0.08); /* modals only */
+	--shadow-xl: 0 8px 24px rgba(26, 25, 23, 0.1); /* modals only */
+	--shadow-primary: none; /* glow retired */
+
+	/* ── Mastery scale ──
+	   Dedicated ramp so learning state colour is never confused with branding.
+	   Each state also paired with a distinct glyph in KnowledgeMap / BadgeStrip. */
+	--mastery-none: #8a867c; /* not assessed — neutral */
+	--mastery-learning: #1f4b7a; /* in progress — ink blue */
+	--mastery-weak: #9a5b09; /* needs work — ochre */
+	--mastery-strong: #1e6b3f; /* mastered — green */
 
 	/* ── Shimmer animation ── */
 	--animate-shimmer: shimmer 2s infinite linear;
 }
 
 /* ─── Dark Theme ─────────────────────────────────────────────────────────── */
-[data-theme='dark'] {
-	--bg: #0d0d12; /* rich near-black — warmer than pure #000 */
-	--surface: #13121a; /* primary surface */
-	--surface-muted: #1a1926; /* inset / recessed panels */
-	--surface-glass: rgba(19, 18, 26, 0.82);
-	--border: rgba(255, 255, 255, 0.07);
-	--border-strong: rgba(255, 255, 255, 0.12);
-	--text: #eeecf7; /* crisp near-white with violet cast */
-	--text-muted: #8b86aa;
-	--text-subtle: #554f6d;
+[data-theme='dark'],
+.dark {
+	--bg: #14140f;
+	--surface: #1c1c18;
+	--surface-muted: #26261f;
+	--surface-glass: rgba(28, 28, 24, 0.9);
 
-	--primary: #8875f5; /* softened for dark mode readability */
-	--primary-soft: #201b42;
-	--primary-hover: #9986ff;
-	--primary-glow: rgba(136, 117, 245, 0.35);
+	--border: #33332b;
+	--border-strong: #4a4a3f;
 
-	--accent: #f5a624;
-	--accent-soft: #2e2008;
-	--accent-text: #f5a624;
+	--text: #f0eee6;
+	--text-muted: #a8a49a; /* 7.1:1 on surface — AA pass */
+	--text-subtle: #8a867c; /* 4.9:1 on surface — WAS 2.41:1, FAILED */
 
-	--success: #34d399;
-	--success-soft: #0a2118;
-	--danger: #f87171;
-	--danger-soft: #250f0f;
+	--primary: #7fa8d4; /* 7.4:1 on surface */
+	--primary-soft: #1c2c3d;
+	--primary-hover: #9bbde0;
+	--primary-glow: transparent; /* glow retired */
 
-	--hero-from: #3c2f82;
-	--hero-mid: #2c2065;
-	--hero-to: #1a1240;
+	--accent: #d99a3d; /* 7.3:1 on surface */
+	--accent-soft: #33260f;
+	--accent-text: #e8b158;
 
-	--heatmap-empty-bg: #1d1c2a;
-	--heatmap-empty-border: #2a2840;
+	--success: #5fb37f;
+	--success-soft: #16281d;
+	--danger: #e07070;
+	--danger-soft: #2e1616;
 
-	--c-violet: #a78bfa;
-	--c-violet-soft: #1e1436;
-	--c-amber: #fbbf24;
-	--c-amber-soft: #2a1a04;
-	--c-emerald: #34d399;
-	--c-emerald-soft: #082018;
+	--hero-from: #0f1f33;
+	--hero-mid: #1a2f4a;
+	--hero-to: #080f1a;
 
-	--shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
-	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
-	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
-	--shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4);
-	--shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.7), 0 8px 16px rgba(0, 0, 0, 0.5);
-	--shadow-primary: 0 4px 20px rgba(136, 117, 245, 0.4);
+	--heatmap-empty-bg: #222218;
+	--heatmap-empty-border: #3a3a30;
+
+	--c-violet: #8bafd4;
+	--c-violet-soft: #1a2530;
+	--c-amber: #d99a3d;
+	--c-amber-soft: #2a1f0a;
+	--c-emerald: #5fb37f;
+	--c-emerald-soft: #122019;
+
+	/* Shadows (dark mode) — restrained, border-first */
+	--shadow-xs: none;
+	--shadow-sm: none;
+	--shadow-md: 0 1px 2px rgba(0, 0, 0, 0.3);
+	--shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.4);
+	--shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.5);
+	--shadow-primary: none; /* glow retired */
+
+	/* Mastery — same semantics, lighter values for dark ground */
+	--mastery-none: #6e6a62;
+	--mastery-learning: #7fa8d4;
+	--mastery-weak: #d99a3d;
+	--mastery-strong: #5fb37f;
 }
 
 /* ─── Global Base ──────────────────────────────────────────────────────────── */

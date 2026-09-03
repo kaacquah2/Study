@@ -157,6 +157,303 @@ describe('/api/modules/[id] Integration Tests', () => {
 			expect(json.streak.current).toBe(2);
 			expect(json.streak.extended).toBe(true);
 		});
+
+		it('consumes a freeze and preserves streak when user missed exactly one day (dayBeforeYesterday)', async () => {
+			vi.mocked(verifySessionUser).mockResolvedValue({ uid: 'user1' });
+
+			const formatter = new Intl.DateTimeFormat('en-US', {
+				timeZone: 'Africa/Accra',
+				year: 'numeric',
+				month: '2-digit',
+				day: '2-digit'
+			});
+			const parts = formatter.formatToParts(new Date());
+			const year = Number(parts.find((p) => p.type === 'year')?.value);
+			const month = Number(parts.find((p) => p.type === 'month')?.value) - 1;
+			const day = Number(parts.find((p) => p.type === 'day')?.value);
+
+			const localMidday = new Date(Date.UTC(year, month, day, 12, 0, 0));
+			localMidday.setUTCDate(localMidday.getUTCDate() - 2); // 2 days ago
+
+			const pParts = formatter.formatToParts(localMidday);
+			const pYear = pParts.find((p) => p.type === 'year')?.value;
+			const pMonth = pParts.find((p) => p.type === 'month')?.value;
+			const pDay = pParts.find((p) => p.type === 'day')?.value;
+			const dayBeforeYesterdayStr = `${pYear}-${pMonth}-${pDay}`;
+
+			const mockUpdate = vi.fn();
+			const mockTransaction = {
+				get: vi.fn().mockImplementation(() => {
+					return Promise.resolve({
+						exists: true,
+						data: () => ({
+							ownerUid: 'user1',
+							streak: {
+								current: 5,
+								longest: 5,
+								lastStudiedOn: dayBeforeYesterdayStr,
+								freezesAvailable: 1
+							},
+							completedModuleIds: []
+						})
+					});
+				}),
+				update: mockUpdate,
+				set: vi.fn()
+			};
+
+			vi.mocked(adminDb.runTransaction).mockImplementation(async (cb) =>
+				cb(mockTransaction as never)
+			);
+
+			const request = new Request('http://localhost/api/modules/mod1/complete', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ courseId: 'c1', timezone: 'Africa/Accra' })
+			});
+
+			const response = await completeModuleHandler({
+				params: { id: 'mod1' },
+				request
+			} as unknown as Parameters<typeof completeModuleHandler>[0]);
+			const json = await response.json();
+
+			expect(response.status).toBe(200);
+			expect(json.streak).toBeDefined();
+			expect(json.streak.current).toBe(6);
+			expect(json.streak.extended).toBe(true);
+			expect(json.streak.freezeUsed).toBe(true);
+			expect(json.streak.freezesAvailable).toBe(0);
+			expect(mockUpdate).toHaveBeenCalledWith(
+				expect.anything(),
+				expect.objectContaining({
+					'streak.current': 6,
+					'streak.freezesAvailable': 0
+				})
+			);
+		});
+
+		it('resets streak to 1 and does not consume freeze when gap is greater than 1 missed day (e.g. 6 months ago)', async () => {
+			vi.mocked(verifySessionUser).mockResolvedValue({ uid: 'user1' });
+
+			const mockUpdate = vi.fn();
+			const mockTransaction = {
+				get: vi.fn().mockImplementation(() => {
+					return Promise.resolve({
+						exists: true,
+						data: () => ({
+							ownerUid: 'user1',
+							streak: {
+								current: 50,
+								longest: 50,
+								lastStudiedOn: '2025-01-01', // 6+ months gap
+								freezesAvailable: 1
+							},
+							completedModuleIds: []
+						})
+					});
+				}),
+				update: mockUpdate,
+				set: vi.fn()
+			};
+
+			vi.mocked(adminDb.runTransaction).mockImplementation(async (cb) =>
+				cb(mockTransaction as never)
+			);
+
+			const request = new Request('http://localhost/api/modules/mod1/complete', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ courseId: 'c1', timezone: 'Africa/Accra' })
+			});
+
+			const response = await completeModuleHandler({
+				params: { id: 'mod1' },
+				request
+			} as unknown as Parameters<typeof completeModuleHandler>[0]);
+			const json = await response.json();
+
+			expect(response.status).toBe(200);
+			expect(json.streak).toBeDefined();
+			expect(json.streak.current).toBe(1);
+			expect(json.streak.extended).toBe(true);
+			expect(json.streak.freezeUsed).toBe(false);
+			expect(json.streak.freezesAvailable).toBe(1); // Freeze is NOT consumed for multi-day gap
+			expect(mockUpdate).toHaveBeenCalledWith(
+				expect.anything(),
+				expect.objectContaining({
+					'streak.current': 1,
+					'streak.freezesAvailable': 1
+				})
+			);
+		});
+
+		it('replenishes streak freezes weekly when 7+ days have elapsed since last refill', async () => {
+			vi.mocked(verifySessionUser).mockResolvedValue({ uid: 'user1' });
+
+			const mockUpdate = vi.fn();
+			const mockTransaction = {
+				get: vi.fn().mockImplementation(() => {
+					return Promise.resolve({
+						exists: true,
+						data: () => ({
+							ownerUid: 'user1',
+							streak: {
+								current: 0,
+								longest: 0,
+								lastStudiedOn: null,
+								freezesAvailable: 0,
+								lastFreezeRefill: '2026-01-01' // Long ago
+							},
+							completedModuleIds: []
+						})
+					});
+				}),
+				update: mockUpdate,
+				set: vi.fn()
+			};
+
+			vi.mocked(adminDb.runTransaction).mockImplementation(async (cb) =>
+				cb(mockTransaction as never)
+			);
+
+			const request = new Request('http://localhost/api/modules/mod1/complete', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ courseId: 'c1', timezone: 'Africa/Accra' })
+			});
+
+			const response = await completeModuleHandler({
+				params: { id: 'mod1' },
+				request
+			} as unknown as Parameters<typeof completeModuleHandler>[0]);
+			const json = await response.json();
+
+			expect(response.status).toBe(200);
+			expect(json.streak.freezesAvailable).toBe(2); // Refilled to MAX_FREEZES (2)
+			expect(mockUpdate).toHaveBeenCalledWith(
+				expect.anything(),
+				expect.objectContaining({
+					'streak.freezesAvailable': 2
+				})
+			);
+		});
+
+		it('authoritatively grades quiz answers server-side against module document and records quiz attempt', async () => {
+			vi.mocked(verifySessionUser).mockResolvedValue({ uid: 'user1' });
+
+			const mockSet = vi.fn();
+			const mockTransaction = {
+				get: vi.fn().mockImplementation(() => {
+					// Course doc or module doc or user doc or progress doc
+					return Promise.resolve({
+						exists: true,
+						data: () => ({
+							ownerUid: 'user1',
+							type: 'quiz',
+							questions: [
+								{
+									prompt: 'What is 2+2?',
+									options: ['3', '4', '5'],
+									correctIndex: 1,
+									explanation: '2+2 is 4'
+								},
+								{
+									prompt: 'What is 3+3?',
+									options: ['6', '7', '8'],
+									answerIndex: 0,
+									explanation: '3+3 is 6'
+								}
+							],
+							streak: { current: 1, longest: 1, lastStudiedOn: '2026-01-01' },
+							completedModuleIds: []
+						})
+					});
+				}),
+				update: vi.fn(),
+				set: mockSet
+			};
+
+			vi.mocked(adminDb.runTransaction).mockImplementation(async (cb) =>
+				cb(mockTransaction as never)
+			);
+
+			// User selects [1, 2] -> Q1 is correct (1), Q2 is wrong (chose 2, correct is 0)
+			const request = new Request('http://localhost/api/modules/mod1/complete', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					courseId: 'c1',
+					timezone: 'Africa/Accra',
+					answers: [1, 2]
+				})
+			});
+
+			const response = await completeModuleHandler({
+				params: { id: 'mod1' },
+				request
+			} as unknown as Parameters<typeof completeModuleHandler>[0]);
+			const json = await response.json();
+
+			expect(response.status).toBe(200);
+			expect(json.quizResult).toBeDefined();
+			expect(json.quizResult.score).toBe(1);
+			expect(json.quizResult.total).toBe(2);
+			expect(json.quizResult.accuracy).toBe(50);
+			expect(json.quizResult.reviewItems).toHaveLength(2);
+			expect(json.quizResult.reviewItems[0].isCorrect).toBe(true);
+			expect(json.quizResult.reviewItems[1].isCorrect).toBe(false);
+
+			// Verify quiz attempt was saved in transaction
+			expect(mockSet).toHaveBeenCalled();
+		});
+
+		it('returns 400 with ANSWER_COUNT_MISMATCH when answers length does not match questions length', async () => {
+			vi.mocked(verifySessionUser).mockResolvedValue({ uid: 'user1' });
+
+			const mockTransaction = {
+				get: vi.fn().mockImplementation(() => {
+					return Promise.resolve({
+						exists: true,
+						data: () => ({
+							ownerUid: 'user1',
+							type: 'quiz',
+							questions: [
+								{ prompt: 'Q1', options: ['A', 'B'], correctIndex: 0 },
+								{ prompt: 'Q2', options: ['C', 'D'], correctIndex: 1 }
+							],
+							streak: { current: 1, longest: 1, lastStudiedOn: '2026-01-01' },
+							completedModuleIds: []
+						})
+					});
+				}),
+				update: vi.fn(),
+				set: vi.fn()
+			};
+
+			vi.mocked(adminDb.runTransaction).mockImplementation(async (cb) =>
+				cb(mockTransaction as never)
+			);
+
+			// Provided only 1 answer for a 2-question quiz
+			const request = new Request('http://localhost/api/modules/mod1/complete', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					courseId: 'c1',
+					answers: [0]
+				})
+			});
+
+			const response = await completeModuleHandler({
+				params: { id: 'mod1' },
+				request
+			} as unknown as Parameters<typeof completeModuleHandler>[0]);
+			const json = await response.json();
+
+			expect(response.status).toBe(400);
+			expect(json.error.code).toBe('ANSWER_COUNT_MISMATCH');
+		});
 	});
 
 	describe('POST /api/modules/[id]/generate', () => {

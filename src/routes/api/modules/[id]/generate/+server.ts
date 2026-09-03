@@ -4,13 +4,15 @@ import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
 import { enqueueModuleGenerationJob } from '$lib/server/ai/generationQueue';
 import { z } from 'zod';
+import { handleServerError } from '$lib/server/apiError';
 
 const GenerateModuleZod = z.object({
 	courseId: z.string()
 });
 
 // POST /api/modules/[id]/generate — Enqueues durable module generation job
-export const POST: RequestHandler = async ({ params, request }) => {
+export const POST: RequestHandler = async (event) => {
+	const { params, request } = event;
 	const { id: moduleId } = params;
 
 	try {
@@ -21,12 +23,12 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		const bodyData = await request.json();
 		const parsed = GenerateModuleZod.safeParse(bodyData);
 		if (!parsed.success) {
+			console.warn('[modules/[id]/generate POST] Validation failed:', parsed.error.issues);
 			return json(
 				{
 					error: {
 						code: 'INVALID_INPUT',
-						message: 'Validation failed',
-						fields: parsed.error.format()
+						message: 'Validation failed'
 					}
 				},
 				{ status: 400 }
@@ -163,13 +165,9 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			);
 		}
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
 
-		console.error('Module generate API error:', err);
-		return json(
-			{ error: { code: 'SERVER_ERROR', message: message || 'Internal Server Error' } },
-			{ status: 500 }
-		);
+		return handleServerError(err, event);
 	}
 };

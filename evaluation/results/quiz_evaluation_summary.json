@@ -1,44 +1,73 @@
 {
-	"evaluation_name": "Quiz Generation Quality Human Rubric Evaluation",
+	"evaluation_name": "Quiz Generation Quality Expert Rubric Evaluation",
 	"sample_size": 50,
-	"num_raters": 2,
+	"num_raters": 1,
+	"evaluator_type": "Internal Domain Expert / Course Author",
 	"scale": "1 to 5 Likert Scale (5 = Excellent)",
 	"dimension_metrics": {
 		"relevance": {
-			"mean": 4.93,
-			"std_dev": 0.17,
-			"min": 4.5,
+			"mean": 5.0,
+			"std_dev": 0.0,
+			"median": 5.0,
+			"min": 5.0,
 			"max": 5.0,
-			"cohens_kappa_agreement": 0.0
+			"pct_high_quality_ge_4": 100.0
 		},
 		"clarity": {
-			"mean": 4.84,
-			"std_dev": 0.31,
-			"min": 3.5,
-			"max": 5.0,
-			"cohens_kappa_agreement": 0.143
-		},
-		"correctness": {
-			"mean": 4.93,
-			"std_dev": 0.17,
-			"min": 4.5,
-			"max": 5.0,
-			"cohens_kappa_agreement": 0.0
-		},
-		"distractor_plausibility": {
-			"mean": 4.78,
-			"std_dev": 0.3,
+			"mean": 4.86,
+			"std_dev": 0.35,
+			"median": 5.0,
 			"min": 4.0,
 			"max": 5.0,
-			"cohens_kappa_agreement": 0.189
+			"pct_high_quality_ge_4": 100.0
+		},
+		"correctness": {
+			"mean": 5.0,
+			"std_dev": 0.0,
+			"median": 5.0,
+			"min": 5.0,
+			"max": 5.0,
+			"pct_high_quality_ge_4": 100.0
+		},
+		"distractor_plausibility": {
+			"mean": 4.14,
+			"std_dev": 0.4,
+			"median": 4.0,
+			"min": 3.0,
+			"max": 5.0,
+			"pct_high_quality_ge_4": 98.0
 		},
 		"difficulty_appropriateness": {
-			"mean": 4.27,
-			"std_dev": 0.53,
-			"min": 3.5,
+			"mean": 3.56,
+			"std_dev": 0.67,
+			"median": 4.0,
+			"min": 2.0,
 			"max": 5.0,
-			"cohens_kappa_agreement": 0.462
+			"pct_high_quality_ge_4": 54.0
 		}
 	},
-	"overall_composite_mean": 4.75
+	"bloom_taxonomy_breakdown": {
+		"Apply": {
+			"count": 7,
+			"mean_composite_score": 4.51,
+			"std_dev": 0.15
+		},
+		"Understand": {
+			"count": 24,
+			"mean_composite_score": 4.46,
+			"std_dev": 0.11
+		},
+		"Remember": {
+			"count": 5,
+			"mean_composite_score": 4.28,
+			"std_dev": 0.16
+		},
+		"Analyze": {
+			"count": 14,
+			"mean_composite_score": 4.69,
+			"std_dev": 0.16
+		}
+	},
+	"overall_composite_mean": 4.51,
+	"methodology_notes": "Evaluated by an internal domain expert across 5 pedagogical dimensions. Reported values reflect true descriptive distributions without synthetic perturbations or simulated multi-rater kappa."
 }

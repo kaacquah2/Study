@@ -5,7 +5,7 @@ import { summarize } from '$lib/server/ai/provider';
 import { z } from 'zod';
 import { adminDb } from '$lib/server/admin';
 import { enforceRateLimit } from '$lib/server/rateLimiter';
-import { MLBackendError } from '$lib/server/ai/client';
+import { handleServerError } from '$lib/server/apiError';
 
 const SummarizeBodySchema = z.object({
 	text: z.string().min(50).max(10_000),
@@ -13,7 +13,8 @@ const SummarizeBodySchema = z.object({
 	minLength: z.number().int().min(10).max(200).optional()
 });
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+	const { request } = event;
 	try {
 		const user = await verifySessionUser(request);
 
@@ -41,12 +42,12 @@ export const POST: RequestHandler = async ({ request }) => {
 		const parsed = SummarizeBodySchema.safeParse(body);
 
 		if (!parsed.success) {
+			console.warn('[summarize POST] Validation failed:', parsed.error.issues);
 			return json(
 				{
 					error: {
 						code: 'INVALID_INPUT',
-						message: 'Validation failed',
-						fields: parsed.error.format()
+						message: 'Validation failed'
 					}
 				},
 				{ status: 400 }
@@ -61,12 +62,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		console.error('Summarize API error:', err);
 		const message = err instanceof Error ? err.message : '';
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
-		const clientMessage =
-			err instanceof MLBackendError
-				? 'Failed to summarize text. Please try again later.'
-				: message || 'Internal Server Error';
-		return json({ error: { code: 'SERVER_ERROR', message: clientMessage } }, { status: 500 });
+		return handleServerError(err, event, 'Failed to summarize text. Please try again later.');
 	}
 };

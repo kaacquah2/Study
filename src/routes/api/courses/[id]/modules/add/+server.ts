@@ -4,6 +4,7 @@ import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
 import { z } from 'zod';
 import { enqueueModuleGenerationJob } from '$lib/server/ai/generationQueue';
+import { handleServerError } from '$lib/server/apiError';
 
 const AddModuleZod = z.object({
 	title: z.string().min(2).max(120).optional(),
@@ -12,7 +13,8 @@ const AddModuleZod = z.object({
 });
 
 // POST /api/courses/[id]/modules/add
-export const POST: RequestHandler = async ({ params, request }) => {
+export const POST: RequestHandler = async (event) => {
+	const { params, request } = event;
 	const { id: courseId } = params;
 
 	try {
@@ -56,6 +58,8 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		await adminDb.runTransaction(async (transaction) => {
 			transaction.set(newModuleRef, {
 				id: newModuleId,
+				courseId,
+				ownerUid: user.uid,
 				order: currentCount + 1,
 				type,
 				title,
@@ -91,14 +95,10 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			{ status: 201 }
 		);
 	} catch (err) {
-		console.error('Add module API error:', err);
 		const message = err instanceof Error ? err.message : '';
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
-		return json(
-			{ error: { code: 'SERVER_ERROR', message: message || 'Failed to add module' } },
-			{ status: 500 }
-		);
+		return handleServerError(err, event);
 	}
 };

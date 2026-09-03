@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { db, auth } from '$lib/firebase/client';
+	import { db } from '$lib/firebase/client';
 	import { doc, collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 	import ProgressBar from '$lib/components/ProgressBar.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
@@ -8,6 +8,7 @@
 	import CertificateModal from '$lib/components/CertificateModal.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import { apiFetch } from '$lib/api/client';
 	import type { CourseDoc, ModuleDoc } from '$lib/firebase/converters';
 	import {
 		generateCourseMarkdown,
@@ -27,6 +28,7 @@
 	let retryCount = $state(0);
 
 	let shareUrl = $state('');
+	let isSharePublic = $state(false);
 	let showShareModal = $state(false);
 	let showCertificateModal = $state(false);
 
@@ -174,19 +176,9 @@
 		if (actionLoading || !courseId) return;
 		actionLoading = true;
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch(`/api/courses/${courseId}/modules/add`, {
-				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json'
-				}
+			await apiFetch(`/api/courses/${courseId}/modules/add`, {
+				method: 'POST'
 			});
-
-			const data = await res.json();
-			if (!res.ok) {
-				throw new Error(data.error?.message || 'Failed to add module');
-			}
 
 			toastStore.success('New module added! Generating content...');
 		} catch (err) {
@@ -200,28 +192,58 @@
 	const handleRetryModule = async (moduleId: string) => {
 		if (!courseId) return;
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch(`/api/modules/${moduleId}/retry`, {
+			await apiFetch(`/api/modules/${moduleId}/retry`, {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ courseId })
+				body: { courseId }
 			});
-			if (res.ok) {
-				toastStore.info('Retrying module generation...');
-			} else {
-				toastStore.error('Retry failed');
-			}
+			toastStore.info('Retrying module generation...');
 		} catch (err) {
 			console.error('Retry module error:', err);
+			toastStore.error('Retry failed');
 		}
 	};
 
-	const handleOpenShare = () => {
-		shareUrl = `${window.location.origin}/shared/${courseId}`;
-		showShareModal = true;
+	let sharingCourse = $state(false);
+
+	const handleOpenShare = async (isPublicOrEvent?: boolean | MouseEvent) => {
+		if (!courseId || sharingCourse) return;
+		const isPublic = typeof isPublicOrEvent === 'boolean' ? isPublicOrEvent : false;
+		sharingCourse = true;
+		try {
+			const { data: res } = await apiFetch<{ token: string; url: string; isPublic: boolean }>(
+				`/api/courses/${courseId}/share`,
+				{
+					method: 'POST',
+					body: { isPublic }
+				}
+			);
+			shareUrl = res.url;
+			isSharePublic = Boolean(res.isPublic);
+			showShareModal = true;
+			if (isPublic) {
+				toastStore.success('Course published to Community Explore!');
+			}
+		} catch (err) {
+			console.error('Share course error:', err);
+			toastStore.error(err instanceof Error ? err.message : 'Failed to generate share link');
+		} finally {
+			sharingCourse = false;
+		}
+	};
+
+	const handleRevokeShare = async () => {
+		if (!courseId) return;
+		actionLoading = true;
+		try {
+			await apiFetch(`/api/courses/${courseId}/share`, { method: 'DELETE' });
+			toastStore.success('Course sharing links revoked.');
+			showShareModal = false;
+		} catch (err) {
+			console.error('Revoke share error:', err);
+			toastStore.error('Failed to revoke sharing links');
+		} finally {
+			actionLoading = false;
+		}
 	};
 
 	const handleExportMarkdown = () => {
@@ -247,20 +269,20 @@
 		if (!courseId) return;
 		actionLoading = true;
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch(`/api/courses/${courseId}/consistency-check`, {
-				method: 'POST',
-				headers: { Authorization: `Bearer ${idToken}` }
-			});
-			const data = await res.json();
-			if (res.ok) {
-				toastStore.success('Consistency audit complete!');
-				if (data.notes) {
-					alert(`Consistency Audit Notes:\n\n${data.notes}`);
+			const { data } = await apiFetch<{ notes?: string }>(
+				`/api/courses/${courseId}/consistency-check`,
+				{
+					method: 'POST'
 				}
-			} else {
-				toastStore.error(data.error?.message || 'Consistency check failed');
+			);
+			toastStore.success('Consistency audit complete!');
+			if (data.notes) {
+				alert(`Consistency Audit Notes:\n\n${data.notes}`);
 			}
+		} catch (err) {
+			console.error('Consistency check error:', err);
+			const message = err instanceof Error ? err.message : 'Consistency check failed';
+			toastStore.error(message);
 		} finally {
 			actionLoading = false;
 		}
@@ -280,20 +302,20 @@
 	<title>{course?.title || 'Course Workspace'} &mdash; Study AI</title>
 </svelte:head>
 
-<div class="max-w-4xl gap-6 py-4 mx-auto flex w-full flex-col">
+<div class="mx-auto flex w-full max-w-4xl flex-col gap-6 py-4">
 	<!-- Top Bar -->
-	<div class="gap-3 pb-3 flex items-center justify-between border-b border-border">
+	<div class="flex items-center justify-between gap-3 border-b border-border pb-3">
 		<a
 			href="/app"
-			class="gap-1.5 text-xs font-bold inline-flex items-center text-text-muted transition-colors hover:text-primary"
+			class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
 		>
 			&larr; Return to Dashboard
 		</a>
 
-		<div class="gap-2 flex items-center">
+		<div class="flex items-center gap-2">
 			<a
 				href={`/app/review?courseId=${courseId}`}
-				class="gap-1.5 border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-300 shadow-xs hover:border-amber-400 inline-flex cursor-pointer items-center rounded-xl border transition-colors"
+				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-300 shadow-xs transition-colors hover:border-amber-400"
 				title="Drill course flashcards in Spaced Repetition (FSRS-4.5)"
 			>
 				<span>🧠 FSRS Drill</span>
@@ -302,7 +324,7 @@
 			<button
 				type="button"
 				onclick={handleOpenShare}
-				class="gap-1.5 px-3 py-1.5 text-xs font-bold shadow-xs inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-text transition-colors hover:border-primary"
+				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text shadow-xs transition-colors hover:border-primary"
 			>
 				<span>🔗 Share</span>
 			</button>
@@ -312,7 +334,7 @@
 				<button
 					type="button"
 					onclick={() => (showExportMenu = !showExportMenu)}
-					class="gap-1 px-3 py-1.5 text-xs font-bold inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-text-muted hover:border-primary hover:text-text"
+					class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text-muted hover:border-primary hover:text-text"
 					aria-label="Course actions and exports"
 				>
 					<span>⚙️ Export & Audit</span>
@@ -321,7 +343,7 @@
 
 				{#if showExportMenu}
 					<div
-						class="right-0 mt-2 w-48 gap-1 rounded-2xl p-2 shadow-xl absolute z-30 flex flex-col border border-border bg-surface"
+						class="absolute right-0 z-30 mt-2 flex w-48 flex-col gap-1 rounded-2xl border border-border bg-surface p-2 shadow-xl"
 					>
 						<button
 							type="button"
@@ -329,7 +351,7 @@
 								showExportMenu = false;
 								handleConsistencyCheck();
 							}}
-							class="gap-2 px-3 py-2 text-xs font-medium flex w-full cursor-pointer items-center rounded-xl text-left text-text hover:bg-surface-muted"
+							class="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-text hover:bg-surface-muted"
 						>
 							<span>🔍 Consistency Audit</span>
 						</button>
@@ -339,7 +361,7 @@
 								showExportMenu = false;
 								handleExportAnki();
 							}}
-							class="gap-2 px-3 py-2 text-xs font-medium flex w-full cursor-pointer items-center rounded-xl text-left text-text hover:bg-surface-muted"
+							class="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-text hover:bg-surface-muted"
 						>
 							<span>🗂️ Anki Deck (.txt)</span>
 						</button>
@@ -349,7 +371,7 @@
 								showExportMenu = false;
 								handleExportMarkdown();
 							}}
-							class="gap-2 px-3 py-2 text-xs font-medium flex w-full cursor-pointer items-center rounded-xl text-left text-text hover:bg-surface-muted"
+							class="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-text hover:bg-surface-muted"
 						>
 							<span>📄 Markdown File</span>
 						</button>
@@ -359,7 +381,7 @@
 								showExportMenu = false;
 								handleExportPDF();
 							}}
-							class="gap-2 px-3 py-2 text-xs font-medium flex w-full cursor-pointer items-center rounded-xl text-left text-text hover:bg-surface-muted"
+							class="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-text hover:bg-surface-muted"
 						>
 							<span>🖨️ Print / Save PDF</span>
 						</button>
@@ -374,14 +396,14 @@
 		<Skeleton variant="card" height="h-64" />
 	{:else if loadError || !course}
 		<div
-			class="gap-3 rounded-2xl p-6 text-xs font-bold flex flex-col items-center justify-center border border-danger/20 bg-danger-soft text-center text-danger"
+			class="flex flex-col items-center justify-center gap-3 rounded-2xl border border-danger/20 bg-danger-soft p-6 text-center text-xs font-bold text-danger"
 		>
 			<span>{loadError || 'Course not found.'}</span>
 			{#if loadError}
 				<button
 					type="button"
 					onclick={() => retryFetch()}
-					class="px-4 py-2 font-semibold text-white rounded-xl bg-danger shadow-sm transition hover:bg-danger/90"
+					class="rounded-xl bg-danger px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-danger/90"
 				>
 					🔄 Try Again
 				</button>
@@ -390,23 +412,23 @@
 	{:else}
 		<!-- Course Overview Header -->
 		<div
-			class="gap-4 rounded-3xl p-6 sm:p-8 flex flex-col border border-border bg-surface shadow-sm"
+			class="flex flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8"
 		>
 			<!-- Badges strip -->
-			<div class="gap-2 flex flex-wrap items-center">
+			<div class="flex flex-wrap items-center gap-2">
 				<span
-					class="px-2.5 py-1 font-bold rounded-lg border border-primary/20 bg-primary-soft text-[10px] text-primary uppercase"
+					class="rounded-lg border border-primary/20 bg-primary-soft px-2.5 py-1 text-[10px] font-bold text-primary uppercase"
 				>
 					{course.level || 'Intermediate'}
 				</span>
 				<span
-					class="px-2.5 py-1 font-bold rounded-lg border border-border/40 bg-surface-muted text-[10px] text-text-muted"
+					class="rounded-lg border border-border/40 bg-surface-muted px-2.5 py-1 text-[10px] font-bold text-text-muted"
 				>
 					⏱️ ~{course.estimatedMinutes || 45} mins
 				</span>
 				{#each course.tags || [] as tag (tag)}
 					<span
-						class="px-2.5 py-1 font-semibold rounded-lg border border-border/40 bg-surface-muted text-[10px] text-text-muted"
+						class="rounded-lg border border-border/40 bg-surface-muted px-2.5 py-1 text-[10px] font-semibold text-text-muted"
 					>
 						#{tag}
 					</span>
@@ -414,44 +436,44 @@
 			</div>
 
 			<div>
-				<h1 class="font-display text-2xl font-bold sm:text-3xl text-text">{course.title}</h1>
-				<p class="mt-2 text-xs leading-relaxed sm:text-sm text-text-muted">{course.description}</p>
+				<h1 class="font-display text-2xl font-bold text-text sm:text-3xl">{course.title}</h1>
+				<p class="mt-2 text-xs leading-relaxed text-text-muted sm:text-sm">{course.description}</p>
 			</div>
 
 			<!-- Status Banner if Building or Failed -->
 			{#if course.status === 'building' || generatingCount > 0}
 				<div
-					class="gap-3 rounded-2xl border-indigo-500/30 bg-indigo-500/10 p-5 text-xs text-indigo-200 shadow-inner flex flex-col border"
+					class="flex flex-col gap-3 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-5 text-xs text-indigo-200 shadow-inner"
 				>
-					<div class="gap-2 flex flex-wrap items-center justify-between">
-						<div class="gap-2.5 text-sm font-bold text-indigo-100 flex items-center">
-							<span class="h-3 w-3 relative flex">
+					<div class="flex flex-wrap items-center justify-between gap-2">
+						<div class="flex items-center gap-2.5 text-sm font-bold text-indigo-100">
+							<span class="relative flex h-3 w-3">
 								<span
-									class="animate-ping bg-indigo-400 absolute inline-flex h-full w-full rounded-full opacity-75"
+									class="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"
 								></span>
-								<span class="h-3 w-3 bg-indigo-500 relative inline-flex rounded-full"></span>
+								<span class="relative inline-flex h-3 w-3 rounded-full bg-indigo-500"></span>
 							</span>
 							<span>Generating AI Course Content ({readyCount}/{totalModules} ready)</span>
 						</div>
-						<span class="font-semibold text-indigo-300/80 text-[11px]">
+						<span class="text-[11px] font-semibold text-indigo-300/80">
 							🔔 Feel free to leave this tab &mdash; we'll alert you when complete!
 						</span>
 					</div>
 
 					<!-- Visual Generation Progress Bar -->
 					<div
-						class="h-2 border-indigo-500/20 bg-indigo-950/60 w-full overflow-hidden rounded-full border"
+						class="h-2 w-full overflow-hidden rounded-full border border-indigo-500/20 bg-indigo-950/60"
 					>
 						<div
-							class="from-indigo-500 to-sky-400 h-full bg-linear-to-r transition-all duration-500"
+							class="h-full bg-linear-to-r from-indigo-500 to-sky-400 transition-all duration-500"
 							style="width: {genProgressPct}%"
 						></div>
 					</div>
 
 					{#if activeBuildingModule}
-						<div class="gap-2 font-medium text-indigo-300 flex items-center text-[11px]">
+						<div class="flex items-center gap-2 text-[11px] font-medium text-indigo-300">
 							<span
-								class="h-3 w-3 animate-spin border-indigo-300 rounded-full border-2 border-t-transparent"
+								class="h-3 w-3 animate-spin rounded-full border-2 border-indigo-300 border-t-transparent"
 							></span>
 							<span>Building content for <strong>{activeBuildingModule.title}</strong>...</span>
 						</div>
@@ -460,9 +482,9 @@
 					<!-- Immediate Module 1 Start Banner -->
 					{#if modules.length > 0 && modules[0].status === 'ready'}
 						<div
-							class="mt-1 gap-3 border-emerald-500/30 bg-emerald-950/60 p-3 text-white flex flex-wrap items-center justify-between rounded-xl border shadow-sm"
+							class="mt-1 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/60 p-3 text-white shadow-sm"
 						>
-							<div class="gap-2 flex items-center">
+							<div class="flex items-center gap-2">
 								<span class="text-base">🚀</span>
 								<span class="text-xs font-bold text-emerald-200">
 									Module 1 is ready! Start learning now while remaining modules finish in the
@@ -471,7 +493,7 @@
 							</div>
 							<a
 								href={`/app/courses/${courseId}/${modules[0].id}`}
-								class="bg-emerald-500 px-3.5 py-1.5 text-xs font-bold text-slate-950 shadow-xs hover:bg-emerald-400 rounded-lg transition-all active:scale-95"
+								class="rounded-lg bg-emerald-500 px-3.5 py-1.5 text-xs font-bold text-slate-950 shadow-xs transition-all hover:bg-emerald-400 active:scale-95"
 							>
 								Start Module 1 &rarr;
 							</a>
@@ -480,7 +502,7 @@
 				</div>
 			{:else if course.status === 'partial' || course.status === 'failed' || failedCount > 0}
 				<div
-					class="border-amber-500/30 bg-amber-500/10 p-3.5 text-xs font-semibold text-amber-300 flex items-center justify-between rounded-xl border"
+					class="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs font-semibold text-amber-300"
 				>
 					<span
 						>Some modules failed generation. Click retry on failed modules below to regenerate them.</span
@@ -491,32 +513,32 @@
 			<!-- Certificate Card OR Progress Bar & Continue CTA -->
 			{#if isCourseCompleted}
 				<div
-					class="mt-2 rounded-2xl border-emerald-500/30 from-emerald-950/40 to-teal-950/40 p-6 flex flex-col items-center justify-center border bg-linear-to-r text-center shadow-lg"
+					class="mt-2 flex flex-col items-center justify-center rounded-2xl border border-emerald-500/30 bg-linear-to-r from-emerald-950/40 to-teal-950/40 p-6 text-center shadow-lg"
 				>
 					<div class="mb-3 text-3xl">🎓</div>
 					<h3 class="font-display text-lg font-bold text-emerald-300">
 						Course Achievement Unlocked!
 					</h3>
 					<p class="mt-1 text-xs text-emerald-200/80">You have completed 100% of {course.title}.</p>
-					<div class="mt-4 gap-3 flex flex-wrap items-center justify-center">
+					<div class="mt-4 flex flex-wrap items-center justify-center gap-3">
 						<button
 							type="button"
 							onclick={() => (showCertificateModal = true)}
-							class="bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 rounded-xl shadow-md transition-all active:scale-95"
+							class="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 shadow-md transition-all hover:bg-amber-400 active:scale-95"
 						>
 							📜 Download / Print Certificate
 						</button>
 						<button
 							type="button"
 							onclick={handleOpenShare}
-							class="bg-emerald-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-emerald-400 rounded-xl shadow-md transition-all active:scale-95"
+							class="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-slate-950 shadow-md transition-all hover:bg-emerald-400 active:scale-95"
 						>
 							Share Your Achievement
 						</button>
 					</div>
 				</div>
 			{:else}
-				<div class="mt-2 gap-3 flex flex-col">
+				<div class="mt-2 flex flex-col gap-3">
 					<ProgressBar
 						progress={progressPercentage}
 						showLabel={true}
@@ -526,17 +548,17 @@
 
 					{#if nextIncompleteModule && nextIncompleteModule.status === 'ready'}
 						<div
-							class="gap-3 rounded-2xl p-3.5 flex flex-wrap items-center justify-between border border-primary/30 bg-primary-soft/30"
+							class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary-soft/30 p-3.5"
 						>
-							<div class="gap-3 flex items-center">
+							<div class="flex items-center gap-3">
 								<span
-									class="h-8 w-8 text-xs font-bold text-white shadow-xs flex items-center justify-center rounded-xl bg-primary"
+									class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-xs font-bold text-white shadow-xs"
 								>
 									→
 								</span>
 								<div>
-									<div class="gap-2 flex items-center">
-										<span class="font-black tracking-wider text-[10px] text-primary uppercase">
+									<div class="flex items-center gap-2">
+										<span class="text-[10px] font-black tracking-wider text-primary uppercase">
 											Up Next
 										</span>
 										{#if nextIncompleteModule.estimatedMinutes}
@@ -553,7 +575,7 @@
 
 							<a
 								href={`/app/courses/${courseId}/${nextIncompleteModule.id}`}
-								class="gap-1.5 px-4 py-2 text-xs font-bold text-white shadow-xs inline-flex items-center rounded-xl bg-primary transition-all hover:bg-primary-hover active:scale-95"
+								class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-primary-hover active:scale-95"
 							>
 								<span>Continue Learning &rarr;</span>
 							</a>
@@ -564,14 +586,14 @@
 		</div>
 
 		<!-- Modules List -->
-		<div class="gap-4 flex flex-col">
+		<div class="flex flex-col gap-4">
 			<div class="flex items-center justify-between">
 				<h2 class="font-display text-lg font-bold text-text">Modules ({modules.length})</h2>
 				<button
 					type="button"
 					onclick={handleAddModule}
 					disabled={actionLoading}
-					class="gap-1.5 px-3 py-1.5 text-xs font-bold shadow-xs inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-primary transition-colors hover:border-primary disabled:opacity-50"
+					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-primary shadow-xs transition-colors hover:border-primary disabled:opacity-50"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -591,7 +613,7 @@
 				</button>
 			</div>
 
-			<div class="gap-3 flex flex-col">
+			<div class="flex flex-col gap-3">
 				{#each modules as mod, idx (mod.id)}
 					{@const isCompleted = userCompletedModuleIds.includes(mod.id || '')}
 					{@const isReady = mod.status === 'ready'}
@@ -600,7 +622,7 @@
 					{@const isNextUp = nextIncompleteModule?.id === mod.id && !isCompleted}
 
 					<div
-						class="gap-3 rounded-2xl p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between flex flex-col border transition-all duration-200 {isNextUp
+						class="flex flex-col gap-3 rounded-2xl border p-4 shadow-xs transition-all duration-200 sm:flex-row sm:items-center sm:justify-between {isNextUp
 							? 'border-primary/50 bg-primary-soft/10 ring-1 ring-primary/30'
 							: isReady
 								? 'border-border bg-surface hover:border-primary/40'
@@ -608,23 +630,23 @@
 									? 'animate-pulse border-border/60 bg-surface-muted/40 opacity-70'
 									: 'border-danger/30 bg-danger-soft/20'}"
 					>
-						<div class="gap-3.5 flex items-center">
+						<div class="flex items-center gap-3.5">
 							<!-- Status Check / Icon -->
 							{#if isCompleted}
 								<div
-									class="h-9 w-9 bg-emerald-500/20 text-sm font-bold text-emerald-400 flex shrink-0 items-center justify-center rounded-xl"
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-sm font-bold text-emerald-400"
 								>
 									✓
 								</div>
 							{:else if isNextUp}
 								<div
-									class="h-9 w-9 text-xs font-bold text-white shadow-xs flex shrink-0 items-center justify-center rounded-xl bg-primary"
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold text-white shadow-xs"
 								>
 									→
 								</div>
 							{:else if isGenerating}
 								<div
-									class="h-9 w-9 flex shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary"
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary"
 								>
 									<span
 										class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"
@@ -632,13 +654,13 @@
 								</div>
 							{:else if isFailed}
 								<div
-									class="h-9 w-9 font-bold flex shrink-0 items-center justify-center rounded-xl bg-danger-soft text-danger"
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-danger-soft font-bold text-danger"
 								>
 									!
 								</div>
 							{:else}
 								<div
-									class="h-9 w-9 text-xs font-bold flex shrink-0 items-center justify-center rounded-xl bg-surface-muted text-text-muted"
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-muted text-xs font-bold text-text-muted"
 								>
 									{idx + 1}
 								</div>
@@ -646,17 +668,17 @@
 
 							<!-- Module Info -->
 							<div>
-								<div class="gap-2 flex flex-wrap items-center">
+								<div class="flex flex-wrap items-center gap-2">
 									<h4 class="font-display text-sm font-bold text-text">{mod.title}</h4>
 									<span
-										class="px-2 py-0.5 font-bold rounded-md border border-border/40 bg-surface-muted text-[9px] text-text-muted uppercase"
+										class="rounded-md border border-border/40 bg-surface-muted px-2 py-0.5 text-[9px] font-bold text-text-muted uppercase"
 									>
 										{mod.type}
 									</span>
 
 									{#if mod.estimatedMinutes}
 										<span
-											class="px-2 py-0.5 font-semibold rounded-md border border-border/40 bg-surface-muted text-[9px] text-text-muted"
+											class="rounded-md border border-border/40 bg-surface-muted px-2 py-0.5 text-[9px] font-semibold text-text-muted"
 										>
 											⏱️ ~{mod.estimatedMinutes} min
 										</span>
@@ -665,24 +687,24 @@
 									<!-- Per-module Granular Progress Badge (Item #5) -->
 									{#if isGenerating}
 										<span
-											class="bg-indigo-500/20 px-2 py-0.5 font-bold text-indigo-300 rounded-md text-[9px]"
+											class="rounded-md bg-indigo-500/20 px-2 py-0.5 text-[9px] font-bold text-indigo-300"
 										>
 											{mod.status === 'pending' ? 'Queued' : 'Building Content'}
 										</span>
 									{/if}
 								</div>
-								<p class="mt-0.5 text-xs line-clamp-1 text-text-muted">{mod.summary}</p>
+								<p class="mt-0.5 line-clamp-1 text-xs text-text-muted">{mod.summary}</p>
 							</div>
 						</div>
 
 						<!-- Action CTA -->
-						<div class="sm:self-auto shrink-0 self-end">
+						<div class="shrink-0 self-end sm:self-auto">
 							{#if isReady}
-								<div class="gap-2 flex items-center">
+								<div class="flex items-center gap-2">
 									{#if mod.type === 'quiz'}
 										<a
 											href={`/app/review?courseId=${courseId}&moduleId=${mod.id}`}
-											class="gap-1 border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 shadow-xs hover:bg-amber-500/20 inline-flex cursor-pointer items-center justify-center rounded-xl border active:scale-95"
+											class="inline-flex cursor-pointer items-center justify-center gap-1 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 shadow-xs hover:bg-amber-500/20 active:scale-95"
 											title="Drill flashcards in Spaced Repetition (FSRS-4.5)"
 										>
 											<span>🧠 FSRS Drill</span>
@@ -690,8 +712,8 @@
 									{/if}
 									<a
 										href={`/app/courses/${courseId}/${mod.id}`}
-										class="gap-1.5 px-4 py-2 text-xs font-bold shadow-xs inline-flex cursor-pointer items-center justify-center rounded-xl transition-all active:scale-95 {isNextUp
-											? 'text-white bg-primary ring-2 ring-primary/20 hover:bg-primary-hover'
+										class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold shadow-xs transition-all active:scale-95 {isNextUp
+											? 'bg-primary text-white ring-2 ring-primary/20 hover:bg-primary-hover'
 											: 'bg-surface-muted text-text hover:bg-surface-muted/80'}"
 									>
 										<span>{isCompleted ? 'Review' : 'Start'}</span>
@@ -699,12 +721,12 @@
 									</a>
 								</div>
 							{:else if isGenerating}
-								<span class="font-semibold text-[11px] text-text-muted">Generating...</span>
+								<span class="text-[11px] font-semibold text-text-muted">Generating...</span>
 							{:else if isFailed}
 								<button
 									type="button"
 									onclick={() => handleRetryModule(mod.id || '')}
-									class="px-3 py-1.5 text-xs font-bold cursor-pointer rounded-xl bg-danger-soft text-danger hover:bg-danger/20"
+									class="cursor-pointer rounded-xl bg-danger-soft px-3 py-1.5 text-xs font-bold text-danger hover:bg-danger/20"
 								>
 									Retry
 								</button>
@@ -720,13 +742,17 @@
 <ShareModal
 	show={showShareModal}
 	{shareUrl}
+	isPublic={isSharePublic}
+	{actionLoading}
 	courseTitle={course?.title || 'Course'}
 	onClose={() => (showShareModal = false)}
+	onRevoke={handleRevokeShare}
+	onTogglePublic={(pub) => handleOpenShare(pub)}
 />
 
 <CertificateModal
 	isOpen={showCertificateModal}
-	userName={auth.currentUser?.displayName || 'Learner'}
+	userName={authStore.user?.displayName || authStore.profile?.displayName || 'Learner'}
 	courseTitle={course?.title || 'Course'}
 	onClose={() => (showCertificateModal = false)}
 />

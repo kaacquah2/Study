@@ -340,3 +340,36 @@ def test_global_docs_survive_user_clear(tmp_path):
     result = rag.retrieve("data structures", user_id="user_beta", top_k=3)
     assert "data structures" in result.lower(), \
         f"Global doc was incorrectly deleted by user clear: {result!r}"
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 12. Candidate crowding resistance (Multi-user recall degradation prevention)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def test_candidate_crowding_isolation(tmp_path):
+    """
+    When User A has many documents that dominate the candidate pool, User B's
+    relevant documents must still be retrieved without being crowded out.
+    """
+    rag = make_rag(tmp_path)
+
+    # User Alpha adds 25 chunks on quantum computing
+    alpha_docs = [
+        f"Quantum entanglement and superposition principle in physics note {i}."
+        for i in range(25)
+    ]
+    rag.add_documents(alpha_docs, user_id="user_alpha", scope="private")
+
+    # User Beta adds 2 chunks on quantum computing
+    beta_docs = [
+        "Quantum computing qubits and quantum gate operations for Beta course.",
+        "Shor algorithm for quantum integer factorization in Beta notes."
+    ]
+    rag.add_documents(beta_docs, user_id="user_beta", scope="private")
+
+    # User Beta queries with top_k=2
+    result = rag.retrieve("quantum computing qubits and gates", user_id="user_beta", top_k=2)
+
+    assert result != "", "User Beta received empty results due to candidate crowding!"
+    assert "Beta" in result, f"Expected Beta's documents to be retrieved, got: {result!r}"
+

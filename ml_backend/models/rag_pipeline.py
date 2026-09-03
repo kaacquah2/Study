@@ -95,7 +95,11 @@ class RAGPipeline:
                 raise
 
         # Get sentence embedding dimension with strict integer type guarantee
-        raw_dim = getattr(self._embed_model, "get_sentence_embedding_dimension", lambda: 384)()
+        raw_dim = getattr(
+            self._embed_model,
+            "get_embedding_dimension",
+            getattr(self._embed_model, "get_sentence_embedding_dimension", lambda: 384)
+        )()
         self._dim: int = int(raw_dim) if raw_dim is not None else 384
         self._index: Optional[faiss.IndexIDMap] = None
 
@@ -270,12 +274,40 @@ class RAGPipeline:
             if self._index is None or self._index.ntotal == 0:
                 return ""
 
+            # Determine authorized IDs for this user
+            authorized_fids = [
+                fid for fid, doc in self._id_to_doc.items()
+                if doc.get("scope") == "global" or (doc.get("scope") == "private" and doc.get("user_id") == user_id)
+            ]
+            if not authorized_fids:
+                return ""
+
             query_embedding = self._embed_model.encode([query], show_progress_bar=False)
             query_embedding = np.array(query_embedding, dtype="float32")
 
-            # Fetch extra candidates to account for access-control filtering
-            k = min(self._index.ntotal, top_k * 5)
-            distances, indices = self._index.search(query_embedding, k)
+            distances, indices = None, None
+            # Native FAISS ID-filtering via SearchParameters (prevents cross-user candidate crowding)
+            if (
+                len(authorized_fids) < self._index.ntotal
+                and hasattr(faiss, "SearchParameters")
+                and hasattr(faiss, "IDSelectorBatch")
+            ):
+                try:
+                    sel = faiss.IDSelectorBatch(np.array(authorized_fids, dtype="int64"))
+                    params = faiss.SearchParameters(sel=sel)
+                    k = min(len(authorized_fids), top_k)
+                    distances, indices = self._index.search(query_embedding, k, params=params)
+                except Exception as exc:
+                    logger.debug(
+                        f"[RAG] Native FAISS SearchParameters failed ({exc}), "
+                        "falling back to candidate post-filtering."
+                    )
+                    distances, indices = None, None
+
+            if distances is None or indices is None:
+                # Fallback: Fetch candidates with an expanded multiplier to mitigate crowding
+                k = min(self._index.ntotal, max(top_k * 10, min(self._index.ntotal, 100)))
+                distances, indices = self._index.search(query_embedding, k)
 
             retrieved: list[str] = []
             for dist, fid in zip(distances[0], indices[0]):
@@ -294,7 +326,7 @@ class RAGPipeline:
                 doc_scope   = doc.get("scope",   "private")
                 doc_user_id = doc.get("user_id", "__system__")
 
-                # Access control
+                # Access control (re-verified as defense-in-depth)
                 if doc_scope == "global":
                     # Global reference material — accessible to all authenticated users
                     retrieved.append(doc["text"])

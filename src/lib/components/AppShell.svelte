@@ -24,7 +24,7 @@
 
 	// Timer for auth timeout fallback state
 	$effect(() => {
-		if (requireAuth && !authStore.authResolved) {
+		if (requireAuth && !authStore.authResolved && !authStore.user) {
 			const timer = setTimeout(() => {
 				showTimeoutError = true;
 			}, 8000);
@@ -40,14 +40,14 @@
 >
 	<Header />
 
-	{#if !authStore.authResolved && !authStore.profile && requireAuth}
+	{#if (!authStore.authResolved || !authStore.user) && !authStore.profile && requireAuth}
 		<!-- Authentication loading state with theme-compliant aesthetics -->
-		<div class="p-6 flex grow flex-col items-center justify-center">
-			{#if showTimeoutError}
+		<div class="flex grow flex-col items-center justify-center p-6">
+			{#if showTimeoutError || authStore.timedOut}
 				<!-- Timeout / Error State -->
 				<div class="max-w-md text-center">
 					<div
-						class="mb-4 h-12 w-12 inline-flex items-center justify-center rounded-md bg-danger-soft text-danger"
+						class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-md bg-danger-soft text-danger"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -70,23 +70,26 @@
 						Session verification timeout
 					</h3>
 					<p class="mb-6 text-xs text-text-muted">
-						We are having trouble securing your session. Please check your connection or try signing
-						in again.
+						We are having trouble securing your session due to a slow connection. Please check your
+						connection or try again.
 					</p>
 					<button
 						type="button"
-						class="px-4 py-2 text-xs font-bold text-white cursor-pointer rounded-md bg-primary shadow-sm hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
-						onclick={() => window.location.reload()}
+						class="cursor-pointer rounded-md bg-primary px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
+						onclick={() => {
+							showTimeoutError = false;
+							authStore.retry();
+						}}
 					>
 						Retry connection
 					</button>
 				</div>
 			{:else}
-				<div class="h-12 w-12 relative flex items-center justify-center">
+				<div class="relative flex h-12 w-12 items-center justify-center">
 					<!-- Visual loading rings -->
 					<div class="absolute h-full w-full rounded-full border-4 border-primary-soft"></div>
 					<div
-						class="animate-spin absolute h-full w-full rounded-full border-4 border-primary border-t-transparent"
+						class="absolute h-full w-full animate-spin rounded-full border-4 border-primary border-t-transparent"
 					></div>
 				</div>
 				<p class="mt-6 animate-pulse text-xs font-bold tracking-widest text-text uppercase">

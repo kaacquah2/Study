@@ -36,7 +36,7 @@
 
 <div class="w-full {className}">
 	{#if showLabel || label}
-		<div class="mb-1.5 text-xs font-semibold flex items-center justify-between">
+		<div class="mb-1.5 flex items-center justify-between text-xs font-semibold">
 			<span class="text-text-muted">{label || 'Progress'}</span>
 			<span class="font-bold text-text">{Math.round(safeProgress)}%</span>
 		</div>
@@ -51,7 +51,7 @@
 		aria-label={label || 'Progress'}
 	>
 		<div
-			class="ease-out h-full rounded-full transition-all duration-500 {accentGradient}"
+			class="h-full rounded-full transition-all duration-500 ease-out {accentGradient}"
 			style="width: {safeProgress}%"
 		></div>
 	</div>

@@ -57,38 +57,83 @@ Summary JSON: [`evaluation/results/rag_metrics_summary.json`](../evaluation/resu
 | **Computer Architecture**        | 2       | 0    | **0.0%**    | `0.462`         | Complete miss due to absence of hardware architecture lecture notes in current vector store. |
 
 > [!NOTE]
-> **Defensible Academic Takeaway:**
-> Semantic vector retrieval is strictly bounded by corpus ingestion coverage. In domains with dedicated lecture notes (e.g., Artificial Intelligence), retrieval achieves 100% precision. Unindexed domains (e.g., Computer Architecture) degrade to zero, demonstrating why multi-provider generative fallback and user document uploads are critical architectural requirements.
+> **Defensible Academic Takeaways & Groundedness Analysis:**
+>
+> 1. **Coverage Bounds:** Semantic vector retrieval is strictly bounded by corpus ingestion coverage. In domains with dedicated lecture notes (e.g., Artificial Intelligence), retrieval achieves 100% precision. Unindexed domains (e.g., Computer Architecture) degrade to zero, demonstrating why multi-provider generative fallback and user document uploads are critical architectural requirements.
+> 2. **50% Groundedness Rate (Primary Negative Result):** Half of answers across the $N=30$ suite were not factually anchored in the retrieved context despite citations being rendered. This establishes a clear **perceived-trust vs. actual-groundedness gap**: users attribute high authority to formatted citations even when retrieval fails to ground the model. The concrete design implication is that the system must visibly surface retrieval confidence scores and explicitly tag template-fallback outputs (`is_fallback: true`) rather than silently synthesizing unverified text.
+
+### Architectural Limitations & Multi-Tenant Scalability Analysis
+
+The current retrieval layer in [`ml_backend/models/rag_pipeline.py`](../ml_backend/models/rag_pipeline.py) operates as a single-node in-memory FAISS index (`IndexFlatL2` wrapped in `IndexIDMap`) persisted locally to `vector_store/index.faiss` and `vector_store/docs.json`. All users' chunks reside in one shared vector space, with access control enforced via a post-retrieval Python filter.
+
+This architecture introduces three major production and theoretical limitations:
+
+1. **Failure to Survive Horizontal Scaling:**
+   - With multiple container replicas or worker instances behind a load balancer (e.g., 2+ FastAPI workers or multi-region pods), each instance maintains an isolated in-memory index.
+   - Document uploads and deletions processed by Instance A never replicate to Instance B, resulting in divergent index states and inconsistent retrieval results depending on ingress request routing.
+
+2. **Vulnerability to Ephemeral Container Disks:**
+   - Standard cloud container environments (Render, Fly.io, Google Cloud Run) operate on ephemeral root filesystems.
+   - On container redeployment, crash recovery, or scale-to-zero cold starts, local disk state in `vector_store/` is destroyed unless backed by persistent block storage volumes (which themselves reintroduce single-node lock bottlenecks and fail-over complexity).
+
+3. **Recall Degradation via Candidate Crowding:**
+   - **Theoretical Mechanism:** When nearest-neighbor candidates are retrieved globally ($k = \text{top\_k} \times 5$) prior to access-control filtering, a single user's high-density private corpus can monopolize all $k$ candidate slots in vector space. As a consequence, valid global or private chunks belonging to another user are crowded out of the candidate set before Python access control is evaluated, resulting in 0 chunks returned (total recall collapse).
+   - **Empirical Analysis of the 36.67% Precision@3 Figure:**
+     - In the automated evaluation benchmark ($N=30$, 11 hits), the 22,618 test chunks in `vector_store/docs.json` were uniformly attributed to `default_user`. Cross-user ACL crowding was therefore not the active driver of the 36.67% score on this specific dataset; rather, syllabus ingestion asymmetry (100% in AI vs. 0% in unindexed Computer Architecture) and fixed $k=3$ candidate windowing explain the static score.
+     - However, empirical multi-tenant isolation testing confirmed the crowding hazard: adding 25 related private chunks for User A completely suppressed retrieval for User B's 2 private chunks under standard post-filtering.
+   - **Interim Code Mitigation:**
+     - [`ml_backend/models/rag_pipeline.py`](../ml_backend/models/rag_pipeline.py) was enhanced to execute native FAISS ID-prefiltering via `faiss.SearchParameters(sel=faiss.IDSelectorBatch(...))`. By restricting FAISS traversal strictly to candidate IDs authorized for the requesting user (`scope="global"` or `user_id=requesting_user`), cross-user candidate crowding is eliminated directly during search traversal.
+
+4. **Post-Deadline Production Fix (Managed Vector Store):**
+   - **Target Architecture:** Transition from local FAISS to a managed clustered vector database supporting native metadata pre-filtering (e.g., **Qdrant**, **Pinecone**, or **PostgreSQL with pgvector**).
+   - **Native Filter Execution:** Queries apply access control rules directly at the indexing layer (`FILTER (scope == "global" OR (scope == "private" AND user_id == :uid))`), guaranteeing horizontal scaling across stateless API replicas, durability across container lifecycles, and sub-millisecond pre-filtered search with full recall preservation.
 
 ---
 
 ## 2. Quiz Generation Quality Evaluation
 
-> [!WARNING]
-> **Rater Provenance:** Ratings were produced by **n=2 raters who are also the course authors** (i.e., internal evaluators, not independent third-party raters). Cohen's κ values reflect within-team consensus, not cross-rater reliability in a formal psychometric or IRB sense. Scores at or near ceiling (κ ≈ 0.000) indicate near-perfect agreement but also reflect the evaluators' familiarity with the generated content. Treat as an informal spot-check, not a peer-reviewed human evaluation study.
+> [!NOTE]
+> **Evaluation Methodology & Evaluator Provenance:**
+> Ratings were conducted via a systematic rubric audit across $N = 50$ generated multiple-choice questions by a single internal domain expert / course author ($n=1$). Because ratings were performed by a single evaluator, inter-rater reliability metrics (such as Cohen's $\kappa$ or Fleiss' $\kappa$) are intentionally omitted. Results are presented as empirical descriptive distributions ($\mu$, $\sigma$, median, and percentage of questions scoring $\ge 4/5$).
 
-Evaluated across $n = 50$ generated multiple-choice questions spanning 5 CS courses (Bloom taxonomy levels: _Remember_, _Understand_, _Apply_, _Analyze_) by two independent raters on a 1–5 Likert scale (where 5 = Excellent).
+Evaluated across $N = 50$ generated multiple-choice questions spanning 7 CS curriculum areas (Bloom taxonomy levels: _Remember_, _Understand_, _Apply_, _Analyze_) on a standard 1–5 Likert rubric (where 5 = Excellent).
 
 Raw dataset: [`evaluation/datasets/quiz_samples_50.json`](../evaluation/datasets/quiz_samples_50.json)  
-Raw ratings: [`evaluation/results/quiz_human_eval_50.csv`](../evaluation/results/quiz_human_eval_50.csv)  
+Expert evaluation dataset: [`evaluation/datasets/quiz_expert_eval_50.csv`](../evaluation/datasets/quiz_expert_eval_50.csv)  
+Raw results CSV: [`evaluation/results/quiz_human_eval_50.csv`](../evaluation/results/quiz_human_eval_50.csv)  
 Summary JSON: [`evaluation/results/quiz_evaluation_summary.json`](../evaluation/results/quiz_evaluation_summary.json)
 
-| Metric                         | Definition                                                                              | Mean Score ($\mu \pm \sigma$) | Inter-Rater Agreement (Cohen's $\kappa$)       |
-| :----------------------------- | :-------------------------------------------------------------------------------------- | :---------------------------- | :--------------------------------------------- |
-| **Relevance**                  | Question directly tests core concept from the module syllabus                           | **`4.93 ± 0.17`**             | $\kappa = 0.000$ (High consensus at ceiling 5) |
-| **Clarity**                    | Prompt wording is unambiguous and grammatically sound                                   | **`4.84 ± 0.31`**             | $\kappa = 0.143$                               |
-| **Correctness**                | Identified correct answer option is objectively true                                    | **`4.93 ± 0.17`**             | $\kappa = 0.000$ (High consensus at ceiling 5) |
-| **Distractor Plausibility**    | Incorrect options represent genuine student misconceptions rather than trivial nonsense | **`4.78 ± 0.30`**             | $\kappa = 0.189$                               |
-| **Difficulty Appropriateness** | Cognitive challenge aligns with module learning objectives                              | **`4.27 ± 0.53`**             | $\kappa = 0.462$ (Moderate agreement)          |
-| **Overall Composite Mean**     | Global average across all 5 dimensions ($n=50$)                                         | **`4.75 / 5.0`**              | —                                              |
+| Metric                         | Definition                                                                             | Mean Score ($\mu \pm \sigma$) | Median | % High Quality ($\ge 4/5$) |
+| :----------------------------- | :------------------------------------------------------------------------------------- | :---------------------------- | :----- | :------------------------- |
+| **Relevance**                  | Question directly tests core concepts from the course syllabus                         | **`5.00 ± 0.00`**             | `5.0`  | `100.0%`                   |
+| **Clarity**                    | Prompt and options are unambiguous, precise, and grammatically sound                   | **`4.86 ± 0.35`**             | `5.0`  | `100.0%`                   |
+| **Correctness**                | Designated answer option and accompanying explanation are objectively true             | **`5.00 ± 0.00`**             | `5.0`  | `100.0%`                   |
+| **Distractor Plausibility**    | Incorrect options represent realistic misconceptions rather than trivial non-sequiturs | **`4.14 ± 0.40`**             | `4.0`  | `98.0%`                    |
+| **Difficulty Appropriateness** | Cognitive complexity aligns with stated Bloom taxonomy level                           | **`3.56 ± 0.67`**             | `4.0`  | `54.0%`                    |
+| **Overall Composite Mean**     | Global average across all 5 dimensions ($N=50$)                                        | **`4.51 / 5.0`**              | `4.5`  | `92.0%`                    |
+
+### Bloom Taxonomy Level Breakdown
+
+| Bloom Level    | Item Count ($N$) | Composite Score ($\mu \pm \sigma$) | Qualitative Characteristic                                                                           |
+| :------------- | :--------------- | :--------------------------------- | :--------------------------------------------------------------------------------------------------- |
+| **Analyze**    | 14               | **`4.69 ± 0.16`**                  | High discriminative power; tests architectural trade-offs (e.g., B+ Trees vs BST, Belady's anomaly). |
+| **Apply**      | 7                | **`4.51 ± 0.15`**                  | Strong algorithmic mechanics (e.g., subnet broadcast calculation, heap indexing).                    |
+| **Understand** | 24               | **`4.46 ± 0.11`**                  | Core conceptual definitions; solid distractor plausibility.                                          |
+| **Remember**   | 5                | **`4.28 ± 0.16`**                  | Direct factual retrieval; slightly lower difficulty challenge.                                       |
+
+> [!WARNING]
+> **Methodological Limitations:**
+>
+> 1. **Single-Rater Subjectivity:** An internal author evaluation ($n=1$) provides valuable qualitative sanity-checking but cannot guarantee cross-evaluator reliability.
+> 2. **Ceiling Effects:** Relevance and correctness achieve ceiling scores because generation templates are tightly constrained to verified syllabus topics, whereas difficulty appropriateness demonstrates higher variance ($\sigma = 0.67$) indicating that automated generation occasionally produces simpler recall questions for higher-order topics.
 
 ---
 
 ## 3. Summarization Model Evaluation
 
 > [!NOTE]
-> **Model Provenance & Evaluation Baseline:**
-> Summarization benchmarks evaluate the `FLAN-T5-base` architecture across 8 academic lecture note excerpts against reference gold summaries. In out-of-the-box mode, the runtime serves `google/flan-t5-base` with length and brevity constraints. When deployed with domain checkpoints trained via [`fine_tuning/01_summarizer_finetune.py`](../ml_backend/fine_tuning/01_summarizer_finetune.py) on SciTLDR, lexical overlap with scientific summaries increases.
+> **Model Provenance, Evaluation Baseline & Sample Size Scope:**
+> Summarization benchmarks evaluate the `FLAN-T5-base` architecture across $N = 8$ academic lecture note excerpts against reference gold summaries. This represents an exploratory **pilot benchmark**, not a high-powered statistical evaluation. Confidence intervals for ROUGE scores at $N = 8$ are inherently wide ($\pm 14.64$ on ROUGE-1); results demonstrate the automated evaluation harness is functional and produces valid metrics, but cannot support fine-grained model ranking. In out-of-the-box mode, the runtime serves `google/flan-t5-base` with length and brevity constraints. When deployed with domain checkpoints trained via [`fine_tuning/01_summarizer_finetune.py`](../ml_backend/fine_tuning/01_summarizer_finetune.py) on SciTLDR, lexical overlap with scientific summaries increases.
 
 Raw dataset: [`evaluation/datasets/summarization_eval_data.json`](../evaluation/datasets/summarization_eval_data.json)  
 Raw results: [`evaluation/results/summarization_results.csv`](../evaluation/results/summarization_results.csv)  
@@ -96,11 +141,12 @@ Summary JSON: [`evaluation/results/summarization_metrics_summary.json`](../evalu
 
 | Metric                  | Score ($\mu \pm \sigma$) | Interpretation                                                    |
 | :---------------------- | :----------------------- | :---------------------------------------------------------------- |
-| **ROUGE-1**             | **`37.89 ± 15.05`**      | Unigram lexical overlap against gold academic summaries           |
-| **ROUGE-2**             | **`12.96 ± 11.66`**      | Bigram phrase structure preservation                              |
-| **ROUGE-L**             | **`31.68 ± 12.89`**      | Longest common subsequence retention                              |
-| **Flesch Reading Ease** | **`35.70 ± 17.18`**      | Accessible undergraduate / academic prose level                   |
-| **Compression Ratio**   | **`57.25% ± 7.13%`**     | Character reduction without discarding core technical terminology |
+| **ROUGE-1**             | **`26.44 ± 14.64`**      | Unigram lexical overlap against gold academic summaries           |
+| **ROUGE-2**             | **`5.57 ± 6.71`**        | Bigram phrase structure preservation                              |
+| **ROUGE-L**             | **`20.87 ± 10.26`**      | Longest common subsequence retention                              |
+| **Flesch Reading Ease** | **`47.22 ± 25.98`**      | Accessible undergraduate / academic prose level                   |
+| **Compression Ratio**   | **`75.15% ± 7.57%`**     | Character reduction without discarding core technical terminology |
+| **Mean Latency**        | **`3.11s ± 2.55s`**      | CPU wall-clock inference time per lecture passage                 |
 
 ---
 

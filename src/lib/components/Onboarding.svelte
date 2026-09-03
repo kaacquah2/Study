@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { auth } from '$lib/firebase/client';
+	import { apiFetch } from '$lib/api/client';
 	import { Upload, BookOpen, Compass, Bot, Sparkles, X, ArrowRight } from '@lucide/svelte';
 
 	interface Props {
@@ -13,17 +13,10 @@
 	const completeOnboarding = async (targetRoute?: string) => {
 		isDismissing = true;
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			if (idToken) {
-				await fetch('/api/user', {
-					method: 'PATCH',
-					headers: {
-						Authorization: `Bearer ${idToken}`,
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify({ onboardingComplete: true })
-				});
-			}
+			await apiFetch('/api/user', {
+				method: 'PATCH',
+				body: { onboardingComplete: true }
+			});
 		} catch (e) {
 			console.debug('Failed to record onboarding completion:', e);
 		}
@@ -75,19 +68,19 @@
 </script>
 
 <div
-	class="inset-0 bg-black/60 p-4 backdrop-blur-sm fixed z-50 flex items-center justify-center transition-all duration-300"
+	class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-all duration-300"
 	role="dialog"
 	aria-modal="true"
 	aria-labelledby="onboarding-title"
 >
 	<div
-		class="bg-card max-w-2xl rounded-2xl p-6 shadow-2xl sm:p-8 relative flex w-full flex-col overflow-hidden border border-border"
+		class="bg-card relative flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border p-6 shadow-2xl sm:p-8"
 	>
 		<!-- Header with Sparkles -->
 		<div class="mb-6 flex items-start justify-between">
-			<div class="gap-3 flex items-center">
+			<div class="flex items-center gap-3">
 				<div
-					class="h-12 w-12 shadow-inner flex items-center justify-center rounded-xl bg-primary/10 text-primary"
+					class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-inner"
 				>
 					<Sparkles class="h-6 w-6 animate-pulse" />
 				</div>
@@ -106,7 +99,7 @@
 			<button
 				onclick={() => completeOnboarding()}
 				disabled={isDismissing}
-				class="text-muted-foreground hover:bg-muted hover:text-foreground p-1.5 rounded-lg transition-colors disabled:opacity-50"
+				class="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-1.5 transition-colors disabled:opacity-50"
 				aria-label="Close modal"
 			>
 				<X class="h-5 w-5" />
@@ -114,20 +107,20 @@
 		</div>
 
 		<!-- Action Cards Grid -->
-		<div class="gap-3.5 sm:grid-cols-2 grid grid-cols-1">
+		<div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
 			{#each starterActions as action (action.title)}
 				{@const Icon = action.icon}
 				<button
 					onclick={() => completeOnboarding(action.route)}
 					disabled={isDismissing}
-					class="group gap-2.5 p-4 hover:-translate-y-0.5 relative flex flex-col items-start rounded-xl border bg-linear-to-br text-left transition-all duration-200 hover:shadow-md disabled:pointer-events-none disabled:opacity-60 {action.color}"
+					class="group relative flex flex-col items-start gap-2.5 rounded-xl border bg-linear-to-br p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md disabled:pointer-events-none disabled:opacity-60 {action.color}"
 				>
 					<div class="flex w-full items-center justify-between">
-						<div class="bg-card/80 text-foreground p-2 rounded-lg shadow-sm">
+						<div class="bg-card/80 text-foreground rounded-lg p-2 shadow-sm">
 							<Icon class="h-5 w-5 transition-transform group-hover:scale-110" />
 						</div>
 						<span
-							class="px-2 py-0.5 font-medium rounded-full border text-[11px] {action.badgeClass}"
+							class="rounded-full border px-2 py-0.5 text-[11px] font-medium {action.badgeClass}"
 						>
 							{action.badge}
 						</span>
@@ -136,12 +129,12 @@
 						<h3 class="text-foreground text-sm font-semibold group-hover:text-primary">
 							{action.title}
 						</h3>
-						<p class="text-muted-foreground mt-1 text-xs line-clamp-2">
+						<p class="text-muted-foreground mt-1 line-clamp-2 text-xs">
 							{action.desc}
 						</p>
 					</div>
 					<div
-						class="gap-1 text-xs font-medium mt-auto flex items-center text-primary opacity-0 transition-opacity group-hover:opacity-100"
+						class="mt-auto flex items-center gap-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100"
 					>
 						Get started <ArrowRight class="h-3.5 w-3.5" />
 					</div>
@@ -151,7 +144,7 @@
 
 		<!-- Footer -->
 		<div
-			class="text-muted-foreground mt-6 pt-4 text-xs flex items-center justify-between border-t border-border"
+			class="text-muted-foreground mt-6 flex items-center justify-between border-t border-border pt-4 text-xs"
 		>
 			<span>You can access all tools anytime from the sidebar.</span>
 			<button

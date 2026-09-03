@@ -2,9 +2,11 @@ import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
+import { handleServerError } from '$lib/server/apiError';
 
 // DELETE /api/courses/[id]
-export const DELETE: RequestHandler = async ({ params, request }) => {
+export const DELETE: RequestHandler = async (event) => {
+	const { params, request } = event;
 	try {
 		const user = await verifySessionUser(request);
 		const { id: courseId } = params;
@@ -57,14 +59,10 @@ export const DELETE: RequestHandler = async ({ params, request }) => {
 
 		return new Response(null, { status: 204 });
 	} catch (err) {
-		console.error('Delete course API error:', err);
 		const message = err instanceof Error ? err.message : '';
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
-		return json(
-			{ error: { code: 'SERVER_ERROR', message: message || 'Internal Server Error' } },
-			{ status: 500 }
-		);
+		return handleServerError(err, event);
 	}
 };

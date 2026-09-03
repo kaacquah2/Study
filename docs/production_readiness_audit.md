@@ -65,7 +65,7 @@ graph TD
 
 - **Adaptive Next-Action Engine**: [`src/lib/server/knowledgeMap/recommendNext.ts`](../src/lib/server/knowledgeMap/recommendNext.ts) evaluating FSRS memory retention, weak area thresholds, and prerequisite readiness.
 - **Heuristic Mastery Scoring**: [`src/lib/server/knowledgeMap/masteryCalculator.ts`](../src/lib/server/knowledgeMap/masteryCalculator.ts) combining quiz accuracy (45%), memory retention (35%), recency (15%), and lesson completion (5%).
-- **Spaced Repetition Schedulers**: Free Spaced Repetition Scheduler FSRS-4.5 ([`src/lib/server/fsrs.ts`](../src/lib/server/fsrs.ts)) and SuperMemo 2 ([`src/lib/server/sm2.ts`](../src/lib/server/sm2.ts)).
+- **Spaced Repetition Scheduler**: Free Spaced Repetition Scheduler FSRS-4.5 ([`src/lib/server/fsrs.ts`](../src/lib/server/fsrs.ts)) and offline replay sync ([`src/lib/server/offlineSync.ts`](../src/lib/server/offlineSync.ts)).
 - **Safety & Guardrails**: Domain classifier ([`domainClassifier.ts`](../src/lib/server/ai/domainClassifier.ts)), memorization guard ([`memorizationGuard.ts`](../src/lib/server/ai/memorizationGuard.ts)), and content moderation pipeline ([`moderation.ts`](../src/lib/server/ai/moderation.ts)).
 
 ### 🟢 Python ML Backend (`ml_backend/`)
@@ -80,7 +80,7 @@ graph TD
 The repository includes a comprehensive automated test suite designed to validate core functionality across layers when dependencies are provisioned:
 
 - **Static Analysis**: Configured via `npm run check` (`svelte-check`) targeting 0 errors across Svelte and TypeScript files.
-- **Unit & Integration Test Suite**: 28 test files containing unit and integration assertions (including [`auth.test.ts`](../src/lib/server/auth.test.ts), [`courses.test.ts`](../src/routes/api/courses/courses.test.ts), [`microservices.test.ts`](../src/routes/api/microservices.test.ts), [`rules.test.ts`](../src/lib/firebase/rules.test.ts), [`recommendNext.test.ts`](../src/lib/server/knowledgeMap/recommendNext.test.ts), [`masteryCalculator.test.ts`](../src/lib/server/knowledgeMap/masteryCalculator.test.ts), [`fsrs.test.ts`](../src/lib/server/fsrs.test.ts), [`sm2.test.ts`](../src/lib/server/sm2.test.ts), [`provider.test.ts`](../src/lib/server/ai/provider.test.ts), etc.). Run via `npm run test:unit -- --run`.
+- **Unit & Integration Test Suite**: 28 test files containing unit and integration assertions (including [`auth.test.ts`](../src/lib/server/auth.test.ts), [`courses.test.ts`](../src/routes/api/courses/courses.test.ts), [`microservices.test.ts`](../src/routes/api/microservices.test.ts), [`rules.test.ts`](../src/lib/firebase/rules.test.ts), [`recommendNext.test.ts`](../src/lib/server/knowledgeMap/recommendNext.test.ts), [`masteryCalculator.test.ts`](../src/lib/server/knowledgeMap/masteryCalculator.test.ts), [`fsrs.test.ts`](../src/lib/server/fsrs.test.ts), [`offlineSync.test.ts`](../src/lib/server/offlineSync.test.ts), [`provider.test.ts`](../src/lib/server/ai/provider.test.ts), etc.). Run via `npm run test:unit -- --run`.
 - **Full Pipeline Integration Suite**: End-to-end server API lifecycle tests in [`pipeline.integration.test.ts`](../src/routes/api/pipeline.integration.test.ts) verifying unmocked Zod validation, moderation safety gates, Firestore course drafting, module generation, and streak calculations. Run via `npm run test:pipeline`.
 - **Python ML Backend Tests**: Pytest suite in `ml_backend/` testing endpoints, schemas, and fallback logic. Run via `pytest ml_backend/`.
 - **End-to-End Tests**: Dual Playwright suite configured in [`playwright.config.ts`](../playwright.config.ts):

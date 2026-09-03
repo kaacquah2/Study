@@ -1,16 +1,23 @@
 {
 	"evaluation_name": "Summarization Quality & Readability Evaluation",
+	"timestamp_utc": "2026-09-03T00:50:52.048467+00:00",
+	"model_id": "google/flan-t5-base",
 	"sample_size": 8,
+	"successful_samples": 8,
+	"failed_samples": 0,
+	"fallback_to_gold_standard": false,
 	"metrics": {
-		"mean_rouge_1": 37.89,
-		"std_rouge_1": 15.05,
-		"mean_rouge_2": 12.96,
-		"std_rouge_2": 11.66,
-		"mean_rouge_l": 31.68,
-		"std_rouge_l": 12.89,
-		"mean_flesch_reading_ease": 35.7,
-		"std_flesch_reading_ease": 17.18,
-		"mean_compression_ratio_percent": 57.25,
-		"std_compression_ratio_percent": 7.13
+		"mean_rouge_1": 26.44,
+		"std_rouge_1": 14.64,
+		"mean_rouge_2": 5.57,
+		"std_rouge_2": 6.71,
+		"mean_rouge_l": 20.87,
+		"std_rouge_l": 10.26,
+		"mean_flesch_reading_ease": 47.22,
+		"std_flesch_reading_ease": 25.98,
+		"mean_compression_ratio_percent": 75.15,
+		"std_compression_ratio_percent": 7.57,
+		"mean_latency_ms": 3106.99,
+		"std_latency_ms": 2349.54
 	}
 }

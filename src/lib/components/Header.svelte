@@ -29,7 +29,7 @@
 		class="flex items-center gap-2.5 rounded-md text-text transition-opacity select-none hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 	>
 		<div
-			class="h-8 w-8 flex items-center justify-center rounded-lg text-white"
+			class="flex h-8 w-8 items-center justify-center rounded-lg text-white"
 			style="background: var(--primary); box-shadow: 0 2px 8px var(--primary-glow);"
 		>
 			<svg
@@ -51,12 +51,12 @@
 	</a>
 
 	<!-- Middle: Theme Switcher -->
-	<div class="md:block hidden">
+	<div class="hidden md:block">
 		<ThemeSwitcher />
 	</div>
 
 	<!-- Right: Streak & Avatar/Auth controls -->
-	<div class="gap-3 flex items-center">
+	<div class="flex items-center gap-3">
 		{#if authStore.user}
 			<StreakChip />
 
@@ -69,7 +69,7 @@
 				/>
 			{:else}
 				<div
-					class="h-8 w-8 text-xs font-bold flex items-center justify-center rounded-full border border-primary/10 bg-primary-soft text-text shadow-sm select-none"
+					class="flex h-8 w-8 items-center justify-center rounded-full border border-primary/10 bg-primary-soft text-xs font-bold text-text shadow-sm select-none"
 				>
 					{initials}
 				</div>
@@ -77,13 +77,13 @@
 
 			<button
 				type="button"
-				class="ml-1 p-2.5 text-xs font-semibold cursor-pointer rounded-md text-text-muted transition-all duration-180 hover:bg-danger-soft hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-danger active:scale-95"
+				class="ml-1 cursor-pointer rounded-md p-2.5 text-xs font-semibold text-text-muted transition-all duration-180 hover:bg-danger-soft hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-danger active:scale-95"
 				onclick={() => authStore.logout()}
 			>
 				Sign out
 			</button>
 		{:else}
-			<div class="md:hidden block">
+			<div class="block md:hidden">
 				<ThemeSwitcher />
 			</div>
 		{/if}

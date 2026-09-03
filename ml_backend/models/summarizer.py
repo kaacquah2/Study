@@ -26,11 +26,14 @@ def get_model_id() -> str:
 
 def load_summarizer() -> Pipeline:
     """Load and cache the summarization pipeline."""
-    return get_pipeline("summarization", get_model_id())
+    try:
+        return get_pipeline("text2text-generation", get_model_id())
+    except Exception:
+        return get_pipeline("summarization", get_model_id())
 
 
 def is_loaded() -> bool:
-    return is_pipeline_loaded("summarization", get_model_id())
+    return is_pipeline_loaded("text2text-generation", get_model_id()) or is_pipeline_loaded("summarization", get_model_id())
 
 
 def summarize(text: str, max_length: int = 150, min_length: int = 40) -> str:
@@ -51,14 +54,29 @@ def summarize(text: str, max_length: int = 150, min_length: int = 40) -> str:
 
     prompt = f"Summarize the following study material concisely:\n\n{text}"
 
+    gen_kwargs = {
+        "max_new_tokens": max_length,
+        "do_sample": False,
+        "truncation": True,
+    }
+    if getattr(model, "task", None) == "text-generation":
+        gen_kwargs["return_full_text"] = False
+
     with model_lock, torch.inference_mode():
         result = model(
             prompt,
-            max_length=max_length,
-            min_length=min_length,
-            do_sample=False,
-            truncation=True,
+            **gen_kwargs
         )
 
-    summary: str = result[0]["summary_text"]
+    res0 = result[0]
+    summary: str = res0.get("generated_text") or res0.get("summary_text") or ""
+    
+    # Clean prompt echoing if returned by pipeline
+    if summary.startswith(prompt):
+        summary = summary[len(prompt):]
+    elif prompt.strip() in summary:
+        summary = summary.replace(prompt.strip(), "")
+    elif text.strip() in summary and len(summary.strip()) > len(text.strip()):
+        summary = summary.replace(text.strip(), "")
+
     return summary.strip()

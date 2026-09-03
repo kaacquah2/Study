@@ -362,7 +362,7 @@ describe('Production Pipeline Integration Suite (Full Lifecycle)', () => {
 		const completeReq = new Request(`http://localhost/api/modules/${mod1Id}/complete`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ courseId, score: 100 })
+			body: JSON.stringify({ courseId })
 		});
 
 		const completeRes = await completeModuleHandler({
@@ -378,6 +378,42 @@ describe('Production Pipeline Integration Suite (Full Lifecycle)', () => {
 		const updatedUser = mockFirestoreStore.get(`users/${testUser.uid}`);
 		const streakCurrent = (updatedUser?.streak as { current?: number })?.current;
 		expect(streakCurrent).toBe(1);
+
+		// 9. Complete Quiz Module with Server-Side Graded Answers
+		mockFirestoreStore.set(`courses/${courseId}/modules/${mod2Id}`, {
+			id: mod2Id,
+			courseId,
+			userId: testUser.uid,
+			order: 2,
+			type: 'quiz',
+			title: 'Paging & TLB Mastery Quiz',
+			status: 'ready',
+			questions: [
+				{
+					prompt: 'What is TLB?',
+					options: ['Buffer', 'CPU', 'Disk'],
+					correctIndex: 0,
+					explanation: 'TLB is a cache.'
+				}
+			]
+		});
+
+		const completeQuizReq = new Request(`http://localhost/api/modules/${mod2Id}/complete`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ courseId, answers: [0] })
+		});
+
+		const completeQuizRes = await completeModuleHandler({
+			request: completeQuizReq,
+			params: { id: mod2Id }
+		} as unknown as Parameters<typeof completeModuleHandler>[0]);
+		expect(completeQuizRes.status).toBe(200);
+		const completeQuizData = await completeQuizRes.json();
+		expect(completeQuizData.quizResult).toBeDefined();
+		expect(completeQuizData.quizResult.score).toBe(1);
+		expect(completeQuizData.quizResult.total).toBe(1);
+		expect(completeQuizData.quizResult.accuracy).toBe(100);
 	});
 
 	it('rejects unsafe prompt input at moderation gate before invoking AI generation', async () => {

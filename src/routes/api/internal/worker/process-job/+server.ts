@@ -2,6 +2,7 @@ import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { processQueuedJob, getGenerationJobStatus } from '$lib/server/ai/generationQueue';
 import { getWorkerSecret } from '$lib/server/ai/taskDispatcher';
+import crypto from 'crypto';
 
 // POST /api/internal/worker/process-job
 export const POST: RequestHandler = async ({ request }) => {
@@ -12,7 +13,20 @@ export const POST: RequestHandler = async ({ request }) => {
 			request.headers.get('x-worker-secret') ||
 			request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
 
-		if (!providedSecret || providedSecret !== expectedSecret) {
+		if (!expectedSecret || !providedSecret) {
+			return json(
+				{ error: { code: 'UNAUTHORIZED', message: 'Invalid or missing worker secret' } },
+				{ status: 401 }
+			);
+		}
+
+		const providedBuf = Buffer.from(providedSecret);
+		const expectedBuf = Buffer.from(expectedSecret);
+
+		if (
+			providedBuf.length !== expectedBuf.length ||
+			!crypto.timingSafeEqual(providedBuf, expectedBuf)
+		) {
 			return json(
 				{ error: { code: 'UNAUTHORIZED', message: 'Invalid or missing worker secret' } },
 				{ status: 401 }

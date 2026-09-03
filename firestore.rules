@@ -22,13 +22,18 @@ service cloud.firestore {
       allow write: if false;                  // Admin SDK only
       
       match /modules/{moduleId} {
-        allow read: if isOwner(get(/databases/$(db)/documents/courses/$(courseId)).data.ownerUid);
+        allow read: if isOwner(resource.data.ownerUid);
         allow write: if false;
       }
     }
 
     match /sharedCourses/{token} {
-      allow read: if signedIn() && (resource == null || !('revoked' in resource.data) || resource.data.revoked == false);  // anyone signed in with valid active link
+      // Capability-based access: any signed-in user with the exact secret token can get the active share
+      allow get: if signedIn() && resource.data.revoked == false;
+      // Catalogue enumeration: only explicitly published community courses can be queried/listed
+      allow list: if signedIn()
+                  && resource.data.isPublic == true
+                  && resource.data.revoked == false;
       allow write: if false;                                 // Admin SDK only
     }
 
@@ -39,10 +44,11 @@ service cloud.firestore {
 
     match /flashcards/{cardId} {
       allow read, delete: if signedIn() && resource.data.uid == request.auth.uid;
-      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow create: if false; // Server-authoritative via /api/spaced-repetition & /api/documents/flashcards
       allow update: if signedIn() && resource.data.uid == request.auth.uid
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.uid == resource.data.uid;
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['question', 'answer', 'front', 'back', 'tags', 'updatedAt']);
     }
 
     match /weakTopics/{uid} {
@@ -87,12 +93,11 @@ service cloud.firestore {
 
     // Peer questions lifecycle security:
     // - Anyone authenticated can read approved questions or their own submissions.
-    // - Authenticated users can create questions with status 'pending' where submittedBy matches auth.uid.
-    // - Direct client updates and deletes are disallowed (Admin SDK only).
+    // - Creation is routed exclusively through /api/courses/peer-questions (Admin SDK) with moderation and rate limiting.
+    // - Direct client writes (create, update, delete) are disallowed.
     match /peerQuestions/{questionId} {
       allow read: if signedIn() && (resource.data.status == 'approved' || resource.data.submittedBy == request.auth.uid);
-      allow create: if signedIn() && request.resource.data.submittedBy == request.auth.uid && request.resource.data.status == 'pending';
-      allow update, delete: if false;
+      allow write: if false;
     }
   }
 }

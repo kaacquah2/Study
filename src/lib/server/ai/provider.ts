@@ -10,6 +10,7 @@
  */
 
 import { z } from 'zod';
+import { env } from '$env/dynamic/private';
 import { callML, pingMLBackend } from './client';
 import {
 	generateOutlineViaGemini,
@@ -184,14 +185,76 @@ async function getCachedPing() {
 	return result;
 }
 
-async function executeAI<T>(
-	mlFn: () => Promise<T>,
-	geminiFn: () => Promise<T>,
-	ollamaFn?: () => Promise<T>,
+/**
+ * Netlify Functions synchronous execution ceiling is ~26 seconds.
+ * We enforce a conservative default end-to-end deadline budget (24s)
+ * so that fallback degradation completes before the serverless host drops the request.
+ */
+export const NETLIFY_TIMEOUT_CEILING_MS = 26_000;
+export const DEFAULT_AI_DEADLINE_MS = 24_000;
+
+/**
+ * Minimum budget thresholds (ms) required for a tier to even attempt execution.
+ * If the remaining budget before a tier is below this threshold, that tier is skipped
+ * to preserve remaining time for fallback tiers or return before the platform ceiling.
+ */
+export const MIN_TIER_BUDGET_MS = {
+	ml_backend: 4_000,
+	gemini: 2_000,
+	ollama: 4_000
+} as const;
+
+export function getAiDeadlineMs(customDeadlineMs?: number): number {
+	if (customDeadlineMs !== undefined && customDeadlineMs > 0) {
+		return Math.min(customDeadlineMs, NETLIFY_TIMEOUT_CEILING_MS);
+	}
+	const envDeadline = parseInt(
+		process.env.AI_DEADLINE_MS ||
+			(typeof env !== 'undefined' && env?.AI_DEADLINE_MS) ||
+			String(DEFAULT_AI_DEADLINE_MS),
+		10
+	);
+	return isNaN(envDeadline) || envDeadline <= 0
+		? DEFAULT_AI_DEADLINE_MS
+		: Math.min(envDeadline, NETLIFY_TIMEOUT_CEILING_MS);
+}
+
+/**
+ * Executes a tier promise bounded by its allotted budget timeout.
+ */
+async function runWithBudgetTimeout<T>(
+	tierName: string,
+	fn: () => Promise<T>,
+	budgetMs: number
+): Promise<T> {
+	let timer: NodeJS.Timeout | undefined;
+	const timeoutPromise = new Promise<never>((_, reject) => {
+		timer = setTimeout(() => {
+			reject(
+				new Error(`[executeAI] Tier ${tierName} timed out: budget of ${budgetMs}ms exhausted`)
+			);
+		}, budgetMs);
+	});
+
+	try {
+		return await Promise.race([fn(), timeoutPromise]);
+	} finally {
+		if (timer) clearTimeout(timer);
+	}
+}
+
+export async function executeAI<T>(
+	mlFn: (budgetMs: number) => Promise<T>,
+	geminiFn: (budgetMs: number) => Promise<T>,
+	ollamaFn?: ((budgetMs: number) => Promise<T>) | null,
 	taskType: 'reasoning' | 'utility' = 'reasoning',
-	topicHint: string = ''
+	topicHint: string = '',
+	deadlineMs?: number
 ): Promise<AIResult<T>> {
 	const enableConfidenceRouting = process.env.ENABLE_CONFIDENCE_ROUTING !== 'false';
+	const totalDeadline = getAiDeadlineMs(deadlineMs);
+	const startTime = Date.now();
+	const getRemainingBudget = () => Math.max(0, totalDeadline - (Date.now() - startTime));
 
 	if (taskType === 'reasoning') {
 		const classification = classifyTopicDomain(topicHint);
@@ -204,88 +267,154 @@ async function executeAI<T>(
 
 		if (enableConfidenceRouting && inDomain) {
 			// ── IN-DOMAIN CS ROUTING: T1 ml_backend (Local RAG / Domain-Adapted), T2 Gemini, T3 Ollama ──
-			const ping = await getCachedPing();
-			if (ping.available && !ping.busy) {
-				try {
-					const result = await mlFn();
-					await recordProviderUsage('ml_backend');
-					return { result, provider: 'ml_backend', domainConfidenceScore: confidence };
-				} catch (mlErr) {
-					console.warn(
-						'[executeAI] In-domain Tier 1 ml_backend failed, fallback to Gemini:',
-						mlErr
-					);
-				}
-			}
-
-			// T2 Gemini Flash
-			const quotaAvailable = await isGeminiQuotaAvailable();
-			if (quotaAvailable) {
-				try {
-					const result = await geminiFn();
-					await recordProviderUsage('gemini');
-					return { result, provider: 'gemini', domainConfidenceScore: confidence };
-				} catch (geminiErr) {
-					console.warn(
-						'[executeAI] In-domain Tier 2 Gemini failed, fallback to Ollama:',
-						geminiErr
-					);
-				}
-			}
-
-			// T3 Ollama
-			if (ollamaFn) {
-				const ollamaStatus = await pingOllama();
-				if (ollamaStatus.available) {
+			// T1 ml_backend
+			let remaining = getRemainingBudget();
+			if (remaining < MIN_TIER_BUDGET_MS.ml_backend) {
+				console.warn(
+					`[executeAI] In-domain Tier 1 ml_backend skipped: remaining budget (${remaining}ms) is below minimum threshold (${MIN_TIER_BUDGET_MS.ml_backend}ms)`
+				);
+			} else {
+				const ping = await getCachedPing();
+				if (ping.available && !ping.busy) {
 					try {
-						const result = await ollamaFn();
-						await recordProviderUsage('ollama');
-						return { result, provider: 'ollama', domainConfidenceScore: confidence };
-					} catch (ollamaErr) {
-						console.warn('[executeAI] In-domain Tier 3 Ollama failed:', ollamaErr);
-					}
-				}
-			}
-		} else {
-			// ── OUT-OF-DOMAIN ROUTING: T1 Gemini Flash, T2 Ollama, T3 ml_backend ──
-			const quotaAvailable = await isGeminiQuotaAvailable();
-			if (quotaAvailable) {
-				try {
-					const result = await geminiFn();
-					await recordProviderUsage('gemini');
-					return { result, provider: 'gemini', domainConfidenceScore: confidence };
-				} catch (geminiErr) {
-					console.warn(
-						'[executeAI] Out-of-domain Tier 1 Gemini failed, fallback to Ollama:',
-						geminiErr
-					);
-				}
-			}
-
-			if (ollamaFn) {
-				const ollamaStatus = await pingOllama();
-				if (ollamaStatus.available) {
-					try {
-						const result = await ollamaFn();
-						await recordProviderUsage('ollama');
-						return { result, provider: 'ollama', domainConfidenceScore: confidence };
-					} catch (ollamaErr) {
+						// Reserve at least Gemini's minimum budget so T1 failure does not starve fallback
+						remaining = getRemainingBudget();
+						const t1Budget = Math.min(
+							remaining,
+							Math.max(MIN_TIER_BUDGET_MS.ml_backend, remaining - MIN_TIER_BUDGET_MS.gemini),
+							15_000
+						);
+						const result = await runWithBudgetTimeout('ml_backend', () => mlFn(t1Budget), t1Budget);
+						await recordProviderUsage('ml_backend');
+						return { result, provider: 'ml_backend', domainConfidenceScore: confidence };
+					} catch (mlErr) {
 						console.warn(
-							'[executeAI] Out-of-domain Tier 2 Ollama failed, fallback to ml_backend:',
-							ollamaErr
+							'[executeAI] In-domain Tier 1 ml_backend failed, fallback to Gemini:',
+							mlErr
 						);
 					}
 				}
 			}
 
-			const ping = await getCachedPing();
-			if (ping.available && !ping.busy) {
-				try {
-					const result = await mlFn();
-					await recordProviderUsage('ml_backend');
-					return { result, provider: 'ml_backend', domainConfidenceScore: confidence };
-				} catch (mlErr) {
-					console.warn('[executeAI] Out-of-domain Tier 3 ml_backend failed:', mlErr);
+			// T2 Gemini Flash
+			remaining = getRemainingBudget();
+			if (remaining < MIN_TIER_BUDGET_MS.gemini) {
+				console.warn(
+					`[executeAI] In-domain Tier 2 Gemini skipped: remaining budget (${remaining}ms) is below minimum threshold (${MIN_TIER_BUDGET_MS.gemini}ms)`
+				);
+			} else {
+				const quotaAvailable = await isGeminiQuotaAvailable();
+				if (quotaAvailable) {
+					try {
+						const t2Budget = Math.min(remaining, 15_000);
+						const result = await runWithBudgetTimeout('gemini', () => geminiFn(t2Budget), t2Budget);
+						await recordProviderUsage('gemini');
+						return { result, provider: 'gemini', domainConfidenceScore: confidence };
+					} catch (geminiErr) {
+						console.warn(
+							'[executeAI] In-domain Tier 2 Gemini failed, fallback to Ollama:',
+							geminiErr
+						);
+					}
+				}
+			}
+
+			// T3 Ollama
+			if (ollamaFn) {
+				remaining = getRemainingBudget();
+				if (remaining < MIN_TIER_BUDGET_MS.ollama) {
+					console.warn(
+						`[executeAI] In-domain Tier 3 Ollama skipped: remaining budget (${remaining}ms) is below minimum threshold (${MIN_TIER_BUDGET_MS.ollama}ms)`
+					);
+				} else {
+					const ollamaStatus = await pingOllama();
+					if (ollamaStatus.available) {
+						try {
+							const t3Budget = Math.min(remaining, 15_000);
+							const result = await runWithBudgetTimeout(
+								'ollama',
+								() => ollamaFn(t3Budget),
+								t3Budget
+							);
+							await recordProviderUsage('ollama');
+							return { result, provider: 'ollama', domainConfidenceScore: confidence };
+						} catch (ollamaErr) {
+							console.warn('[executeAI] In-domain Tier 3 Ollama failed:', ollamaErr);
+						}
+					}
+				}
+			}
+		} else {
+			// ── OUT-OF-DOMAIN ROUTING: T1 Gemini Flash, T2 Ollama, T3 ml_backend ──
+			// T1 Gemini Flash
+			let remaining = getRemainingBudget();
+			if (remaining < MIN_TIER_BUDGET_MS.gemini) {
+				console.warn(
+					`[executeAI] Out-of-domain Tier 1 Gemini skipped: remaining budget (${remaining}ms) is below minimum threshold (${MIN_TIER_BUDGET_MS.gemini}ms)`
+				);
+			} else {
+				const quotaAvailable = await isGeminiQuotaAvailable();
+				if (quotaAvailable) {
+					try {
+						const t1Budget = Math.min(remaining, 15_000);
+						const result = await runWithBudgetTimeout('gemini', () => geminiFn(t1Budget), t1Budget);
+						await recordProviderUsage('gemini');
+						return { result, provider: 'gemini', domainConfidenceScore: confidence };
+					} catch (geminiErr) {
+						console.warn(
+							'[executeAI] Out-of-domain Tier 1 Gemini failed, fallback to Ollama:',
+							geminiErr
+						);
+					}
+				}
+			}
+
+			// T2 Ollama
+			if (ollamaFn) {
+				remaining = getRemainingBudget();
+				if (remaining < MIN_TIER_BUDGET_MS.ollama) {
+					console.warn(
+						`[executeAI] Out-of-domain Tier 2 Ollama skipped: remaining budget (${remaining}ms) is below minimum threshold (${MIN_TIER_BUDGET_MS.ollama}ms)`
+					);
+				} else {
+					const ollamaStatus = await pingOllama();
+					if (ollamaStatus.available) {
+						try {
+							const t2Budget = Math.min(remaining, 15_000);
+							const result = await runWithBudgetTimeout(
+								'ollama',
+								() => ollamaFn(t2Budget),
+								t2Budget
+							);
+							await recordProviderUsage('ollama');
+							return { result, provider: 'ollama', domainConfidenceScore: confidence };
+						} catch (ollamaErr) {
+							console.warn(
+								'[executeAI] Out-of-domain Tier 2 Ollama failed, fallback to ml_backend:',
+								ollamaErr
+							);
+						}
+					}
+				}
+			}
+
+			// T3 ml_backend
+			remaining = getRemainingBudget();
+			if (remaining < MIN_TIER_BUDGET_MS.ml_backend) {
+				console.warn(
+					`[executeAI] Out-of-domain Tier 3 ml_backend skipped: remaining budget (${remaining}ms) is below minimum threshold (${MIN_TIER_BUDGET_MS.ml_backend}ms)`
+				);
+			} else {
+				const ping = await getCachedPing();
+				if (ping.available && !ping.busy) {
+					try {
+						const t3Budget = Math.min(remaining, 15_000);
+						const result = await runWithBudgetTimeout('ml_backend', () => mlFn(t3Budget), t3Budget);
+						await recordProviderUsage('ml_backend');
+						return { result, provider: 'ml_backend', domainConfidenceScore: confidence };
+					} catch (mlErr) {
+						console.warn('[executeAI] Out-of-domain Tier 3 ml_backend failed:', mlErr);
+					}
 				}
 			}
 		}
@@ -293,41 +422,70 @@ async function executeAI<T>(
 		throw new Error('All AI providers (gemini, ollama, ml_backend) are currently unavailable.');
 	} else {
 		// Tier 1 for utility tasks (summarize, paraphrase): Self-hosted ML Backend
-		const ping = await getCachedPing();
-		if (ping.available && !ping.busy) {
-			try {
-				const result = await mlFn();
-				await recordProviderUsage('ml_backend');
-				return { result, provider: 'ml_backend' };
-			} catch (mlErr) {
-				console.warn('[executeAI] Tier 1 ml_backend utility failed, attempting fallback:', mlErr);
-			}
-		}
-
-		if (ollamaFn) {
-			const ollamaStatus = await pingOllama();
-			if (ollamaStatus.available) {
+		let remaining = getRemainingBudget();
+		if (remaining < MIN_TIER_BUDGET_MS.ml_backend) {
+			console.warn(
+				`[executeAI] Tier 1 ml_backend utility skipped: remaining budget (${remaining}ms) is below minimum threshold (${MIN_TIER_BUDGET_MS.ml_backend}ms)`
+			);
+		} else {
+			const ping = await getCachedPing();
+			if (ping.available && !ping.busy) {
 				try {
-					const result = await ollamaFn();
-					await recordProviderUsage('ollama');
-					return { result, provider: 'ollama' };
-				} catch (ollamaErr) {
-					console.warn(
-						'[executeAI] Tier 2 Ollama utility failed, attempting Gemini fallback:',
-						ollamaErr
+					remaining = getRemainingBudget();
+					const t1Budget = Math.min(
+						remaining,
+						Math.max(MIN_TIER_BUDGET_MS.ml_backend, remaining - MIN_TIER_BUDGET_MS.gemini),
+						15_000
 					);
+					const result = await runWithBudgetTimeout('ml_backend', () => mlFn(t1Budget), t1Budget);
+					await recordProviderUsage('ml_backend');
+					return { result, provider: 'ml_backend' };
+				} catch (mlErr) {
+					console.warn('[executeAI] Tier 1 ml_backend utility failed, attempting fallback:', mlErr);
 				}
 			}
 		}
 
-		const quotaAvailable = await isGeminiQuotaAvailable();
-		if (quotaAvailable) {
-			try {
-				const result = await geminiFn();
-				await recordProviderUsage('gemini');
-				return { result, provider: 'gemini' };
-			} catch (geminiErr) {
-				console.warn('[executeAI] Tier 3 Gemini utility failed:', geminiErr);
+		if (ollamaFn) {
+			remaining = getRemainingBudget();
+			if (remaining < MIN_TIER_BUDGET_MS.ollama) {
+				console.warn(
+					`[executeAI] Tier 2 Ollama utility skipped: remaining budget (${remaining}ms) is below minimum threshold (${MIN_TIER_BUDGET_MS.ollama}ms)`
+				);
+			} else {
+				const ollamaStatus = await pingOllama();
+				if (ollamaStatus.available) {
+					try {
+						const t2Budget = Math.min(remaining, 15_000);
+						const result = await runWithBudgetTimeout('ollama', () => ollamaFn(t2Budget), t2Budget);
+						await recordProviderUsage('ollama');
+						return { result, provider: 'ollama' };
+					} catch (ollamaErr) {
+						console.warn(
+							'[executeAI] Tier 2 Ollama utility failed, attempting Gemini fallback:',
+							ollamaErr
+						);
+					}
+				}
+			}
+		}
+
+		remaining = getRemainingBudget();
+		if (remaining < MIN_TIER_BUDGET_MS.gemini) {
+			console.warn(
+				`[executeAI] Tier 3 Gemini utility skipped: remaining budget (${remaining}ms) is below minimum threshold (${MIN_TIER_BUDGET_MS.gemini}ms)`
+			);
+		} else {
+			const quotaAvailable = await isGeminiQuotaAvailable();
+			if (quotaAvailable) {
+				try {
+					const t3Budget = Math.min(remaining, 15_000);
+					const result = await runWithBudgetTimeout('gemini', () => geminiFn(t3Budget), t3Budget);
+					await recordProviderUsage('gemini');
+					return { result, provider: 'gemini' };
+				} catch (geminiErr) {
+					console.warn('[executeAI] Tier 3 Gemini utility failed:', geminiErr);
+				}
 			}
 		}
 
@@ -342,7 +500,8 @@ export async function generateOutline(
 	moduleCount: number,
 	format: 'lessons_and_quizzes' | 'quizzes_only',
 	referenceText?: string,
-	userId?: string
+	userId?: string,
+	options?: { deadlineMs?: number }
 ): Promise<AIResult<CourseOutline>> {
 	const parseOutline = (raw: unknown): CourseOutline => {
 		const parsed = OutlineZodSchema.parse(raw);
@@ -361,7 +520,8 @@ export async function generateOutline(
 	};
 
 	return executeAI(
-		async () => {
+		async (budgetMs) => {
+			const timeout = Math.min(budgetMs, 15_000);
 			const response = await callML<unknown>(
 				'/outline',
 				{
@@ -370,21 +530,34 @@ export async function generateOutline(
 					format,
 					reference_text: referenceText ?? null
 				},
-				90_000,
+				timeout,
 				userId
 			);
 			return parseOutline(response);
 		},
-		async () => {
-			const response = await generateOutlineViaGemini(topic, moduleCount, format, referenceText);
+		async (budgetMs) => {
+			const response = await generateOutlineViaGemini(
+				topic,
+				moduleCount,
+				format,
+				referenceText,
+				budgetMs
+			);
 			return parseOutline(response);
 		},
-		async () => {
-			const response = await generateOutlineViaOllama(topic, moduleCount, format, referenceText);
+		async (budgetMs) => {
+			const response = await generateOutlineViaOllama(
+				topic,
+				moduleCount,
+				format,
+				referenceText,
+				budgetMs
+			);
 			return parseOutline(response);
 		},
 		'reasoning',
-		topic
+		topic,
+		options?.deadlineMs
 	);
 }
 
@@ -396,7 +569,8 @@ export async function generateLesson(
 	moduleTitle: string,
 	moduleObjective: string,
 	keyPoints: string[],
-	userId?: string
+	userId?: string,
+	options?: { deadlineMs?: number }
 ): Promise<AIResult<LessonContent>> {
 	const parseLesson = (raw: unknown): LessonContent => {
 		const parsed = LessonZodSchema.parse(raw);
@@ -419,7 +593,8 @@ export async function generateLesson(
 			: [safeModuleTitle];
 
 	return executeAI(
-		async () => {
+		async (budgetMs) => {
+			const timeout = Math.min(budgetMs, 15_000);
 			const response = await callML<unknown>(
 				'/lesson',
 				{
@@ -432,32 +607,35 @@ export async function generateLesson(
 						type: m.type
 					}))
 				},
-				120_000,
+				timeout,
 				userId
 			);
 			return parseLesson(response);
 		},
-		async () => {
+		async (budgetMs) => {
 			const response = await generateLessonViaGemini(
 				safeCourseTitle,
 				fullOutline,
 				safeModuleTitle,
 				safeObjective,
-				safeKeyPoints
+				safeKeyPoints,
+				budgetMs
 			);
 			return parseLesson(response);
 		},
-		async () => {
+		async (budgetMs) => {
 			const response = await generateLessonViaOllama(
 				safeCourseTitle,
 				safeModuleTitle,
 				safeObjective,
-				safeKeyPoints
+				safeKeyPoints,
+				budgetMs
 			);
 			return parseLesson(response);
 		},
 		'reasoning',
-		`${safeCourseTitle} ${safeModuleTitle}`
+		`${safeCourseTitle} ${safeModuleTitle}`,
+		options?.deadlineMs
 	);
 }
 
@@ -467,7 +645,8 @@ export async function generateLessonV2(
 	moduleTitle: string,
 	moduleObjective: string,
 	keyPoints: string[],
-	userId?: string
+	userId?: string,
+	options?: { deadlineMs?: number }
 ): Promise<AIResult<LessonContentV2>> {
 	const safeCourseTitle = (courseTitle || 'Untitled Course').slice(0, 500);
 	const safeModuleTitle = (moduleTitle || 'Overview').slice(0, 500);
@@ -477,13 +656,15 @@ export async function generateLessonV2(
 			? keyPoints.filter((k) => k.trim())
 			: [safeModuleTitle];
 
+	const deadline = getAiDeadlineMs(options?.deadlineMs);
 	try {
 		const res = await generateLessonWithBlocksViaGemini(
 			safeCourseTitle,
 			fullOutline,
 			safeModuleTitle,
 			safeObjective,
-			safeKeyPoints
+			safeKeyPoints,
+			Math.min(deadline, 15_000)
 		);
 
 		const rawPages =
@@ -521,7 +702,8 @@ export async function generateLessonV2(
 			moduleTitle,
 			moduleObjective,
 			keyPoints,
-			userId
+			userId,
+			options
 		);
 
 		const pages: LessonPageV2[] = legacyRes.result.pages.map((p) => ({
@@ -546,7 +728,8 @@ export async function generateQuiz(
 	moduleTitle: string,
 	moduleObjective: string,
 	keyPoints: string[],
-	userId?: string
+	userId?: string,
+	options?: { deadlineMs?: number }
 ): Promise<AIResult<QuizContent>> {
 	const parseQuiz = (raw: unknown): QuizContent => {
 		const parsed = QuizZodSchema.parse(raw);
@@ -570,7 +753,8 @@ export async function generateQuiz(
 			: [safeModuleTitle];
 
 	return executeAI(
-		async () => {
+		async (budgetMs) => {
+			const timeout = Math.min(budgetMs, 15_000);
 			const response = await callML<unknown>(
 				'/quiz',
 				{
@@ -580,27 +764,34 @@ export async function generateQuiz(
 					key_points: safeKeyPoints,
 					lesson_body: null
 				},
-				120_000,
+				timeout,
 				userId
 			);
 			return parseQuiz(response);
 		},
-		async () => {
+		async (budgetMs) => {
 			const response = await generateQuizViaGemini(
 				courseTitle,
 				fullOutline,
 				moduleTitle,
 				moduleObjective,
-				safeKeyPoints
+				safeKeyPoints,
+				budgetMs
 			);
 			return parseQuiz(response);
 		},
-		async () => {
-			const response = await generateQuizViaOllama(moduleTitle, moduleObjective, safeKeyPoints);
+		async (budgetMs) => {
+			const response = await generateQuizViaOllama(
+				moduleTitle,
+				moduleObjective,
+				safeKeyPoints,
+				budgetMs
+			);
 			return parseQuiz(response);
 		},
 		'reasoning',
-		`${courseTitle} ${moduleTitle}`
+		`${courseTitle} ${moduleTitle}`,
+		options?.deadlineMs
 	);
 }
 
@@ -610,10 +801,12 @@ export async function summarize(
 	text: string,
 	maxLength = 150,
 	minLength = 40,
-	userId?: string
+	userId?: string,
+	options?: { deadlineMs?: number }
 ): Promise<AIResult<string>> {
 	return executeAI(
-		async () => {
+		async (budgetMs) => {
+			const timeout = Math.min(budgetMs, 15_000);
 			const response = await callML<{ summary: string }>(
 				'/summarize',
 				{
@@ -621,20 +814,22 @@ export async function summarize(
 					max_length: maxLength,
 					min_length: minLength
 				},
-				120_000,
+				timeout,
 				userId
 			);
 			return response.summary;
 		},
-		async () => {
-			const response = await summarizeViaGemini(text, maxLength, minLength);
+		async (budgetMs) => {
+			const response = await summarizeViaGemini(text, maxLength, minLength, budgetMs);
 			return response.summary;
 		},
-		async () => {
-			const response = await summarizeViaOllama(text);
+		async (budgetMs) => {
+			const response = await summarizeViaOllama(text, budgetMs);
 			return response.summary;
 		},
-		'utility'
+		'utility',
+		'',
+		options?.deadlineMs
 	);
 }
 
@@ -643,27 +838,31 @@ export async function summarize(
 export async function paraphrase(
 	text: string,
 	style: 'academic' | 'simple' | 'formal' = 'academic',
-	userId?: string
+	userId?: string,
+	options?: { deadlineMs?: number }
 ): Promise<AIResult<string>> {
 	return executeAI(
-		async () => {
+		async (budgetMs) => {
+			const timeout = Math.min(budgetMs, 15_000);
 			const response = await callML<{ paraphrase: string }>(
 				'/paraphrase',
 				{ text, style },
-				120_000,
+				timeout,
 				userId
 			);
 			return response.paraphrase;
 		},
-		async () => {
-			const response = await paraphraseViaGemini(text, style);
+		async (budgetMs) => {
+			const response = await paraphraseViaGemini(text, style, budgetMs);
 			return response.paraphrase;
 		},
-		async () => {
-			const response = await paraphraseViaOllama(text, style);
+		async (budgetMs) => {
+			const response = await paraphraseViaOllama(text, style, budgetMs);
 			return response.paraphrased;
 		},
-		'utility'
+		'utility',
+		'',
+		options?.deadlineMs
 	);
 }
 
@@ -672,17 +871,19 @@ export async function paraphrase(
 export async function chat(
 	messages: ChatMessage[],
 	courseContext?: string,
-	userId?: string
+	userId?: string,
+	options?: { deadlineMs?: number }
 ): Promise<AIResult<ChatResult>> {
 	return executeAI(
-		async () => {
+		async (budgetMs) => {
+			const timeout = Math.min(budgetMs, 15_000);
 			const response = await callML<{ reply: string; sources?: ChatSource[] }>(
 				'/chat',
 				{
 					messages,
 					course_context: courseContext ?? null
 				},
-				180_000,
+				timeout,
 				userId
 			);
 			return {
@@ -690,21 +891,23 @@ export async function chat(
 				sources: response.sources || []
 			};
 		},
-		async () => {
-			const response = await chatViaGemini(messages, courseContext);
+		async (budgetMs) => {
+			const response = await chatViaGemini(messages, courseContext, budgetMs);
 			return {
 				reply: response.reply,
 				sources: response.sources || []
 			};
 		},
-		async () => {
-			const response = await chatViaOllama(messages, courseContext);
+		async (budgetMs) => {
+			const response = await chatViaOllama(messages, courseContext, budgetMs);
 			return {
 				reply: response.reply,
 				sources: response.sources || []
 			};
 		},
-		'reasoning'
+		'reasoning',
+		'',
+		options?.deadlineMs
 	);
 }
 
@@ -736,17 +939,19 @@ export async function* streamChat(
 // ── Enhance Topic ─────────────────────────────────────────────────────────────
 
 export async function enhanceTopic(
-	topic: string
+	topic: string,
+	options?: { deadlineMs?: number }
 ): Promise<AIResult<{ enhancedTopic: string; suggestions: string[] }>> {
 	return executeAI(
-		async () => {
+		async (budgetMs) => {
+			const timeout = Math.min(budgetMs, 15_000);
 			const res = await callML<{ text?: string; reply?: string }>(
 				'/completion',
 				{
 					prompt: `Expand the following vague topic into a specific, high-quality, targeted course subject. Provide a JSON object with "enhancedTopic" (string) and "suggestions" (array of 3 alternative strings).\n\nRaw Topic: "${topic}"`,
 					system_instruction: 'You are an expert curriculum consultant. Return valid JSON only.'
 				},
-				20_000
+				timeout
 			);
 			const text = res.text || res.reply || '';
 			const parsed = JSON.parse(text);
@@ -755,11 +960,11 @@ export async function enhanceTopic(
 				suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : []
 			};
 		},
-		async () => {
-			const response = await enhanceTopicViaGemini(topic);
+		async (budgetMs) => {
+			const response = await enhanceTopicViaGemini(topic, budgetMs);
 			return response;
 		},
-		async () => {
+		async (budgetMs) => {
 			const res = await chatViaOllama(
 				[
 					{
@@ -767,7 +972,8 @@ export async function enhanceTopic(
 						content: `Expand the following vague topic into a specific, high-quality, targeted course subject. Return valid JSON with "enhancedTopic" (string) and "suggestions" (array of 3 alternative strings).\n\nRaw Topic: "${topic}"`
 					}
 				],
-				'You are an expert curriculum consultant. Return valid JSON only.'
+				'You are an expert curriculum consultant. Return valid JSON only.',
+				budgetMs
 			);
 			const parsed = JSON.parse(res.reply);
 			return {
@@ -775,7 +981,9 @@ export async function enhanceTopic(
 				suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : []
 			};
 		},
-		'reasoning'
+		'reasoning',
+		topic,
+		options?.deadlineMs
 	);
 }
 
@@ -785,40 +993,45 @@ export interface AICompletionOptions {
 	prompt: string;
 	systemInstruction?: string;
 	userId?: string;
+	deadlineMs?: number;
 }
 
 export async function generateAICompletion(
 	options: AICompletionOptions
 ): Promise<{ text: string; provider: AIProvider }> {
 	const result = await executeAI(
-		async () => {
+		async (budgetMs) => {
+			const timeout = Math.min(budgetMs, 15_000);
 			const res = await callML<{ text?: string; reply?: string }>(
 				'/completion',
 				{
 					prompt: options.prompt,
 					system_instruction: options.systemInstruction
 				},
-				120_000,
+				timeout,
 				options.userId
 			);
 			return res.text || res.reply || '';
 		},
-		async () => {
+		async (budgetMs) => {
 			const res = await chatViaGemini(
 				[{ role: 'user', content: options.prompt }],
-				options.systemInstruction
+				options.systemInstruction,
+				budgetMs
 			);
 			return res.reply;
 		},
-		async () => {
+		async (budgetMs) => {
 			const res = await chatViaOllama(
 				[{ role: 'user', content: options.prompt }],
-				options.systemInstruction
+				options.systemInstruction,
+				budgetMs
 			);
 			return res.reply;
 		},
 		'reasoning',
-		options.prompt
+		options.prompt,
+		options.deadlineMs
 	);
 
 	return {
@@ -831,7 +1044,8 @@ export async function generateAICompletion(
 
 export async function generateKnowledgeGraph(
 	courseTitle: string,
-	modules: Array<{ id: string; title: string; summary: string; keyPoints?: string[] }>
+	modules: Array<{ id: string; title: string; summary: string; keyPoints?: string[] }>,
+	options?: { deadlineMs?: number }
 ): Promise<
 	AIResult<{
 		nodes: Array<{ id: string; label: string; moduleId: string; importance: number }>;
@@ -852,7 +1066,8 @@ export async function generateKnowledgeGraph(
 	const kgPrompt = `Course: "${courseTitle}"\nModules:\n${modulesSummary}\n\nExtract 2-4 key concept nodes per module and establish prerequisite edges. Return JSON with "nodes" (id, label, moduleId, importance 1-10) and "edges" (source, target, relationship: prerequisite|related, confidence 0.0-1.0). Only edges with confidence >= 0.6.`;
 
 	return executeAI(
-		async () => {
+		async (budgetMs) => {
+			const timeout = Math.min(budgetMs, 15_000);
 			const res = await callML<{ text?: string; reply?: string }>(
 				'/completion',
 				{
@@ -860,23 +1075,25 @@ export async function generateKnowledgeGraph(
 					system_instruction:
 						'You are an expert educational cognitive architect. Return valid JSON only.'
 				},
-				60_000
+				timeout
 			);
 			const text = res.text || res.reply || '';
 			return JSON.parse(text);
 		},
-		async () => {
-			const result = await generateKnowledgeGraphViaGemini(courseTitle, modules);
+		async (budgetMs) => {
+			const result = await generateKnowledgeGraphViaGemini(courseTitle, modules, budgetMs);
 			return result;
 		},
-		async () => {
+		async (budgetMs) => {
 			const res = await chatViaOllama(
 				[{ role: 'user', content: kgPrompt }],
-				'You are an expert educational cognitive architect. Return valid JSON only.'
+				'You are an expert educational cognitive architect. Return valid JSON only.',
+				budgetMs
 			);
 			return JSON.parse(res.reply);
 		},
 		'reasoning',
-		courseTitle
+		courseTitle,
+		options?.deadlineMs
 	);
 }

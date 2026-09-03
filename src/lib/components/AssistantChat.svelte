@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { auth } from '$lib/firebase/client';
 	import { page } from '$app/state';
-	import { themeStore } from '$lib/stores/theme.svelte';
+	import { apiFetch } from '$lib/api/client';
 	import { renderSanitizedMarkdown } from '$lib/utils/markdown';
 	import { chatStore } from '$lib/stores/chat.svelte';
 	import { studySessionStore } from '$lib/stores/studySession.svelte';
@@ -243,8 +242,6 @@
 		});
 
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-
 			// Add initial empty assistant message to receive stream
 			messages = [...messages, { role: 'assistant', content: '' }];
 			const assistantMessageIndex = messages.length - 1;
@@ -252,41 +249,20 @@
 			// Fetch recent events from session store (last 15 minutes)
 			const recentEvents = studySessionStore.getRecentEvents(15);
 
-			const res = await fetch('/api/chat/stream', {
+			const { raw } = await apiFetch('/api/chat/stream', {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json',
-					'X-Client-Theme': themeStore.current,
-					'X-Client-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone
-				},
-				body: JSON.stringify({
+				responseType: 'stream',
+				body: {
 					messages: messages.slice(0, -1).slice(-8),
 					courseId: courseId || undefined,
 					moduleId: moduleId || undefined,
 					socraticMode,
 					sessionEvents: recentEvents
-				})
+				}
 			});
 
-			if (!res.ok) {
-				const result = await res.json().catch(() => ({}));
-				const errMsg =
-					res.status === 503 || result.error?.code === 'MODEL_WARMING_UP'
-						? 'The AI Study Assistant is currently warming up models in the background. Please wait a few seconds and try again.'
-						: res.status === 429
-							? result.error?.message ||
-								'You have reached the chat rate limit. Please try again later.'
-							: result.error?.message || 'AI service error. Please try again shortly.';
-
-				messages = messages.map((m, idx) =>
-					idx === assistantMessageIndex ? { ...m, content: errMsg } : m
-				);
-				return;
-			}
-
-			if (res.body) {
-				const reader = res.body.getReader();
+			if (raw?.body) {
+				const reader = raw.body.getReader();
 				const decoder = new TextDecoder();
 				let buffer = '';
 
@@ -378,7 +354,7 @@
 	{#if !chatStore.isOpen}
 		<button
 			type="button"
-			class="right-6 bottom-20 h-14 w-14 text-white shadow-xl md:right-6 md:bottom-6 fixed z-40 flex cursor-pointer items-center justify-center rounded-full bg-primary transition-all duration-180 hover:scale-105 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
+			class="fixed right-6 bottom-20 z-40 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-xl transition-all duration-180 hover:scale-105 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 md:right-6 md:bottom-6"
 			onclick={toggleDrawer}
 			aria-label="Open AI Study Assistant"
 		>
@@ -407,7 +383,7 @@
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		{#if !chatStore.isDocked}
 			<div
-				class="inset-0 backdrop-blur-xs md:hidden fixed z-40 bg-text/20"
+				class="fixed inset-0 z-40 bg-text/20 backdrop-blur-xs md:hidden"
 				onclick={toggleDrawer}
 			></div>
 		{/if}
@@ -415,9 +391,9 @@
 		<aside
 			role="region"
 			aria-label="AI Study Companion"
-			class="animate-slide-in shadow-2xl flex flex-col border-l border-border bg-surface transition-all duration-150 {chatStore.isDocked
-				? 'relative z-20 h-screen shrink-0 border-l border-border bg-surface'
-				: 'top-0 right-0 md:w-96 lg:w-105 fixed z-50 h-full w-full max-w-[calc(100vw-2rem)]'}"
+			class="animate-slide-in flex flex-col border-l border-border bg-surface shadow-2xl transition-all duration-150 {chatStore.isDocked
+				? 'relative z-20 h-full shrink-0 border-l border-border bg-surface'
+				: 'fixed top-0 right-0 z-50 h-full w-full max-w-[calc(100vw-2rem)] md:w-96 lg:w-105'}"
 			style={chatStore.isDocked ? `width: ${chatStore.dockWidth}px;` : ''}
 		>
 			<!-- Resize Drag Handle (Only active when docked on desktop >= 1024px) -->
@@ -428,11 +404,11 @@
 					aria-orientation="vertical"
 					aria-label="Resize chat panel"
 					onmousedown={handleMouseDownResize}
-					class="group top-0 bottom-0 -left-1.5 w-3 absolute z-30 cursor-col-resize select-none focus:outline-none"
+					class="group absolute top-0 bottom-0 -left-1.5 z-30 w-3 cursor-col-resize select-none focus:outline-none"
 					title="Drag to resize AI Companion width"
 				>
 					<div
-						class="w-1 mx-auto h-full rounded-full transition-colors group-hover:bg-primary {isResizing
+						class="mx-auto h-full w-1 rounded-full transition-colors group-hover:bg-primary {isResizing
 							? 'bg-primary'
 							: 'bg-transparent'}"
 					></div>
@@ -440,18 +416,18 @@
 			{/if}
 
 			<!-- Header -->
-			<div class="p-4 flex items-center justify-between border-b border-border">
-				<div class="gap-2 flex items-center">
+			<div class="flex items-center justify-between border-b border-border p-4">
+				<div class="flex items-center gap-2">
 					<div
-						class="h-8 w-8 shadow-xs flex items-center justify-center rounded-xl bg-primary-soft text-primary"
+						class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-soft text-primary shadow-xs"
 						aria-hidden="true"
 					>
 						<span class="text-sm">✨</span>
 					</div>
 					<div>
 						<h3 class="font-display text-xs font-bold text-text">AI Study Tutor</h3>
-						<div class="gap-2 flex items-center">
-							<span class="font-bold tracking-wider text-[10px] text-success uppercase"
+						<div class="flex items-center gap-2">
+							<span class="text-[10px] font-bold tracking-wider text-success uppercase"
 								>● Online</span
 							>
 							<button
@@ -460,7 +436,7 @@
 								aria-label={socraticMode
 									? 'Switch to Direct Mode: Gives immediate answers'
 									: 'Switch to Socratic Mode: Asks guiding questions'}
-								class="gap-1 px-2 py-0.5 font-bold inline-flex cursor-pointer items-center rounded-full text-[10px] transition-all {socraticMode
+								class="inline-flex cursor-pointer items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-all {socraticMode
 									? 'border border-primary/30 bg-primary-soft text-primary'
 									: 'border border-border bg-surface-muted text-text-muted'}"
 								title={socraticMode
@@ -474,12 +450,12 @@
 					</div>
 				</div>
 
-				<div class="gap-1 flex items-center">
+				<div class="flex items-center gap-1">
 					{#if messages.length > 1}
 						<button
 							type="button"
 							onclick={clearChat}
-							class="p-1.5 text-xs cursor-pointer rounded-lg text-text-muted hover:bg-surface-muted hover:text-text"
+							class="cursor-pointer rounded-lg p-1.5 text-xs text-text-muted hover:bg-surface-muted hover:text-text"
 							title="Clear conversation"
 							aria-label="Clear chat conversation"
 						>
@@ -491,7 +467,7 @@
 					<button
 						type="button"
 						onclick={toggleDock}
-						class="p-1.5 lg:inline-flex hidden cursor-pointer rounded-lg text-text-muted hover:bg-surface-muted hover:text-text"
+						class="hidden cursor-pointer rounded-lg p-1.5 text-text-muted hover:bg-surface-muted hover:text-text lg:inline-flex"
 						title={chatStore.isDocked
 							? 'Switch to floating window'
 							: 'Dock side-by-side with lesson'}
@@ -537,7 +513,7 @@
 					<!-- Close Button -->
 					<button
 						type="button"
-						class="p-1.5 cursor-pointer rounded-lg text-text-muted hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
+						class="cursor-pointer rounded-lg p-1.5 text-text-muted hover:bg-surface-muted hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
 						onclick={toggleDrawer}
 						aria-label="Close assistant"
 					>
@@ -563,11 +539,11 @@
 			{#if activeContextLabel}
 				<div
 					role="status"
-					class="px-3.5 py-1.5 font-semibold flex items-center justify-between border-b border-primary/20 bg-primary-soft/40 text-[11px] text-primary"
+					class="flex items-center justify-between border-b border-primary/20 bg-primary-soft/40 px-3.5 py-1.5 text-[11px] font-semibold text-primary"
 				>
-					<div class="gap-1.5 flex items-center truncate">
+					<div class="flex items-center gap-1.5 truncate">
 						<span>📍 Context:</span>
-						<span class="font-bold truncate text-text">{activeContextLabel}</span>
+						<span class="truncate font-bold text-text">{activeContextLabel}</span>
 					</div>
 					<button
 						type="button"
@@ -585,7 +561,7 @@
 			<div
 				role="toolbar"
 				aria-label="Quick action study prompts"
-				class="gap-1.5 px-3 py-2 flex overflow-x-auto border-b border-border/60 bg-surface-muted/40 text-[11px]"
+				class="flex gap-1.5 overflow-x-auto border-b border-border/60 bg-surface-muted/40 px-3 py-2 text-[11px]"
 			>
 				{#each promptChips as chip (chip.label)}
 					<button
@@ -593,7 +569,7 @@
 						onclick={() => handleChipClick(chip.prompt)}
 						disabled={loading}
 						aria-label={`Ask AI: ${chip.label}`}
-						class="px-2.5 py-1 font-semibold inline-flex shrink-0 cursor-pointer items-center rounded-lg border border-border bg-surface text-text-muted transition-colors hover:border-primary/40 hover:text-primary active:scale-95 disabled:opacity-50"
+						class="inline-flex shrink-0 cursor-pointer items-center rounded-lg border border-border bg-surface px-2.5 py-1 font-semibold text-text-muted transition-colors hover:border-primary/40 hover:text-primary active:scale-95 disabled:opacity-50"
 					>
 						{chip.label}
 					</button>
@@ -606,34 +582,34 @@
 				role="log"
 				aria-live="polite"
 				aria-label="Chat messages history"
-				class="space-y-3.5 p-3.5 flex-1 overflow-y-auto scroll-smooth"
+				class="flex-1 space-y-3.5 overflow-y-auto scroll-smooth p-3.5"
 			>
 				<!-- Initial Mode Entry Panel when conversation is fresh -->
 				{#if messages.length <= 1}
 					<div
-						class="rounded-2xl p-4 border border-border/80 bg-surface-muted/50"
+						class="rounded-2xl border border-border/80 bg-surface-muted/50 p-4"
 						role="region"
 						aria-label="Learning modes selection"
 					>
 						<div class="mb-3 flex items-center justify-between">
-							<span class="font-bold tracking-wider text-[10px] text-text-muted uppercase">
+							<span class="text-[10px] font-bold tracking-wider text-text-muted uppercase">
 								Choose a learning mode:
 							</span>
-							<span class="font-semibold text-[10px] text-primary">
+							<span class="text-[10px] font-semibold text-primary">
 								{socraticMode ? '💡 Socratic Mode Active' : '⚡ Direct Mode Active'}
 							</span>
 						</div>
 
-						<div class="gap-2 sm:grid-cols-2 grid grid-cols-1">
+						<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 							{#each tutorModes as mode (mode.title)}
 								<button
 									type="button"
 									onclick={() => handleChipClick(mode.prompt)}
 									disabled={loading}
 									aria-label={`Select ${mode.title} mode: ${mode.desc}`}
-									class="p-2.5 hover:shadow-xs flex cursor-pointer flex-col items-start rounded-xl border border-border bg-surface text-left transition-all hover:border-primary/50 hover:bg-primary-soft/20 active:scale-98 disabled:opacity-50"
+									class="flex cursor-pointer flex-col items-start rounded-xl border border-border bg-surface p-2.5 text-left transition-all hover:border-primary/50 hover:bg-primary-soft/20 hover:shadow-xs active:scale-98 disabled:opacity-50"
 								>
-									<div class="gap-1.5 text-xs font-bold flex items-center text-text">
+									<div class="flex items-center gap-1.5 text-xs font-bold text-text">
 										<span aria-hidden="true">{mode.icon}</span>
 										<span>{mode.title}</span>
 									</div>
@@ -649,9 +625,9 @@
 				{#each messages as msg, idx (idx)}
 					<div class="group flex {msg.role === 'user' ? 'justify-end' : 'justify-start'}">
 						<div
-							class="rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed shadow-xs relative max-w-[88%]
+							class="relative max-w-[88%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed shadow-xs
 							{msg.role === 'user'
-								? 'text-white rounded-br-none bg-primary'
+								? 'rounded-br-none bg-primary text-white'
 								: 'prose dark:prose-invert rounded-bl-none border border-border bg-surface-muted text-text'}"
 						>
 							{#if msg.role === 'assistant'}
@@ -664,7 +640,7 @@
 								<button
 									type="button"
 									onclick={() => handleCopyMessage(msg.content)}
-									class="top-2 right-2 rounded p-1 absolute hidden cursor-pointer text-[10px] text-text-muted opacity-80 transition-opacity group-hover:inline-flex hover:bg-surface hover:text-text"
+									class="absolute top-2 right-2 hidden cursor-pointer rounded p-1 text-[10px] text-text-muted opacity-80 transition-opacity group-hover:inline-flex hover:bg-surface hover:text-text"
 									title="Copy response"
 									aria-label="Copy AI response"
 								>
@@ -675,23 +651,23 @@
 							{/if}
 
 							{#if msg.sources && msg.sources.length > 0}
-								<div class="mt-2.5 pt-2 border-t border-border/40 text-[11px]">
-									<div class="mb-1 gap-1.5 font-bold flex items-center">
+								<div class="mt-2.5 border-t border-border/40 pt-2 text-[11px]">
+									<div class="mb-1 flex items-center gap-1.5 font-bold">
 										{#if msg.sourceSupport === 'strong'}
 											<span
-												class="rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-600 dark:text-emerald-400 text-[10px]"
+												class="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-600 dark:text-emerald-400"
 											>
 												📘 Strong source support
 											</span>
 										{:else}
 											<span
-												class="rounded bg-blue-500/10 px-1.5 py-0.5 text-blue-600 dark:text-blue-400 text-[10px]"
+												class="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-600 dark:text-blue-400"
 											>
 												📘 Limited source support
 											</span>
 										{/if}
 									</div>
-									<div class="text-muted-foreground gap-0.5 flex flex-col text-[10px]">
+									<div class="text-muted-foreground flex flex-col gap-0.5 text-[10px]">
 										{#each msg.sources as src, srcIdx (src.chunkId || `${src.sourceTitle}-${srcIdx}`)}
 											<div>
 												• <strong>{src.sourceTitle}</strong>
@@ -707,30 +683,30 @@
 								</div>
 							{:else if msg.role === 'assistant' && msg.sourceSupport === 'none' && !msg.isError}
 								<div
-									class="text-muted-foreground mt-2 gap-1 pt-1 flex items-center border-t border-border/40 text-[10px]"
+									class="text-muted-foreground mt-2 flex items-center gap-1 border-t border-border/40 pt-1 text-[10px]"
 								>
 									<span>🌐 General knowledge explanation</span>
 								</div>
 							{/if}
 
 							{#if msg.isError}
-								<div class="mt-3 gap-2 pt-2 flex flex-wrap items-center border-t border-border/50">
+								<div class="mt-3 flex flex-wrap items-center gap-2 border-t border-border/50 pt-2">
 									<a
 										href="/app/review"
-										class="bg-card text-foreground hover:bg-muted px-2.5 py-1 font-semibold rounded-lg border border-border text-[11px]"
+										class="bg-card text-foreground hover:bg-muted rounded-lg border border-border px-2.5 py-1 text-[11px] font-semibold"
 									>
 										🧠 Review Flashcards
 									</a>
 									<a
 										href="/app/courses"
-										class="bg-card text-foreground hover:bg-muted px-2.5 py-1 font-semibold rounded-lg border border-border text-[11px]"
+										class="bg-card text-foreground hover:bg-muted rounded-lg border border-border px-2.5 py-1 text-[11px] font-semibold"
 									>
 										📖 Continue Lesson
 									</a>
 									<button
 										type="button"
 										onclick={() => handleSend()}
-										class="px-2.5 py-1 font-semibold rounded-lg bg-primary/10 text-[11px] text-primary hover:bg-primary/20"
+										class="rounded-lg bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20"
 									>
 										🔄 Retry Question
 									</button>
@@ -743,7 +719,7 @@
 				{#if loading}
 					<div class="flex justify-start">
 						<div
-							class="gap-1 rounded-2xl px-3.5 py-2.5 flex items-center rounded-bl-none border border-border bg-surface-muted"
+							class="flex items-center gap-1 rounded-2xl rounded-bl-none border border-border bg-surface-muted px-3.5 py-2.5"
 						>
 							<span
 								class="h-1.5 w-1.5 animate-bounce rounded-full bg-text-muted"
@@ -763,8 +739,8 @@
 			</div>
 
 			<!-- Input form footer -->
-			<div class="p-3 border-t border-border bg-surface">
-				<div class="gap-2 flex">
+			<div class="border-t border-border bg-surface p-3">
+				<div class="flex gap-2">
 					<input
 						type="text"
 						bind:value={inputMessage}
@@ -773,12 +749,12 @@
 							? `Ask about "${activeContextLabel}"...`
 							: 'Ask a study question...'}
 						aria-label="Ask a question"
-						class="px-3.5 py-2.5 text-xs grow rounded-xl border border-border bg-surface-muted transition-colors duration-180 hover:border-text-muted focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+						class="grow rounded-xl border border-border bg-surface-muted px-3.5 py-2.5 text-xs transition-colors duration-180 hover:border-text-muted focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 						disabled={loading}
 					/>
 					<button
 						type="button"
-						class="px-4 py-2.5 text-white shadow-xs flex cursor-pointer items-center justify-center rounded-xl bg-primary transition-all duration-180 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+						class="flex cursor-pointer items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-white shadow-xs transition-all duration-180 hover:bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
 						onclick={handleSend}
 						disabled={loading || !inputMessage.trim()}
 						aria-label="Send message"

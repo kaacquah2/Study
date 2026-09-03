@@ -51,7 +51,7 @@ Developed as a Final Year Project for the Department of Computer Science at **Kw
 - **Interactive Onboarding Workflow (`Onboarding.svelte`):** First-time guided setup directing students across material uploads, course generation, knowledge mapping, and AI tutoring.
 - **RAG Citations & Source Support Attribution (`AssistantChat.svelte`):** Grounded assistant chat with metadata-aware citations (`📘 Strong source support`) and transparent distinction from general explanation.
 - **Interactive Knowledge Map (`/app/knowledge-map`, `KnowledgeMap.svelte`):** Concept graph visualization powered by ELK.js with 'Explain My Progress' diagnostics.
-- **Spaced Repetition Knowledge Hub (`/app/review`, `/api/spaced-repetition`):** Flashcard scheduling powered by **SuperMemo 2 (SM-2)** (`sm2.ts`) and **Free Spaced Repetition Scheduler (FSRS-4.5)** (`fsrs.ts`).
+- **Spaced Repetition Knowledge Hub (`/app/review`, `/api/spaced-repetition`):** Flashcard scheduling powered by **Free Spaced Repetition Scheduler (FSRS-4.5)** (`fsrs.ts`) with offline replay synchronization.
 - **Custom Document RAG Ingestion (`/app/knowledge`, `/api/documents`):** User PDF/notes vector store ingestion with isolated FAISS semantic search.
   - User data deletion and privacy compliance endpoints (`deleteUserData.ts`, `/api/user`).
 - **Curated Theme System & Security:**
@@ -78,7 +78,7 @@ Developed as a Final Year Project for the Department of Computer Science at **Kw
 - **Google Gemini API:** Primary generative AI provider (`gemini-flash-latest`)
 - **Ollama Local LLM:** Local model provider (`llama3.2`) for offline/tier-2 inference
 - **Python FastAPI Microservice (`ml_backend`):** PyTorch, Hugging Face Transformers, Sentence-Transformers, and FAISS for vector embedding & RAG retrieval
-- **Spaced Repetition Engines:** Custom TypeScript implementations of SuperMemo 2 (`sm2.ts`) and Free Spaced Repetition Scheduler FSRS-4.5 (`fsrs.ts`)
+- **Spaced Repetition Engine:** Authoritative TypeScript implementation of Free Spaced Repetition Scheduler FSRS-4.5 (`fsrs.ts`) and offline synchronization replay (`offlineSync.ts`)
 - **Content Moderation & Guardrails:** Domain classifier (`domainClassifier.ts`), memorization guard (`memorizationGuard.ts`), weak topic detector (`weakTopicDetector.ts`), pricing tracker (`pricingConfig.ts`), and moderation pipeline (`moderation.ts`)
 
 ### Distributed Caching & External APIs
@@ -169,13 +169,12 @@ Study/
 │   │   │   ├── fsrs.test.ts    # FSRS scheduling unit tests
 │   │   │   ├── fsrs.ts         # Free Spaced Repetition Scheduler algorithm
 │   │   │   ├── offlineSync.test.ts # Offline synchronization test suite
+│   │   │   ├── offlineSync.ts  # Pure domain offline review replay engine
 │   │   │   ├── outlineCache.test.ts # Outline cache test suite
 │   │   │   ├── outlineCache.ts # Course outline caching layer
 │   │   │   ├── rateLimiter.test.ts  # Rate limiter test suite
 │   │   │   ├── rateLimiter.ts  # In-memory sliding-window rate limiter
 │   │   │   ├── redis.ts        # Upstash Redis REST client for distributed caching
-│   │   │   ├── sm2.test.ts     # SM-2 scheduling unit tests
-│   │   │   ├── sm2.ts          # SuperMemo 2 spaced repetition algorithm
 │   │   │   ├── youtube.test.ts # YouTube API fetcher unit tests
 │   │   │   ├── youtube.ts      # YouTube Data API video fetcher & cacher
 │   │   │   ├── ai/             # Multi-provider AI abstraction layer
@@ -243,7 +242,6 @@ Study/
 │       │   └── verify-email/   # Email verification alert & resend screen
 │       ├── courses/            # Public course viewing & quiz routes ([id])
 │       ├── share/              # Public share link resolver route ([token])
-│       ├── shared/             # Shared course preview & clone handler ([shareId])
 │       └── superadmin/         # Platform superadmin control portal
 ├── tests/                      # End-to-End Playwright test suite
 │   ├── responsiveLayout.e2e.ts # Viewport responsiveness suite across 7 laptop resolutions

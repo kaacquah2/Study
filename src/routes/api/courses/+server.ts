@@ -7,7 +7,7 @@ import { enqueueGenerationJob } from '$lib/server/ai/generationQueue';
 import { recordAttributionMetadata } from '$lib/server/ai/providerStats';
 import { moderateInput } from '$lib/server/ai/moderation';
 import { z } from 'zod';
-import { MLBackendError } from '$lib/server/ai/client';
+import { handleServerError } from '$lib/server/apiError';
 
 const CreateCourseZod = z.object({
 	topic: z.string().min(3).max(120),
@@ -26,17 +26,14 @@ function sanitizePromptInput(text?: string): string | undefined {
 		text
 			// eslint-disable-next-line no-control-regex
 			.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '') // remove control chars
-			.replace(/system:/gi, '')
-			.replace(/assistant:/gi, '')
-			.replace(/user:/gi, '')
-			.replace(/ignore (previous|above|all|instructions)/gi, '')
-			.replace(/<\/?[a-z][^>]*>/gi, '')
 			.trim()
 	);
 }
+export { sanitizePromptInput as _sanitizePromptInput };
 
 // POST /api/courses
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+	const { request } = event;
 	try {
 		// 1. Verify User Session
 		const user = await verifySessionUser(request);
@@ -45,12 +42,12 @@ export const POST: RequestHandler = async ({ request }) => {
 		const body = await request.json();
 		const parsed = CreateCourseZod.safeParse(body);
 		if (!parsed.success) {
+			console.warn('[courses POST] Validation failed:', parsed.error.issues);
 			return json(
 				{
 					error: {
 						code: 'INVALID_INPUT',
-						message: 'Validation failed',
-						fields: parsed.error.format()
+						message: 'Validation failed'
 					}
 				},
 				{ status: 400 }
@@ -151,14 +148,18 @@ export const POST: RequestHandler = async ({ request }) => {
 				);
 			}
 
+			const correlationId = event.locals?.requestId || crypto.randomUUID();
+			console.error(`[courses POST outline error] [req_id=${correlationId}]:`, e);
 			return json(
 				{
 					error: {
 						code: 'AI_GENERATION_FAILED',
-						message: `Failed to construct outline: ${message}`
-					}
+						message: 'Failed to construct outline. Please try again.',
+						requestId: correlationId
+					},
+					requestId: correlationId
 				},
-				{ status: 500 }
+				{ status: 500, headers: { 'X-Request-ID': correlationId } }
 			);
 		}
 
@@ -224,6 +225,8 @@ export const POST: RequestHandler = async ({ request }) => {
 				const moduleRef = courseRef.collection('modules').doc();
 				transaction.set(moduleRef, {
 					id: moduleRef.id,
+					courseId: courseRef.id,
+					ownerUid: user.uid,
 					order: mod.order,
 					type: mod.type,
 					title: mod.title,
@@ -275,21 +278,20 @@ export const POST: RequestHandler = async ({ request }) => {
 			message.includes('PERMISSION_DENIED') ||
 			message.includes('Missing or insufficient permissions')
 		) {
+			const correlationId = event.locals?.requestId || crypto.randomUUID();
 			return json(
 				{
 					error: {
 						code: 'FIRESTORE_PERMISSION_DENIED',
 						message:
-							'Firestore access denied. Please set FIREBASE_SERVICE_ACCOUNT in your .env file or enable local Firebase emulators (PUBLIC_FIREBASE_USE_EMULATOR=true).'
-					}
+							'Firestore access denied. Please set FIREBASE_SERVICE_ACCOUNT in your .env file or enable local Firebase emulators (PUBLIC_FIREBASE_USE_EMULATOR=true).',
+						requestId: correlationId
+					},
+					requestId: correlationId
 				},
-				{ status: 500 }
+				{ status: 500, headers: { 'X-Request-ID': correlationId } }
 			);
 		}
-		const clientMessage =
-			err instanceof MLBackendError
-				? 'Internal AI backend error'
-				: message || 'Internal Server Error';
-		return json({ error: { code: 'SERVER_ERROR', message: clientMessage } }, { status: 500 });
+		return handleServerError(err, event);
 	}
 };

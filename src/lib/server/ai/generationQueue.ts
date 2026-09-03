@@ -9,6 +9,7 @@
  * and includes a self-healing reconciler for recovering orphaned or crashed jobs.
  */
 
+import crypto from 'node:crypto';
 import { adminDb, FieldValue } from '../admin';
 import { generateOutline, generateLessonV2, generateQuiz } from './provider';
 import { recordAttributionMetadata } from './providerStats';
@@ -25,13 +26,68 @@ export interface GenerationJob {
 	status: 'queued' | 'processing' | 'completed' | 'failed';
 	attempts: number;
 	maxAttempts: number;
-	errorMessage?: string;
+	errorMessage?: string | null;
 	createdAt: number;
 	updatedAt: number;
+	leaseUntil?: number | null;
+	nextRetryAt?: number | null;
 }
 
 export const MAX_QUEUE_ATTEMPTS = 3;
 export const STALLED_JOB_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Calculates exponential backoff with jitter between retry attempts.
+ */
+export function calculateBackoffMs(
+	attempt: number,
+	baseMs: number = 2000,
+	maxMs: number = 60000
+): number {
+	const exponential = baseMs * Math.pow(2, Math.max(0, attempt - 1));
+	const jitter = Math.floor(Math.random() * (baseMs / 2));
+	return Math.min(exponential + jitter, maxMs);
+}
+
+/**
+ * Sanitizes internal and runtime exceptions into safe, user-facing error messages.
+ */
+export function sanitizeErrorMessage(err: unknown): string {
+	if (!err) return 'An unexpected error occurred during generation. Please try again.';
+
+	const rawMessage = err instanceof Error ? err.message : String(err);
+
+	if (rawMessage.startsWith('Quality validation error:')) {
+		return rawMessage;
+	}
+
+	const lower = rawMessage.toLowerCase();
+
+	if (
+		lower.includes('rate limit') ||
+		lower.includes('resourceexhausted') ||
+		lower.includes('quota') ||
+		lower.includes('429')
+	) {
+		return 'The AI service is temporarily experiencing high demand. Please try again shortly.';
+	}
+
+	if (
+		lower.includes('econnrefused') ||
+		lower.includes('etimedout') ||
+		lower.includes('timeout') ||
+		lower.includes('fetch failed') ||
+		lower.includes('network')
+	) {
+		return 'The generation service timed out or was temporarily unreachable. Please retry.';
+	}
+
+	if (lower.includes('permission') || lower.includes('unauthorized') || lower.includes('auth')) {
+		return 'Service access error occurred during generation. Please contact support if this persists.';
+	}
+
+	return 'An unexpected error occurred while generating course content. Please try again.';
+}
 
 /**
  * Executes an outline generation job.
@@ -81,6 +137,7 @@ async function processOutlineJob(job: GenerationJob): Promise<void> {
 		batch.set(modRef, {
 			id: modRef.id,
 			courseId,
+			ownerUid: job.userId,
 			order: mod.order,
 			type: mod.type,
 			title: mod.title,
@@ -295,52 +352,130 @@ async function processModuleJob(job: GenerationJob): Promise<void> {
 
 /**
  * Executes a queued course generation job asynchronously in the background.
+ * Uses a transactional compare-and-swap with a lease lock to guarantee
+ * that multiple concurrent workers or polls do not double-process the job.
  */
 export async function processQueuedJob(jobId: string): Promise<void> {
-	if (!adminDb || process.env.NODE_ENV === 'test') return;
+	if (!adminDb) return;
+
+	const jobRef = adminDb.collection('course_generation_jobs').doc(jobId);
+	let activeJob: GenerationJob | null = null;
 
 	try {
-		const job = await getGenerationJobStatus(jobId);
-		if (!job || job.status === 'completed') return;
+		const claimedJob = await adminDb.runTransaction(async (tx): Promise<GenerationJob | null> => {
+			const snap = await tx.get(jobRef);
+			if (!snap.exists) return null;
 
-		await updateGenerationJobStatus(jobId, 'processing');
+			const data = snap.data() as GenerationJob;
+			if (!data || data.status === 'completed' || data.status === 'failed') {
+				return null;
+			}
 
-		if (job.jobType === 'outline') {
-			await processOutlineJob(job);
-		} else if (job.jobType === 'module') {
-			await processModuleJob(job);
+			const now = Date.now();
+
+			// If job has a retry backoff scheduled in the future, don't claim it yet
+			if (data.nextRetryAt && data.nextRetryAt > now) {
+				return null;
+			}
+
+			// If maximum retry attempts have already been reached, do not claim
+			const maxAttempts = data.maxAttempts || MAX_QUEUE_ATTEMPTS;
+			if (data.attempts >= maxAttempts) {
+				return null;
+			}
+
+			// Lease check: if status is 'processing', only reclaim if lease has expired
+			const leaseExpired = !data.leaseUntil || data.leaseUntil < now;
+			if (data.status === 'processing' && !leaseExpired) {
+				return null;
+			}
+
+			const leaseUntil = now + STALLED_JOB_TIMEOUT_MS;
+			const nextAttempts = (data.attempts || 0) + 1;
+
+			tx.update(jobRef, {
+				status: 'processing',
+				leaseUntil,
+				attempts: FieldValue.increment(1),
+				updatedAt: now,
+				errorMessage: null
+			});
+
+			return {
+				...data,
+				status: 'processing',
+				leaseUntil,
+				attempts: nextAttempts,
+				updatedAt: now
+			};
+		});
+
+		if (!claimedJob) return;
+		activeJob = claimedJob;
+
+		if (claimedJob.jobType === 'outline') {
+			await processOutlineJob(claimedJob);
+		} else if (claimedJob.jobType === 'module') {
+			await processModuleJob(claimedJob);
 		}
 
 		await updateGenerationJobStatus(jobId, 'completed');
 	} catch (err) {
-		const message = err instanceof Error ? err.message : 'Unknown generation error';
 		console.error(`[generationQueue] Failed processing job ${jobId}:`, err);
-		await updateGenerationJobStatus(jobId, 'failed', message);
+		const sanitizedError = sanitizeErrorMessage(err);
 
-		// If it's a module job, mark the module as failed as well
-		const job = await getGenerationJobStatus(jobId);
-		if (job && job.jobType === 'module' && job.moduleId && adminDb) {
+		// If we claimed the job, evaluate retry eligibility against max attempts
+		const currentAttempts = activeJob?.attempts ?? 1;
+		const maxAttempts = activeJob?.maxAttempts ?? MAX_QUEUE_ATTEMPTS;
+
+		if (currentAttempts < maxAttempts) {
+			const backoffMs = calculateBackoffMs(currentAttempts);
+			const nextRetryAt = Date.now() + backoffMs;
+			console.warn(
+				`[generationQueue] Job ${jobId} failed attempt ${currentAttempts}/${maxAttempts}. Retrying in ${backoffMs}ms`
+			);
+
 			try {
-				const courseRef = adminDb.collection('courses').doc(job.courseId);
-				await courseRef.collection('modules').doc(job.moduleId).set(
-					{
-						status: 'failed',
-						error: message
-					},
-					{ merge: true }
-				);
-				await courseRef.set(
-					{
-						status: 'partial',
-						updatedAt: FieldValue.serverTimestamp()
-					},
-					{ merge: true }
-				);
+				await jobRef.update({
+					status: 'queued',
+					leaseUntil: null,
+					nextRetryAt,
+					updatedAt: Date.now(),
+					errorMessage: sanitizedError
+				});
 			} catch (dbErr) {
-				console.warn(
-					'[generationQueue] Failed to update module failure status in Firestore:',
-					dbErr
-				);
+				console.error(`[generationQueue] Failed to schedule retry for job ${jobId}:`, dbErr);
+			}
+		} else {
+			console.error(
+				`[generationQueue] Job ${jobId} exhausted all retry attempts (${maxAttempts}). Marking as failed.`
+			);
+			await updateGenerationJobStatus(jobId, 'failed', sanitizedError);
+
+			// If it's a module job, mark the module as failed as well
+			if (activeJob?.jobType === 'module' && activeJob.moduleId && adminDb) {
+				try {
+					const courseRef = adminDb.collection('courses').doc(activeJob.courseId);
+					await courseRef.collection('modules').doc(activeJob.moduleId).set(
+						{
+							status: 'failed',
+							error: sanitizedError
+						},
+						{ merge: true }
+					);
+					await courseRef.set(
+						{
+							status: 'partial',
+							updatedAt: FieldValue.serverTimestamp()
+						},
+						{ merge: true }
+					);
+				} catch (dbErr) {
+					console.warn(
+						'[generationQueue] Failed to update module failure status in Firestore:',
+						dbErr
+					);
+				}
 			}
 		}
 	}
@@ -354,7 +489,7 @@ export async function enqueueGenerationJob(params: {
 	courseId: string;
 	topic: string;
 }): Promise<GenerationJob> {
-	const jobId = `job_outline_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+	const jobId = crypto.randomUUID();
 	const now = Date.now();
 
 	const job: GenerationJob = {
@@ -367,10 +502,12 @@ export async function enqueueGenerationJob(params: {
 		attempts: 0,
 		maxAttempts: MAX_QUEUE_ATTEMPTS,
 		createdAt: now,
-		updatedAt: now
+		updatedAt: now,
+		leaseUntil: null,
+		nextRetryAt: null
 	};
 
-	if (adminDb && process.env.NODE_ENV !== 'test') {
+	if (adminDb) {
 		try {
 			await adminDb.collection('course_generation_jobs').doc(jobId).set(job);
 
@@ -400,7 +537,7 @@ export async function enqueueModuleGenerationJob(params: {
 	moduleId: string;
 	userId: string;
 }): Promise<GenerationJob> {
-	const jobId = `job_mod_${params.moduleId}_${Date.now()}`;
+	const jobId = crypto.randomUUID();
 	const now = Date.now();
 
 	const job: GenerationJob = {
@@ -413,10 +550,12 @@ export async function enqueueModuleGenerationJob(params: {
 		attempts: 0,
 		maxAttempts: MAX_QUEUE_ATTEMPTS,
 		createdAt: now,
-		updatedAt: now
+		updatedAt: now,
+		leaseUntil: null,
+		nextRetryAt: null
 	};
 
-	if (adminDb && process.env.NODE_ENV !== 'test') {
+	if (adminDb) {
 		try {
 			await adminDb.collection('course_generation_jobs').doc(jobId).set(job);
 
@@ -443,7 +582,7 @@ export async function enqueueModuleGenerationJob(params: {
  * Fetches current status of a queued generation job.
  */
 export async function getGenerationJobStatus(jobId: string): Promise<GenerationJob | null> {
-	if (!adminDb || process.env.NODE_ENV === 'test') {
+	if (!adminDb) {
 		return null;
 	}
 
@@ -459,21 +598,30 @@ export async function getGenerationJobStatus(jobId: string): Promise<GenerationJ
 
 /**
  * Updates status of a queued generation job in Firestore.
+ * Note: attempts are only incremented during atomic lease claim in processQueuedJob.
  */
 export async function updateGenerationJobStatus(
 	jobId: string,
 	status: GenerationJob['status'],
 	errorMessage?: string
 ): Promise<void> {
-	if (!adminDb || process.env.NODE_ENV === 'test') return;
+	if (!adminDb) return;
 
 	try {
 		const updateData: Record<string, unknown> = {
 			status,
-			updatedAt: Date.now(),
-			attempts: FieldValue.increment(1)
+			updatedAt: Date.now()
 		};
-		if (errorMessage) {
+
+		if (status === 'completed') {
+			updateData.leaseUntil = null;
+			updateData.nextRetryAt = null;
+			updateData.errorMessage = null;
+		} else if (status === 'failed') {
+			updateData.leaseUntil = null;
+		}
+
+		if (errorMessage !== undefined) {
 			updateData.errorMessage = errorMessage;
 		}
 
@@ -484,19 +632,20 @@ export async function updateGenerationJobStatus(
 }
 
 /**
- * Reconciles stalled generation jobs (older than timeout).
+ * Reconciles stalled generation jobs (older than timeout or expired lease).
  * Recovers crashed worker instances and marks dead-letter jobs as failed.
  */
 export async function reconcileStalledJobs(
 	stalledThresholdMs: number = STALLED_JOB_TIMEOUT_MS
 ): Promise<{ recoveredCount: number; failedCount: number }> {
-	if (!adminDb || process.env.NODE_ENV === 'test') {
+	if (!adminDb) {
 		return { recoveredCount: 0, failedCount: 0 };
 	}
 
 	let recoveredCount = 0;
 	let failedCount = 0;
-	const cutoff = Date.now() - stalledThresholdMs;
+	const now = Date.now();
+	const cutoff = now - stalledThresholdMs;
 
 	try {
 		const snapshot = await adminDb
@@ -506,12 +655,25 @@ export async function reconcileStalledJobs(
 
 		for (const doc of snapshot.docs) {
 			const job = doc.data() as GenerationJob;
-			if (job.updatedAt < cutoff) {
-				if (job.attempts < job.maxAttempts) {
+			const isStalled =
+				(job.leaseUntil && job.leaseUntil < now) || (!job.leaseUntil && job.updatedAt < cutoff);
+
+			if (isStalled) {
+				const maxAttempts = job.maxAttempts || MAX_QUEUE_ATTEMPTS;
+				if (job.attempts < maxAttempts) {
 					console.warn(
-						`[generationQueue] Reclaiming stalled job ${job.jobId} (attempt ${job.attempts + 1}/${job.maxAttempts})`
+						`[generationQueue] Reclaiming stalled job ${job.jobId} (attempt ${job.attempts + 1}/${maxAttempts})`
 					);
-					await updateGenerationJobStatus(job.jobId, 'queued');
+					const backoffMs = calculateBackoffMs(job.attempts);
+					await adminDb
+						.collection('course_generation_jobs')
+						.doc(job.jobId)
+						.update({
+							status: 'queued',
+							leaseUntil: null,
+							nextRetryAt: now + backoffMs,
+							updatedAt: now
+						});
 
 					const payload: QueuedTaskPayload = {
 						jobId: job.jobId,

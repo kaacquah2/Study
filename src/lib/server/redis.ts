@@ -48,7 +48,7 @@ async function redisCommand<T = unknown>(command: string[]): Promise<T | null> {
 
 export async function redisGet<T = unknown>(key: string): Promise<T | null> {
 	const result = await redisCommand<string>(['GET', key]);
-	if (!result) return null;
+	if (result === null || result === undefined) return null;
 	try {
 		return JSON.parse(result) as T;
 	} catch {

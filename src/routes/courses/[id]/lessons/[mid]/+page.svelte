@@ -19,9 +19,9 @@
 </svelte:head>
 
 <div class="flex min-h-screen items-center justify-center bg-bg text-text">
-	<div class="gap-4 p-6 flex flex-col items-center text-center">
+	<div class="flex flex-col items-center gap-4 p-6 text-center">
 		<div
-			class="w-8 h-8 animate-spin rounded-full border-3 border-primary border-t-transparent"
+			class="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent"
 		></div>
 		<p class="text-sm font-medium text-text-muted">Redirecting to lesson reader...</p>
 	</div>

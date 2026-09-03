@@ -141,12 +141,12 @@
 	<div
 		role="region"
 		aria-label="Lesson audio player"
-		class="gap-3 rounded-2xl p-4 backdrop-blur-sm flex flex-col border border-primary/20 bg-surface-muted/40 shadow-sm transition-all"
+		class="flex flex-col gap-3 rounded-2xl border border-primary/20 bg-surface-muted/40 p-4 shadow-sm backdrop-blur-sm transition-all"
 	>
-		<div class="gap-3 flex items-center justify-between">
-			<div class="gap-2 flex items-center">
+		<div class="flex items-center justify-between gap-3">
+			<div class="flex items-center gap-2">
 				<div
-					class="h-9 w-9 flex items-center justify-center rounded-xl bg-primary-soft text-primary"
+					class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-soft text-primary"
 					aria-hidden="true"
 				>
 					<svg
@@ -178,12 +178,12 @@
 			</div>
 
 			<!-- Controls -->
-			<div class="gap-2 flex items-center">
+			<div class="flex items-center gap-2">
 				{#if !isPlaying || isPaused}
 					<button
 						type="button"
 						onclick={playAudio}
-						class="h-8 w-8 text-white flex cursor-pointer items-center justify-center rounded-xl bg-primary shadow-sm transition-all hover:bg-primary-hover active:scale-95"
+						class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl bg-primary text-white shadow-sm transition-all hover:bg-primary-hover active:scale-95"
 						title="Play Narration"
 						aria-label={isPaused ? 'Resume narration audio' : 'Play lesson narration audio'}
 					>
@@ -195,7 +195,7 @@
 					<button
 						type="button"
 						onclick={pauseAudio}
-						class="h-8 w-8 bg-amber-500 text-white hover:bg-amber-600 flex cursor-pointer items-center justify-center rounded-xl shadow-sm transition-all active:scale-95"
+						class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm transition-all hover:bg-amber-600 active:scale-95"
 						title="Pause"
 						aria-label="Pause narration audio"
 					>
@@ -209,7 +209,7 @@
 					type="button"
 					onclick={stopAudio}
 					disabled={!isPlaying && !isPaused && currentSentenceIndex === 0}
-					class="h-8 w-8 flex cursor-pointer items-center justify-center rounded-xl border border-border bg-surface text-text-muted transition-colors hover:border-danger hover:text-danger disabled:cursor-not-allowed disabled:opacity-40"
+					class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border border-border bg-surface text-text-muted transition-colors hover:border-danger hover:text-danger disabled:cursor-not-allowed disabled:opacity-40"
 					title="Stop"
 					aria-label="Stop narration audio"
 				>
@@ -221,18 +221,18 @@
 		</div>
 
 		<!-- Options & Progress -->
-		<div class="gap-4 pt-2 text-xs flex items-center justify-between border-t border-border/40">
+		<div class="flex items-center justify-between gap-4 border-t border-border/40 pt-2 text-xs">
 			<!-- Speed selector -->
-			<div class="gap-1.5 flex items-center" role="group" aria-label="Audio playback speed">
-				<span class="font-bold tracking-wider text-[10px] text-text-muted uppercase">Speed:</span>
+			<div class="flex items-center gap-1.5" role="group" aria-label="Audio playback speed">
+				<span class="text-[10px] font-bold tracking-wider text-text-muted uppercase">Speed:</span>
 				{#each [0.75, 1, 1.25, 1.5] as sRate (sRate)}
 					<button
 						type="button"
 						onclick={() => handleRateChange(sRate)}
 						aria-label={`Playback speed ${sRate}x`}
 						aria-pressed={rate === sRate}
-						class="px-2 py-0.5 font-bold rounded-lg text-[10px] transition-colors {rate === sRate
-							? 'text-white bg-primary'
+						class="rounded-lg px-2 py-0.5 text-[10px] font-bold transition-colors {rate === sRate
+							? 'bg-primary text-white'
 							: 'bg-surface text-text-muted hover:text-text'}"
 					>
 						{sRate}x
@@ -242,11 +242,11 @@
 
 			<!-- Voice selection if multiple -->
 			{#if availableVoices.length > 1}
-				<div class="max-w-50 gap-1 flex flex-col">
+				<div class="flex max-w-50 flex-col gap-1">
 					<select
 						bind:value={selectedVoiceURI}
 						aria-label="Select narrator voice"
-						class="px-2 py-0.5 w-full truncate rounded-lg border border-border bg-surface text-[10px] text-text"
+						class="w-full truncate rounded-lg border border-border bg-surface px-2 py-0.5 text-[10px] text-text"
 					>
 						{#each availableVoices.filter((v) => v.lang.startsWith('en')) as voice (voice.voiceURI)}
 							<option value={voice.voiceURI}>{voice.name}</option>
@@ -259,7 +259,7 @@
 		<!-- Sentence highlight preview -->
 		{#if isPlaying && sentences[currentSentenceIndex]}
 			<div
-				class="p-2.5 text-xs rounded-xl border border-primary/30 bg-primary-soft/30 text-primary"
+				class="rounded-xl border border-primary/30 bg-primary-soft/30 p-2.5 text-xs text-primary"
 				aria-live="polite"
 			>
 				<span class="font-bold">Reading:</span> "{sentences[currentSentenceIndex]}"

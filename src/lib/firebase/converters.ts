@@ -60,12 +60,15 @@ export interface ModuleDoc {
 		blocks?: LessonBlock[];
 	}> | null;
 	questions?: Array<{
+		order?: number;
 		prompt?: string;
 		question?: string;
 		options: string[];
 		correctIndex?: number;
 		answerIndex?: number;
 		explanation: string;
+		conceptId?: string;
+		conceptTag?: string;
 		lastAnsweredCorrectly?: boolean;
 		nextReviewDate?: string;
 		intervalDays?: number;
@@ -97,6 +100,8 @@ export interface UserProfileDoc {
 		longest: number;
 		lastStudiedOn: string | null;
 		timezone: string;
+		freezesAvailable?: number;
+		lastFreezeRefill?: string | null;
 	};
 }
 
@@ -105,6 +110,7 @@ export interface SharedCourseDoc {
 	courseId: string;
 	sharedByUid: string;
 	sharedByName: string;
+	isPublic?: boolean;
 	claimCount: number;
 	importCount?: number;
 	isOfficial?: boolean;

@@ -26,7 +26,15 @@ export interface DispatchResult {
  * Returns the configured internal worker authorization secret.
  */
 export function getWorkerSecret(): string {
-	return process.env.INTERNAL_WORKER_SECRET || 'dev_internal_worker_secret_key';
+	const secret = process.env.INTERNAL_WORKER_SECRET;
+	if (!secret) {
+		if (process.env.NODE_ENV === 'production') {
+			throw new Error('[FATAL] INTERNAL_WORKER_SECRET is required in production.');
+		}
+		console.warn('[taskDispatcher] INTERNAL_WORKER_SECRET unset — worker endpoints disabled.');
+		return '';
+	}
+	return secret;
 }
 
 /**

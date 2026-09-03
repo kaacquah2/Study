@@ -382,6 +382,121 @@ def test_model_loading_on_demand():
         assert res.summary == "Summarized text result"
 
 
+def test_chat_endpoint_lazy_loads_model():
+    """Verify that /chat endpoint lazy-loads the chat model on demand when not already loaded."""
+    from main import chat
+    from schemas.types import ChatRequest, ChatMessage
+    from fastapi import Response
+    from starlette.requests import Request
+
+    req = ChatRequest(messages=[ChatMessage(role="user", content="Hello")])
+    mock_request = Request({
+        "type": "http",
+        "method": "POST",
+        "path": "/chat",
+        "headers": [],
+        "client": ("127.0.0.1", 12345)
+    })
+
+    with patch("models.chat_assistant.is_loaded", return_value=False), \
+         patch("models.chat_assistant.load_model") as mock_load, \
+         patch("models.chat_assistant.chat", return_value=("Hello! How can I help?", [])):
+        
+        res = asyncio.run(chat(req, mock_request, response=Response()))
+        assert mock_load.called
+        assert res.reply == "Hello! How can I help?"
+
+
+def test_completion_endpoint_lazy_loads_model():
+    """Verify that /completion endpoint lazy-loads the chat model on demand when not already loaded."""
+    from main import completion
+    from schemas.types import CompletionRequest
+    from fastapi import Response
+    from starlette.requests import Request
+
+    req = CompletionRequest(prompt="Summarize topic")
+    mock_request = Request({
+        "type": "http",
+        "method": "POST",
+        "path": "/completion",
+        "headers": [],
+        "client": ("127.0.0.1", 12345)
+    })
+
+    with patch("models.chat_assistant.is_loaded", return_value=False), \
+         patch("models.chat_assistant.load_model") as mock_load, \
+         patch("models.chat_assistant.chat", return_value=("Completion text", [])):
+        
+        res = asyncio.run(completion(req, mock_request, response=Response()))
+        assert mock_load.called
+        assert res.text == "Completion text"
+
+
+def test_chat_stream_endpoint_lazy_loads_model():
+    """Verify that /chat/stream endpoint lazy-loads the chat model on demand when not already loaded."""
+    from main import chat_stream_endpoint
+    from schemas.types import ChatRequest, ChatMessage
+    from starlette.requests import Request
+
+    req = ChatRequest(messages=[ChatMessage(role="user", content="Hello")])
+    mock_request = Request({
+        "type": "http",
+        "method": "POST",
+        "path": "/chat/stream",
+        "headers": [],
+        "client": ("127.0.0.1", 12345)
+    })
+
+    def mock_stream_gen(*args, **kwargs):
+        yield "data: {\"token\": \"Hi\", \"done\": false, \"sources\": []}\n\n"
+        yield "data: {\"token\": \"\", \"done\": true, \"sources\": []}\n\n"
+
+    with patch("models.chat_assistant.is_loaded", return_value=False), \
+         patch("models.chat_assistant.load_model") as mock_load, \
+         patch("models.chat_assistant.chat_stream", side_effect=mock_stream_gen):
+        
+        streaming_resp = asyncio.run(chat_stream_endpoint(req, mock_request))
+        assert mock_load.called
+        assert streaming_resp.status_code == 200
+
+
+def test_chat_stream_timeout_handling():
+    """Verify that /chat/stream gracefully catches timeouts and yields an SSE error event."""
+    import time
+    from main import chat_stream_endpoint
+    import main
+    from schemas.types import ChatRequest, ChatMessage
+    from starlette.requests import Request
+
+    req = ChatRequest(messages=[ChatMessage(role="user", content="Hello")])
+    mock_request = Request({
+        "type": "http",
+        "method": "POST",
+        "path": "/chat/stream",
+        "headers": [],
+        "client": ("127.0.0.1", 12345)
+    })
+
+    def hanging_generator(*args, **kwargs):
+        time.sleep(0.5)
+        yield "data: {\"token\": \"late\"}\n\n"
+
+    with patch("models.chat_assistant.is_loaded", return_value=True), \
+         patch("models.chat_assistant.chat_stream", side_effect=hanging_generator), \
+         patch.object(main, "_INFERENCE_TIMEOUT", 0.05):
+        
+        streaming_resp = asyncio.run(chat_stream_endpoint(req, mock_request))
+        
+        async def collect_chunks():
+            chunks = []
+            async for chunk in streaming_resp.body_iterator:
+                chunks.append(chunk)
+            return "".join(chunks)
+        
+        output = asyncio.run(collect_chunks())
+        assert "Inference request timed out." in output
+
+
 def test_download_all_models_success():
     """Verify download_all_models executes all model caches and offline verifications without errors."""
     from download_models import download_all_models
@@ -569,3 +684,157 @@ def test_healthcheck_includes_model_provenance():
         assert "fine_tuned_count" in data["model_provenance"]
 
 
+def test_healthcheck_exempt_from_hmac_when_secret_configured():
+    """Verify that /healthcheck succeeds with X-API-Key alone even when ML_BACKEND_SECRET is configured."""
+    from fastapi.testclient import TestClient
+    from main import app
+    import main
+
+    client = TestClient(app)
+    test_secret = "test-hmac-secret-12345"
+    with patch.object(main, "_ML_SECRET", test_secret), \
+         patch.object(main, "_EAGER_WARMUP", False):
+        # Request with ONLY X-API-Key, without X-Signature / X-Timestamp / X-Nonce
+        headers = {"X-API-Key": main._API_KEY} if main._API_KEY else {}
+        response = client.get("/healthcheck", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] in ("ok", "ready")
+
+
+def test_healthcheck_succeeds_with_valid_empty_body_hmac():
+    """Verify that /healthcheck also succeeds when valid HMAC headers for empty body are provided."""
+    import time
+    import uuid
+    import hmac
+    import hashlib
+    from fastapi.testclient import TestClient
+    from main import app
+    import main
+
+    client = TestClient(app)
+    test_secret = "test-hmac-secret-12345"
+    ts = str(int(time.time()))
+    nonce = str(uuid.uuid4())
+    msg = f"{ts}.{nonce}.{{}}"
+    sig = hmac.new(test_secret.encode("utf-8"), msg.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    headers = {
+        "X-Signature": sig,
+        "X-Timestamp": ts,
+        "X-Nonce": nonce,
+    }
+    if main._API_KEY:
+        headers["X-API-Key"] = main._API_KEY
+
+    with patch.object(main, "_ML_SECRET", test_secret), \
+         patch.object(main, "_EAGER_WARMUP", False):
+        response = client.get("/healthcheck", headers=headers)
+        assert response.status_code == 200
+
+
+def test_inference_endpoint_enforces_hmac_when_secret_configured():
+    """Verify that inference endpoints protected by verify_api_key reject requests missing HMAC headers when secret is set."""
+    from fastapi.testclient import TestClient
+    from main import app
+    import main
+
+    client = TestClient(app)
+    test_secret = "test-hmac-secret-12345"
+    headers = {"X-API-Key": main._API_KEY} if main._API_KEY else {}
+
+    with patch.object(main, "_ML_SECRET", test_secret):
+        response = client.post(
+            "/summarize",
+            headers=headers,
+            json={"text": "This is a sample test text for summarization."}
+        )
+        assert response.status_code == 401
+        assert "HMAC" in response.json().get("detail", "")
+
+
+def test_cached_quiz_reshuffle_with_duplicate_options():
+    """Verify that cached quiz reshuffling preserves the correct option even when duplicate strings exist."""
+    from fastapi.testclient import TestClient
+    from main import app, cache
+    import main
+
+    client = TestClient(app)
+    headers = {"X-API-Key": main._API_KEY} if main._API_KEY else {}
+
+    cached_payload = {
+        "questions": [
+            {
+                "order": 0,
+                "prompt": "What is the result?",
+                "options": ["Dup", "Unique", "Dup", "Another"],
+                "correct_index": 2,  # The second "Dup"
+                "explanation": "Target option is the second Dup",
+                "is_fallback": False,
+            }
+        ]
+    }
+
+    req_body = {
+        "course_title": "Test Course",
+        "module_title": "Test Title",
+        "learning_objective": "Testing cache reshuffle",
+        "key_points": ["Point 1"],
+    }
+
+    from schemas.types import QuizRequest
+    cache_key = cache.generate_key("quiz", QuizRequest(**req_body).model_dump())
+    cache.set(cache_key, cached_payload)
+
+    with patch.object(main, "_ML_SECRET", None), \
+         patch.object(main, "_ensure_model_loaded", return_value=None):
+        resp = client.post("/quiz", json=req_body, headers=headers)
+        assert resp.status_code == 200
+        assert resp.headers.get("x-cache") == "HIT"
+        data = resp.json()
+        q = data["questions"][0]
+        # Regardless of shuffling, correct_index must point to the original correct option ("Dup")
+        assert q["options"][q["correct_index"]] == "Dup"
+        assert len(q["options"]) == 4
+
+
+def test_inference_timeout_from_header():
+    """Verify that _get_inference_timeout respects X-Timeout-Seconds header."""
+    from main import _get_inference_timeout
+    from starlette.requests import Request
+
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "path": "/summarize",
+        "headers": [(b"x-timeout-seconds", b"12.5")],
+    }
+    req = Request(scope)
+    timeout = _get_inference_timeout(req)
+    assert timeout == 12.5
+
+    # With header exceeding ceiling, capped at _INFERENCE_TIMEOUT
+    scope_high = {
+        "type": "http",
+        "method": "POST",
+        "path": "/summarize",
+        "headers": [(b"x-timeout-seconds", b"120.0")],
+    }
+    req_high = Request(scope_high)
+    timeout_high = _get_inference_timeout(req_high)
+    assert timeout_high == 20.0
+
+    # With multiplier for lesson/quiz
+    timeout_mult = _get_inference_timeout(req_high, multiplier=1.5)
+    assert timeout_mult == 30.0
+
+    # With invalid header, fallback to default
+    scope_invalid = {
+        "type": "http",
+        "method": "POST",
+        "path": "/summarize",
+        "headers": [(b"x-timeout-seconds", b"invalid_number")],
+    }
+    req_invalid = Request(scope_invalid)
+    timeout_invalid = _get_inference_timeout(req_invalid)
+    assert timeout_invalid == 20.0

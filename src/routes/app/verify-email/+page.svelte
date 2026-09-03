@@ -60,10 +60,10 @@
 </svelte:head>
 
 <div
-	class="max-w-md gap-6 py-12 mx-auto my-auto flex w-full flex-col items-center justify-center text-center"
+	class="mx-auto my-auto flex w-full max-w-md flex-col items-center justify-center gap-6 py-12 text-center"
 >
 	<div
-		class="h-16 w-16 rounded-2xl flex items-center justify-center bg-primary-soft text-primary shadow-md"
+		class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft text-primary shadow-md"
 	>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -90,12 +90,12 @@
 		</p>
 	</div>
 
-	<div class="gap-3 flex w-full flex-col">
+	<div class="flex w-full flex-col gap-3">
 		<button
 			type="button"
 			onclick={handleResend}
 			disabled={cooldown > 0 || sending}
-			class="py-3.5 text-xs font-bold text-white w-full cursor-pointer rounded-xl bg-primary shadow-md shadow-primary/20 hover:bg-primary-hover active:scale-98 disabled:opacity-50"
+			class="w-full cursor-pointer rounded-xl bg-primary py-3.5 text-xs font-bold text-white shadow-primary/20 shadow-md hover:bg-primary-hover active:scale-98 disabled:opacity-50"
 		>
 			{#if sending}
 				Sending...

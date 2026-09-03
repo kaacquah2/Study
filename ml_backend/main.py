@@ -23,10 +23,12 @@ Run locally:
 
 import os
 import uuid
+import json
 import secrets
 import asyncio
 import logging
 import random
+import threading
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -100,7 +102,23 @@ logger = logging.getLogger(__name__)
 
 _API_KEY = os.getenv("ML_BACKEND_API_KEY", "")
 _APP_ENV = os.getenv("APP_ENV", "development")
-_INFERENCE_TIMEOUT = float(os.getenv("INFERENCE_TIMEOUT", "60.0"))
+_INFERENCE_TIMEOUT = float(os.getenv("INFERENCE_TIMEOUT", "20.0"))
+
+
+def _get_inference_timeout(request: Request, multiplier: float = 1.0) -> float:
+    """
+    Compute effective inference timeout bounded by incoming X-Timeout-Seconds
+    header and the platform ceiling.
+    """
+    hdr = request.headers.get("X-Timeout-Seconds")
+    if hdr:
+        try:
+            val = float(hdr)
+            if val > 0:
+                return min(val, _INFERENCE_TIMEOUT * multiplier)
+        except (ValueError, TypeError):
+            pass
+    return _INFERENCE_TIMEOUT * multiplier
 
 # Security verification: refuse to run in production without a secure key set
 if not _API_KEY and _APP_ENV.lower() == "production":
@@ -128,8 +146,12 @@ _LAZY_LOAD_LOCKS = {
     "chat_assistant": asyncio.Lock(),
 }
 
-# Rate limiter setup
-limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
+# Rate limiter setup: key on trusted X-User-ID header so SvelteKit proxy users aren't aggregated to single IP
+def user_key(request: Request) -> str:
+    return request.headers.get("X-User-ID") or get_remote_address(request)
+
+
+limiter = Limiter(key_func=user_key, default_limits=["120/minute"])
 
 
 # ── Lifespan: warm up models non-blockingly in background (parallel execution) ─────────────
@@ -230,19 +252,54 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
+
+def _handle_500_error(request: Request, endpoint_name: str, exc: Exception) -> HTTPException:
+    req_id = getattr(request.state, "request_id", None) or request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    logger.error(f"[req_id={req_id}] {endpoint_name} error: {exc}", exc_info=True)
+    return HTTPException(
+        status_code=500,
+        detail={"message": "Internal Server Error", "request_id": req_id},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    req_id = getattr(request.state, "request_id", None) or request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    logger.error(f"[req_id={req_id}] Unhandled server exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": {"message": "Internal Server Error", "request_id": req_id}},
+        headers={"X-Request-ID": req_id},
+    )
+
 # ── X-Request-ID and Latency Middleware ─────────────────────────────────────────
 _METRICS_COUNTERS = {
     "total_requests": 0,
     "total_errors": 0,
     "start_time": time.time(),
 }
+# Lock protects counter increments from concurrent writer races under multi-threaded workers.
+_METRICS_LOCK = threading.Lock()
+
+
+def _incr_metric(key: str) -> None:
+    """Atomically increment a metrics counter."""
+    with _METRICS_LOCK:
+        _METRICS_COUNTERS[key] += 1
+
+
+def _get_metrics_snapshot() -> dict:
+    """Return a consistent snapshot of all counters."""
+    with _METRICS_LOCK:
+        return dict(_METRICS_COUNTERS)
+
 
 @app.middleware("http")
 async def request_metrics_middleware(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
     request.state.request_id = request_id
     start_time = time.perf_counter()
-    _METRICS_COUNTERS["total_requests"] += 1
+    _incr_metric("total_requests")
 
     try:
         response = await call_next(request)
@@ -252,7 +309,7 @@ async def request_metrics_middleware(request: Request, call_next):
         logger.info(f"[{request.method}] {request.url.path} - status={response.status_code} - duration={duration_ms}ms [req_id={request_id}]")
         return response
     except Exception as e:
-        _METRICS_COUNTERS["total_errors"] += 1
+        _incr_metric("total_errors")
         duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
         logger.error(f"[{request.method}] {request.url.path} - FAILED - duration={duration_ms}ms [req_id={request_id}]: {e}")
         raise
@@ -270,7 +327,22 @@ if _APP_ENV.lower() == "production":
             "FATAL: Wildcard '*' is prohibited in ALLOWED_ORIGINS in production mode."
         )
 else:
-    allowed_origins = [origin.strip() for origin in allowed_origins_raw.split(",") if origin.strip()] if allowed_origins_raw else ["*"]
+    # Development: if ALLOWED_ORIGINS is unset, use explicit localhost origins instead of "*".
+    # allow_credentials=True combined with allow_origins=["*"] is rejected by browsers per the
+    # CORS spec (RFC 9110 §10.2 — credentials require a specific origin, not a wildcard).
+    _DEFAULT_DEV_ORIGINS = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:4173",
+        "http://127.0.0.1:4173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+    allowed_origins = (
+        [origin.strip() for origin in allowed_origins_raw.split(",") if origin.strip()]
+        if allowed_origins_raw
+        else _DEFAULT_DEV_ORIGINS
+    )
 
 app.add_middleware(
     CORSMiddleware,
@@ -284,26 +356,46 @@ app.add_middleware(
 # ── Auth dependency ────────────────────────────────────────────────────────────
 
 _ML_SECRET = os.getenv("ML_BACKEND_SECRET", "")
-import threading
+from cachetools import TTLCache  # already in requirements via cache.py
 
-# In-memory nonce store with timestamp expiration to prevent replay attacks
-_SEEN_NONCES: dict[str, float] = {}
-_NONCE_LOCK = threading.Lock()
-_NONCE_TTL = 300.0  # 5 minutes window
+_NONCE_TTL = 300  # 5 minutes window (seconds)
 
-def _is_nonce_valid(nonce: str, now: float) -> bool:
-    with _NONCE_LOCK:
-        expired = [k for k, exp in _SEEN_NONCES.items() if exp < now]
-        for k in expired:
-            del _SEEN_NONCES[k]
+# Fallback in-memory nonce store: bounded to prevent flood-based memory exhaustion.
+# maxsize=10_000 caps memory growth; TTL ensures automatic expiry aligns with the HMAC window.
+_NONCE_FALLBACK: TTLCache = TTLCache(maxsize=10_000, ttl=float(_NONCE_TTL))
+_NONCE_FALLBACK_LOCK = threading.Lock()
 
-        if nonce in _SEEN_NONCES:
+
+def _is_nonce_valid(nonce: str, now: float) -> bool:  # noqa: ARG001 (now kept for signature compat)
+    """
+    Validate and consume a nonce to prevent replay attacks.
+
+    Strategy:
+    1. Try Redis SET key 1 EX <TTL> NX — atomic across all uvicorn workers.
+       Returns True (key was set = nonce is fresh) or False (key existed = replay).
+    2. Fallback to a bounded in-memory TTLCache when Redis is unavailable.
+       This is per-process, so multi-worker replay protection degrades gracefully.
+    """
+    redis_client = getattr(cache, "_redis_client", None)
+    redis_available = getattr(cache, "_redis_available", False)
+
+    if redis_available and redis_client is not None:
+        try:
+            # NX: only set if Not eXists. Returns True if the key was newly set.
+            result = redis_client.set(f"nonce:{nonce}", 1, ex=_NONCE_TTL, nx=True)
+            return bool(result)
+        except Exception:
+            pass  # fall through to in-memory fallback
+
+    # Bounded in-memory fallback
+    with _NONCE_FALLBACK_LOCK:
+        if nonce in _NONCE_FALLBACK:
             return False
-        _SEEN_NONCES[nonce] = now + _NONCE_TTL
+        _NONCE_FALLBACK[nonce] = 1
         return True
 
-async def verify_api_key(request: Request) -> None:
-    """Dual-layer authentication: API key check and HMAC-SHA256 nonced request signature verification."""
+async def verify_api_key_only(request: Request) -> None:
+    """Authentication dependency that checks the API key header without requiring HMAC signing. Used for lightweight health checks."""
     if not _API_KEY:
         if _APP_ENV.lower() == "production":
             raise HTTPException(status_code=401, detail="Invalid API key.")
@@ -311,6 +403,10 @@ async def verify_api_key(request: Request) -> None:
         key = request.headers.get("X-API-Key", "")
         if not secrets.compare_digest(key, _API_KEY):
             raise HTTPException(status_code=401, detail="Invalid API key.")
+
+async def verify_api_key(request: Request) -> None:
+    """Dual-layer authentication: API key check and HMAC-SHA256 nonced request signature verification."""
+    await verify_api_key_only(request)
 
     if _ML_SECRET:
         sig = request.headers.get("X-Signature", "")
@@ -398,9 +494,10 @@ def _evaluate_ml_readiness() -> tuple[bool, str, dict[str, bool], dict[str, str]
 @app.get("/health/liveness", tags=["Health"])
 async def health_liveness():
     """Unauthenticated HTTP liveness probe — returns 200 as long as FastAPI process is alive."""
+    counters = _get_metrics_snapshot()
     return {
         "status": "alive",
-        "uptime_seconds": round(time.time() - _METRICS_COUNTERS["start_time"], 1),
+        "uptime_seconds": round(time.time() - counters["start_time"], 1),
     }
 
 
@@ -439,7 +536,7 @@ async def health_probe(probe: str = "readiness"):
     return await health_readiness()
 
 
-@app.get("/healthcheck", response_model=HealthResponse, dependencies=[Depends(verify_api_key)], tags=["Health"])
+@app.get("/healthcheck", response_model=HealthResponse, dependencies=[Depends(verify_api_key_only)], tags=["Health"])
 async def healthcheck(response: Response):
     """
     Protected detailed ML healthcheck & diagnostic endpoint (requires X-API-Key).
@@ -494,13 +591,14 @@ def metrics():
         ram_mb = round(process.memory_info().rss / (1024 * 1024), 2)
     except Exception:
         ram_mb = None
-    uptime_sec = round(time.time() - _METRICS_COUNTERS["start_time"], 1)
+    counters = _get_metrics_snapshot()
+    uptime_sec = round(time.time() - counters["start_time"], 1)
 
     metrics_data: dict[str, Any] = {
         "status": "up",
         "uptime_seconds": uptime_sec,
-        "total_requests": _METRICS_COUNTERS["total_requests"],
-        "total_errors": _METRICS_COUNTERS["total_errors"],
+        "total_requests": counters["total_requests"],
+        "total_errors": counters["total_errors"],
         "process_ram_mb": ram_mb,
         "cuda_available": cuda_available,
         "device_name": torch.cuda.get_device_name(0) if cuda_available else "CPU",
@@ -549,7 +647,7 @@ async def summarize(request: Request, body: SummarizeRequest, response: Response
                 max_length=body.max_length,
                 min_length=body.min_length,
             ),
-            timeout=_INFERENCE_TIMEOUT,
+            timeout=_get_inference_timeout(request),
         )
         _MODEL_STATUS["summarizer"] = "ready"
         res_data = {"summary": summary}
@@ -560,8 +658,7 @@ async def summarize(request: Request, body: SummarizeRequest, response: Response
         raise HTTPException(status_code=504, detail="Inference request timed out.")
     except Exception as e:
         _MODEL_STATUS["summarizer"] = f"error: {str(e)}"
-        logger.error(f"Summarize error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _handle_500_error(request, "Summarize", e)
 
 
 # ── Paraphrase ─────────────────────────────────────────────────────────────────
@@ -581,7 +678,7 @@ async def paraphrase(request: Request, body: ParaphraseRequest, response: Respon
     try:
         result = await asyncio.wait_for(
             asyncio.to_thread(paraphraser_model.paraphrase, text=body.text, style=body.style),
-            timeout=_INFERENCE_TIMEOUT,
+            timeout=_get_inference_timeout(request),
         )
         _MODEL_STATUS["paraphraser"] = "ready"
         res_data = {"paraphrase": result}
@@ -592,8 +689,7 @@ async def paraphrase(request: Request, body: ParaphraseRequest, response: Respon
         raise HTTPException(status_code=504, detail="Inference request timed out.")
     except Exception as e:
         _MODEL_STATUS["paraphraser"] = f"error: {str(e)}"
-        logger.error(f"Paraphrase error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _handle_500_error(request, "Paraphrase", e)
 
 
 # ── Outline ────────────────────────────────────────────────────────────────────
@@ -625,7 +721,7 @@ async def outline(body: OutlineRequest, request: Request, response: Response):
                 reference_text=body.reference_text,
                 user_id=user_id,
             ),
-            timeout=_INFERENCE_TIMEOUT,
+            timeout=_get_inference_timeout(request),
         )
         _MODEL_STATUS["outline_generator"] = "ready"
         modules = [OutlineModule(**m) for m in data["modules"]]
@@ -642,8 +738,7 @@ async def outline(body: OutlineRequest, request: Request, response: Response):
         raise HTTPException(status_code=504, detail="Inference request timed out.")
     except Exception as e:
         _MODEL_STATUS["outline_generator"] = f"error: {str(e)}"
-        logger.error(f"Outline generation error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _handle_500_error(request, "Outline generation", e)
 
 
 # ── Lesson ─────────────────────────────────────────────────────────────────────
@@ -674,7 +769,7 @@ async def lesson(body: LessonRequest, request: Request, response: Response):
                 course_outline=body.course_outline,
                 user_id=user_id,
             ),
-            timeout=_INFERENCE_TIMEOUT * 1.5,
+            timeout=_get_inference_timeout(request, multiplier=1.5),
         )
         _MODEL_STATUS["lesson_generator"] = "ready"
         pages = [LessonPage(**p) for p in data["pages"]]
@@ -686,8 +781,7 @@ async def lesson(body: LessonRequest, request: Request, response: Response):
         raise HTTPException(status_code=504, detail="Inference request timed out.")
     except Exception as e:
         _MODEL_STATUS["lesson_generator"] = f"error: {str(e)}"
-        logger.error(f"Lesson generation error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _handle_500_error(request, "Lesson generation", e)
 
 
 # ── Quiz ───────────────────────────────────────────────────────────────────────
@@ -705,9 +799,10 @@ async def quiz(request: Request, body: QuizRequest, response: Response):
         # Dynamic post-cache shuffling of options to keep quiz interaction fresh
         res_obj = QuizResponse(**cached_val)
         for q in res_obj.questions:
-            correct_opt = q.options[q.correct_index]
-            random.shuffle(q.options)
-            q.correct_index = q.options.index(correct_opt)
+            order = list(range(len(q.options)))
+            random.shuffle(order)
+            q.options = [q.options[i] for i in order]
+            q.correct_index = order.index(q.correct_index)
         return res_obj
 
     try:
@@ -719,7 +814,7 @@ async def quiz(request: Request, body: QuizRequest, response: Response):
                 key_points=body.key_points,
                 lesson_body=body.lesson_body,
             ),
-            timeout=_INFERENCE_TIMEOUT * 1.5,
+            timeout=_get_inference_timeout(request, multiplier=1.5),
         )
         _MODEL_STATUS["quiz_pipeline"] = "ready"
         questions = [QuizQuestion(**q) for q in data["questions"]]
@@ -731,8 +826,7 @@ async def quiz(request: Request, body: QuizRequest, response: Response):
         raise HTTPException(status_code=504, detail="Inference request timed out.")
     except Exception as e:
         _MODEL_STATUS["quiz_pipeline"] = f"error: {str(e)}"
-        logger.error(f"Quiz generation error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _handle_500_error(request, "Quiz generation", e)
 
 
 # ── Chat ───────────────────────────────────────────────────────────────────────
@@ -740,6 +834,7 @@ async def quiz(request: Request, body: QuizRequest, response: Response):
 @app.post("/chat", response_model=ChatResponse, dependencies=[Depends(verify_api_key)], tags=["AI"])
 @limiter.limit("30/minute")
 async def chat(body: ChatRequest, request: Request, response: Response):
+    await _ensure_model_loaded("chat_assistant", chat_model.is_loaded, chat_model.load_model)
     try:
         user_id = request.headers.get("X-User-ID", "__anonymous__")
         # Chat is RAG-augmented and conversation-specific — user_id is in cache key.
@@ -757,7 +852,7 @@ async def chat(body: ChatRequest, request: Request, response: Response):
                 course_context=body.course_context,
                 user_id=user_id,
             ),
-            timeout=_INFERENCE_TIMEOUT,
+            timeout=_get_inference_timeout(request),
         )
         _MODEL_STATUS["chat_assistant"] = "ready"
         res_obj = ChatResponse(reply=reply, sources=sources)
@@ -771,8 +866,7 @@ async def chat(body: ChatRequest, request: Request, response: Response):
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         _MODEL_STATUS["chat_assistant"] = f"error: {str(e)}"
-        logger.error(f"Chat error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _handle_500_error(request, "Chat", e)
 
 
 @app.post("/chat/stream", dependencies=[Depends(verify_api_key)], tags=["AI"])
@@ -781,13 +875,40 @@ async def chat_stream_endpoint(body: ChatRequest, request: Request):
     """
     Stream AI chat response via Server-Sent Events (SSE).
     """
+    await _ensure_model_loaded("chat_assistant", chat_model.is_loaded, chat_model.load_model)
     user_id = request.headers.get("X-User-ID", "__anonymous__")
-    return StreamingResponse(
-        chat_model.chat_stream(
+    stream_timeout = _get_inference_timeout(request)
+
+    async def _timed_stream_generator():
+        gen = chat_model.chat_stream(
             messages=[m.model_dump() for m in body.messages],
             course_context=body.course_context,
             user_id=user_id,
-        ),
+            timeout=stream_timeout,
+        )
+        try:
+            while True:
+                chunk = await asyncio.wait_for(
+                    asyncio.to_thread(lambda: next(gen, None)),
+                    timeout=stream_timeout,
+                )
+                if chunk is None:
+                    break
+                yield chunk
+            _MODEL_STATUS["chat_assistant"] = "ready"
+        except asyncio.TimeoutError:
+            logger.error("Chat stream request timed out.")
+            payload_err = json.dumps({"error": "Inference request timed out.", "done": True, "sources": []})
+            yield f"data: {payload_err}\n\n"
+        except Exception as e:
+            _MODEL_STATUS["chat_assistant"] = f"error: {str(e)}"
+            req_id = getattr(request.state, "request_id", None) or request.headers.get("X-Request-ID") or str(uuid.uuid4())
+            logger.error(f"[req_id={req_id}] Chat stream error: {e}", exc_info=True)
+            payload_err = json.dumps({"error": "Internal Server Error", "request_id": req_id, "done": True, "sources": []})
+            yield f"data: {payload_err}\n\n"
+
+    return StreamingResponse(
+        _timed_stream_generator(),
         media_type="text/event-stream"
     )
 
@@ -797,6 +918,7 @@ async def chat_stream_endpoint(body: ChatRequest, request: Request):
 @app.post("/completion", response_model=CompletionResponse, dependencies=[Depends(verify_api_key)], tags=["AI"])
 @limiter.limit("30/minute")
 async def completion(body: CompletionRequest, request: Request, response: Response):
+    await _ensure_model_loaded("chat_assistant", chat_model.is_loaded, chat_model.load_model)
     try:
         user_id = request.headers.get("X-User-ID", "__anonymous__")
         cache_key = cache.generate_key("completion", {**body.model_dump(), "user_id": user_id})
@@ -818,8 +940,9 @@ async def completion(body: CompletionRequest, request: Request, response: Respon
                 course_context=None,
                 user_id=user_id,
             ),
-            timeout=_INFERENCE_TIMEOUT,
+            timeout=_get_inference_timeout(request),
         )
+        _MODEL_STATUS["chat_assistant"] = "ready"
         res_obj = CompletionResponse(text=reply)
         cache.set(cache_key, res_obj.model_dump(), ttl=300)
         return res_obj
@@ -827,8 +950,8 @@ async def completion(body: CompletionRequest, request: Request, response: Respon
         logger.error("Completion request timed out.")
         raise HTTPException(status_code=504, detail="Inference request timed out.")
     except Exception as e:
-        logger.error(f"Completion error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        _MODEL_STATUS["chat_assistant"] = f"error: {str(e)}"
+        raise _handle_500_error(request, "Completion", e)
 
 
 # ── Documents (RAG ingestion) ──────────────────────────────────────────────────
@@ -846,11 +969,14 @@ async def add_documents(body: DocumentsRequest, request: Request):
     Client-supplied identity fields in the request body are ignored.
     """
     user_id = request.headers.get("X-User-ID", "__anonymous__")
-    added = await asyncio.wait_for(
-        asyncio.to_thread(rag.add_documents, body.texts, user_id, "private"),
-        timeout=_INFERENCE_TIMEOUT,
-    )
-    return {"status": "ok", "chunks_added": added, "user_id": user_id}
+    try:
+        added = await asyncio.wait_for(
+            asyncio.to_thread(rag.add_documents, body.texts, user_id, "private"),
+            timeout=_get_inference_timeout(request),
+        )
+        return {"status": "ok", "chunks_added": added, "user_id": user_id}
+    except Exception as e:
+        raise _handle_500_error(request, "Add documents", e)
 
 
 @app.delete("/documents", dependencies=[Depends(verify_api_key)], tags=["RAG"])
@@ -861,5 +987,8 @@ async def clear_documents(request: Request):
     Global reference documents are never affected by user-initiated clears.
     """
     user_id = request.headers.get("X-User-ID", "__anonymous__")
-    await asyncio.to_thread(rag.clear, user_id=user_id)
-    return {"status": "ok", "message": f"Private vector store cleared for user {user_id}."}
+    try:
+        await asyncio.to_thread(rag.clear, user_id=user_id)
+        return {"status": "ok", "message": f"Private vector store cleared for user {user_id}."}
+    except Exception as e:
+        raise _handle_500_error(request, "Clear documents", e)

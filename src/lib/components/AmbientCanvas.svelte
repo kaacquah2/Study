@@ -6,17 +6,18 @@
 	let ctx: CanvasRenderingContext2D | null = null;
 	let width = 0;
 	let height = 0;
-	let animId: number | null = null;
+	let timerId: ReturnType<typeof setTimeout> | null = null;
 
-	// Simple fluid gradient animation using perlin-like color transition
+	// Fluid ambient colors derived from primary & accent design tokens
 	const colors = [
-		{ r: 100, g: 150, b: 255 },
-		{ r: 150, g: 255, b: 200 },
-		{ r: 255, g: 200, b: 150 },
-		{ r: 255, g: 150, b: 100 }
+		{ r: 107, g: 92, b: 246 }, // --primary #6b5cf6
+		{ r: 124, g: 58, b: 237 }, // --c-violet #7c3aed
+		{ r: 232, g: 148, b: 12 }, // --accent #e8940c
+		{ r: 90, g: 76, b: 224 } // --primary-hover #5a4ce0
 	];
 	let t = 0;
-	const speed = 0.0005; // time progression
+	// Scaled for ~10fps tick interval (100ms)
+	const speed = 0.003;
 
 	function lerp(a: number, b: number, f: number) {
 		return a + f * (b - a);
@@ -30,24 +31,45 @@
 		canvas.height = height;
 	}
 
+	function stopLoop() {
+		if (timerId !== null) {
+			clearTimeout(timerId);
+			timerId = null;
+		}
+	}
+
 	function draw(loop = true) {
 		if (!ctx || width === 0 || height === 0) return;
+		if (browser && document.hidden) {
+			stopLoop();
+			return;
+		}
+
 		const gradient = ctx.createLinearGradient(0, 0, width, height);
 		const phase = (t % 1) * colors.length;
 		const i = Math.floor(phase);
 		const f = phase - i;
 		const c1 = colors[i % colors.length];
 		const c2 = colors[(i + 1) % colors.length];
-		const r = Math.floor(lerp(c1.r, c2.r, f));
-		const g = Math.floor(lerp(c1.g, c2.g, f));
-		const b = Math.floor(lerp(c1.b, c2.b, f));
-		gradient.addColorStop(0, `rgb(${r},${g},${b})`);
-		gradient.addColorStop(1, `rgb(${r},${g},${b})`);
+		const c3 = colors[(i + 2) % colors.length];
+
+		const r1 = Math.floor(lerp(c1.r, c2.r, f));
+		const g1 = Math.floor(lerp(c1.g, c2.g, f));
+		const b1 = Math.floor(lerp(c1.b, c2.b, f));
+
+		const r2 = Math.floor(lerp(c2.r, c3.r, f));
+		const g2 = Math.floor(lerp(c2.g, c3.g, f));
+		const b2 = Math.floor(lerp(c2.b, c3.b, f));
+
+		gradient.addColorStop(0, `rgb(${r1},${g1},${b1})`);
+		gradient.addColorStop(1, `rgb(${r2},${g2},${b2})`);
 		ctx.fillStyle = gradient;
 		ctx.fillRect(0, 0, width, height);
+
 		if (loop) {
 			t += speed;
-			animId = requestAnimationFrame(() => draw(true));
+			stopLoop();
+			timerId = setTimeout(() => draw(true), 100);
 		}
 	}
 
@@ -55,13 +77,12 @@
 		if (browser && canvas) {
 			const motionMediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 			resize();
-			ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+			ctx = canvas.getContext('2d');
 
 			const startOrStop = () => {
-				if (animId !== null) {
-					cancelAnimationFrame(animId);
-					animId = null;
-				}
+				stopLoop();
+				if (document.hidden) return;
+
 				if (motionMediaQuery.matches) {
 					draw(false);
 				} else {
@@ -69,17 +90,31 @@
 				}
 			};
 
+			const handleResize = () => {
+				resize();
+				if (motionMediaQuery.matches) {
+					draw(false);
+				}
+			};
+
+			const handleVisibilityChange = () => {
+				if (document.hidden) {
+					stopLoop();
+				} else {
+					startOrStop();
+				}
+			};
+
 			startOrStop();
 			motionMediaQuery.addEventListener('change', startOrStop);
-			window.addEventListener('resize', () => {
-				resize();
-				if (motionMediaQuery.matches) draw(false);
-			});
+			window.addEventListener('resize', handleResize);
+			document.addEventListener('visibilitychange', handleVisibilityChange);
 
 			return () => {
+				stopLoop();
 				motionMediaQuery.removeEventListener('change', startOrStop);
-				window.removeEventListener('resize', resize);
-				if (animId !== null) cancelAnimationFrame(animId);
+				window.removeEventListener('resize', handleResize);
+				document.removeEventListener('visibilitychange', handleVisibilityChange);
 			};
 		}
 	});

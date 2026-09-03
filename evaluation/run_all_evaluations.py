@@ -87,13 +87,13 @@ def main():
 
     if results.get("quiz"):
         quiz_m = results["quiz"]
-        print(f"* Quiz Rubric Composite Mean:    {quiz_m['overall_composite_mean']} / 5.0")
+        print(f"* Quiz Expert Rubric Mean:       {quiz_m['overall_composite_mean']:.2f} / 5.0 (n=1 Domain Expert, N={quiz_m['sample_size']})")
         dim_m = quiz_m["dimension_metrics"]
-        print(f"   - Relevance:     {dim_m['relevance']['mean']:.2f}/5.0 (Kappa: {dim_m['relevance']['cohens_kappa_agreement']})")
-        print(f"   - Clarity:       {dim_m['clarity']['mean']:.2f}/5.0 (Kappa: {dim_m['clarity']['cohens_kappa_agreement']})")
-        print(f"   - Correctness:   {dim_m['correctness']['mean']:.2f}/5.0 (Kappa: {dim_m['correctness']['cohens_kappa_agreement']})")
-        print(f"   - Distractors:   {dim_m['distractor_plausibility']['mean']:.2f}/5.0 (Kappa: {dim_m['distractor_plausibility']['cohens_kappa_agreement']})")
-        print(f"   - Difficulty:    {dim_m['difficulty_appropriateness']['mean']:.2f}/5.0 (Kappa: {dim_m['difficulty_appropriateness']['cohens_kappa_agreement']})")
+        print(f"   - Relevance:     {dim_m['relevance']['mean']:.2f} +/- {dim_m['relevance']['std_dev']:.2f} (>=4.0: {dim_m['relevance']['pct_high_quality_ge_4']}%)")
+        print(f"   - Clarity:       {dim_m['clarity']['mean']:.2f} +/- {dim_m['clarity']['std_dev']:.2f} (>=4.0: {dim_m['clarity']['pct_high_quality_ge_4']}%)")
+        print(f"   - Correctness:   {dim_m['correctness']['mean']:.2f} +/- {dim_m['correctness']['std_dev']:.2f} (>=4.0: {dim_m['correctness']['pct_high_quality_ge_4']}%)")
+        print(f"   - Distractors:   {dim_m['distractor_plausibility']['mean']:.2f} +/- {dim_m['distractor_plausibility']['std_dev']:.2f} (>=4.0: {dim_m['distractor_plausibility']['pct_high_quality_ge_4']}%)")
+        print(f"   - Difficulty:    {dim_m['difficulty_appropriateness']['mean']:.2f} +/- {dim_m['difficulty_appropriateness']['std_dev']:.2f} (>=4.0: {dim_m['difficulty_appropriateness']['pct_high_quality_ge_4']}%)")
 
     if results.get("user_study"):
         sus_m = results["user_study"]["sus_metrics"]

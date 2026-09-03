@@ -1,7 +1,8 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
-import { adminDb } from '$lib/server/admin';
+import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
+import crypto from 'crypto';
 
 export const GET: RequestHandler = async ({ params, request }) => {
 	const { id: courseId } = params;
@@ -33,13 +34,77 @@ export const GET: RequestHandler = async ({ params, request }) => {
 			);
 		}
 
+		const origin = new URL(request.url).origin;
+		const existingShares = await adminDb
+			.collection('sharedCourses')
+			.where('courseId', '==', courseId)
+			.where('revoked', '==', false)
+			.limit(1)
+			.get();
+
+		let token: string;
+		if (!existingShares.empty) {
+			token = existingShares.docs[0].id;
+		} else {
+			token = crypto.randomBytes(16).toString('hex');
+			const modulesSnapshot = await courseRef.collection('modules').orderBy('order', 'asc').get();
+			interface SharedModule {
+				order: number;
+				type: 'lesson' | 'quiz';
+				title: string;
+				summary: string;
+				pages: unknown;
+				questions: unknown;
+			}
+			const modules: SharedModule[] = [];
+
+			modulesSnapshot.forEach((doc) => {
+				const data = doc.data();
+				if (data.status === 'ready') {
+					modules.push({
+						order: data.order,
+						type: data.type,
+						title: data.title,
+						summary: data.summary,
+						pages: data.pages || null,
+						questions: data.questions || null
+					});
+				}
+			});
+
+			const userDoc = await adminDb.collection('users').doc(user.uid).get();
+			const sharedByName =
+				userDoc.data()?.displayName || user.name || user.email || 'Anonymous student';
+
+			await adminDb
+				.collection('sharedCourses')
+				.doc(token)
+				.set({
+					token,
+					courseId,
+					sharedByUid: user.uid,
+					sharedByName,
+					isPublic: false,
+					snapshot: {
+						title: courseData.title,
+						description: courseData.description,
+						format: courseData.format,
+						modules
+					},
+					claimCount: 0,
+					importCount: 0,
+					revoked: false,
+					createdAt: FieldValue.serverTimestamp()
+				});
+		}
+
 		const certificate = {
 			id: `CERT-${courseId.slice(0, 8).toUpperCase()}`,
 			courseId,
 			courseTitle: courseData.title,
 			studentName: user.email || 'Learner',
 			issuedAt: new Date().toISOString(),
-			shareUrl: `${new URL(request.url).origin}/shared/${courseId}`
+			shareUrl: `${origin}/share/${token}`
 		};
 
 		return json({ certificate });

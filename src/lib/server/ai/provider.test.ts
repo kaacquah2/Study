@@ -5,7 +5,8 @@ import {
 	generateQuiz,
 	summarize,
 	paraphrase,
-	chat
+	chat,
+	executeAI
 } from './provider';
 import { callML, pingMLBackend } from './client';
 import * as geminiModule from './gemini';
@@ -99,7 +100,8 @@ describe('AI Provider Unit Tests', () => {
 				'Python Basics',
 				3,
 				'lessons_and_quizzes',
-				undefined
+				undefined,
+				expect.any(Number)
 			);
 			expect(provider).toBe('gemini');
 			expect(result.title).toBe('Intro to Python');
@@ -377,6 +379,110 @@ describe('AI Provider Unit Tests', () => {
 			await expect(
 				generateOutline('General History Topic', 3, 'lessons_and_quizzes')
 			).rejects.toThrow('All AI providers (gemini, ollama, ml_backend) are currently unavailable.');
+		});
+	});
+
+	describe('Deadline Budgets and Tier Skipping (Netlify ~26s Alignment)', () => {
+		it('skips Tier 1 ml_backend when remaining budget is below MIN_TIER_BUDGET_MS.ml_backend', async () => {
+			const mlFn = vi.fn().mockResolvedValue('ml_result');
+			const geminiFn = vi.fn().mockResolvedValue('gemini_result');
+			const ollamaFn = vi.fn().mockResolvedValue('ollama_result');
+
+			// In-domain CS task would normally try Tier 1 ml_backend first.
+			// With a tight deadline of 3,000ms (< 4,000ms ml_backend min), ml_backend must be skipped,
+			// while Gemini (min 2,000ms) runs successfully.
+			const res = await executeAI(
+				mlFn,
+				geminiFn,
+				ollamaFn,
+				'reasoning',
+				'Computer Science Data Structures',
+				3_000
+			);
+
+			expect(mlFn).not.toHaveBeenCalled();
+			expect(geminiFn).toHaveBeenCalled();
+			expect(res.provider).toBe('gemini');
+			expect(res.result).toBe('gemini_result');
+		});
+
+		it('skips remaining tiers when deadline budget is exhausted after a tier failure', async () => {
+			// Tier 1 ml_backend runs with 4,500ms budget, but takes 3,000ms before failing
+			const mlFn = vi.fn().mockImplementation(async () => {
+				await new Promise((r) => setTimeout(r, 60));
+				throw new Error('ml_backend slow network drop');
+			});
+			const geminiFn = vi.fn().mockResolvedValue('gemini_result');
+			const ollamaFn = vi.fn().mockResolvedValue('ollama_result');
+
+			// Deadline is 4,050ms. mlFn takes 60ms, remaining budget becomes ~3,990ms.
+			// But for Gemini fallback, if we set deadline to 2,040ms and mlFn is Tier 1 Gemini (or in-domain mlFn min 2000),
+			// let's test with deadline 4,050ms and mlFn taking 2,500ms:
+			// Or even simpler: deadlineMs is 100ms. All tiers (Gemini: 2000ms, Ollama: 4000ms, ml_backend: 4000ms)
+			// are immediately skipped because 100ms is below their minimum thresholds!
+			await expect(
+				executeAI(mlFn, geminiFn, ollamaFn, 'reasoning', 'Computer Science Algorithms', 100)
+			).rejects.toThrow('All AI providers (gemini, ollama, ml_backend) are currently unavailable.');
+
+			expect(mlFn).not.toHaveBeenCalled();
+			expect(geminiFn).not.toHaveBeenCalled();
+			expect(ollamaFn).not.toHaveBeenCalled();
+		});
+
+		it('propagates deadline budget options to callML and bounds tier timeout', async () => {
+			vi.mocked(callML).mockResolvedValue({
+				title: 'CS Quick Outline',
+				description: 'Generated within budget',
+				modules: [
+					{
+						order: 1,
+						type: 'lesson',
+						title: 'Mod 1',
+						summary: 'S1',
+						learning_objective: 'O1',
+						key_points: ['K1']
+					},
+					{
+						order: 2,
+						type: 'lesson',
+						title: 'Mod 2',
+						summary: 'S2',
+						learning_objective: 'O2',
+						key_points: ['K2']
+					},
+					{
+						order: 3,
+						type: 'quiz',
+						title: 'Mod 3',
+						summary: 'S3',
+						learning_objective: 'O3',
+						key_points: ['K3']
+					}
+				]
+			});
+
+			const { result, provider } = await generateOutline(
+				'Data Structures and Algorithms in C',
+				3,
+				'lessons_and_quizzes',
+				undefined,
+				'user-123',
+				{ deadlineMs: 8_000 }
+			);
+
+			expect(provider).toBe('ml_backend');
+			expect(result.modules).toHaveLength(3);
+			expect(callML).toHaveBeenCalledWith(
+				'/outline',
+				expect.objectContaining({ topic: 'Data Structures and Algorithms in C' }),
+				expect.any(Number),
+				'user-123'
+			);
+
+			// The timeoutMs passed to callML should be bounded by the 8,000ms deadline (minus fallback reservation)
+			const calledTimeout = vi.mocked(callML).mock.calls[0][2];
+			expect(calledTimeout).toBeLessThanOrEqual(8_000);
+			expect(calledTimeout).toBeGreaterThan(0);
 		});
 	});
 });

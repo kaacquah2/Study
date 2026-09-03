@@ -266,7 +266,7 @@ describe('Course Sharing & Claiming API Integration Tests', () => {
 			expect(json.error.code).toBe('INVALID_STATE');
 		});
 
-		it('returns 201 with share token and URL on success', async () => {
+		it('returns 201 with share token, URL, and default isPublic=false on success', async () => {
 			vi.mocked(verifySessionUser).mockResolvedValue({ uid: 'user1' });
 
 			const req = new Request('http://localhost/api/courses/c1/share', { method: 'POST' });
@@ -280,8 +280,28 @@ describe('Course Sharing & Claiming API Integration Tests', () => {
 			const json = await res.json();
 			expect(json.token).toBeDefined();
 			expect(typeof json.token).toBe('string');
-			expect(json.token.length).toBe(12);
+			expect(json.token.length).toBe(32);
 			expect(json.url).toContain('/share/');
+			expect(json.isPublic).toBe(false);
+		});
+
+		it('returns 201 with isPublic=true when explicitly requested', async () => {
+			vi.mocked(verifySessionUser).mockResolvedValue({ uid: 'user1' });
+
+			const req = new Request('http://localhost/api/courses/c1/share', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ isPublic: true })
+			});
+			const res = await sharePostHandler({
+				params: { id: 'c1' },
+				url: new URL('http://localhost/api/courses/c1/share'),
+				request: req
+			} as unknown as Parameters<typeof sharePostHandler>[0]);
+
+			expect(res.status).toBe(201);
+			const json = await res.json();
+			expect(json.isPublic).toBe(true);
 		});
 	});
 

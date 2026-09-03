@@ -85,26 +85,6 @@
 		showDeleteConfirmModal = false;
 		onDelete(course.id);
 	};
-	// Tilt effect on hover
-	let tiltX = $state(0);
-	let tiltY = $state(0);
-	let isHovered = $state(false);
-
-	const handleMouseMove = (e: MouseEvent) => {
-		const card = e.currentTarget as HTMLElement;
-		const rect = card.getBoundingClientRect();
-		const cx = rect.left + rect.width / 2;
-		const cy = rect.top + rect.height / 2;
-		tiltX = ((e.clientY - cy) / (rect.height / 2)) * -5;
-		tiltY = ((e.clientX - cx) / (rect.width / 2)) * 5;
-		isHovered = true;
-	};
-
-	const handleMouseLeave = () => {
-		tiltX = 0;
-		tiltY = 0;
-		isHovered = false;
-	};
 </script>
 
 <svelte:window
@@ -117,51 +97,45 @@
 	}}
 />
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="p-6 relative flex flex-col justify-between rounded-lg border border-border bg-surface shadow-md transition-all duration-200 select-none {borderClasses[
+	class="relative flex flex-col justify-between rounded-lg border border-border bg-surface p-6 shadow-xs transition-all duration-180 select-none hover:-translate-y-px hover:border-border-strong hover:shadow-sm {borderClasses[
 		course.accent || 'violet'
-	] || 'border-t-4 border-t-primary'} {isHovered ? 'shadow-xl' : ''}"
-	onmousemove={handleMouseMove}
-	onmouseleave={handleMouseLeave}
-	style="transform: perspective(800px) rotateX({tiltX}deg) rotateY({tiltY}deg) scale({isHovered
-		? 1.015
-		: 1}); will-change: transform;"
+	] || 'border-t-4 border-t-primary'}"
 >
 	<!-- Card Header -->
-	<div class="mb-3 gap-4 flex items-start justify-between">
+	<div class="mb-3 flex items-start justify-between gap-4">
 		<!-- Status Badge -->
 		<div>
 			{#if course.status === 'building'}
 				<span
-					class="gap-1.5 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-primary-soft text-[10px] text-primary uppercase"
+					class="inline-flex items-center gap-1.5 rounded-sm bg-primary-soft px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary uppercase"
 					aria-label="Status: Building course"
 				>
-					<span class="h-1.5 w-1.5 relative flex" aria-hidden="true">
+					<span class="relative flex h-1.5 w-1.5" aria-hidden="true">
 						<span
-							class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
+							class="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"
 						></span>
-						<span class="h-1.5 w-1.5 relative inline-flex rounded-full bg-primary"></span>
+						<span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary"></span>
 					</span>
 					Building...
 				</span>
 			{:else if course.status === 'ready'}
 				<span
-					class="gap-1 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-success-soft text-[10px] text-success uppercase"
+					class="inline-flex items-center gap-1 rounded-sm bg-success-soft px-2 py-0.5 text-[10px] font-bold tracking-wider text-success uppercase"
 					aria-label="Status: Course ready"
 				>
 					Ready
 				</span>
 			{:else if course.status === 'failed'}
 				<span
-					class="gap-1 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-danger-soft text-[10px] text-danger uppercase"
+					class="inline-flex items-center gap-1 rounded-sm bg-danger-soft px-2 py-0.5 text-[10px] font-bold tracking-wider text-danger uppercase"
 					aria-label="Status: Course generation failed"
 				>
 					Failed
 				</span>
 			{:else}
 				<span
-					class="gap-1 px-2 py-0.5 font-bold tracking-wider inline-flex items-center rounded-sm bg-surface-muted text-[10px] text-text-muted uppercase"
+					class="inline-flex items-center gap-1 rounded-sm bg-surface-muted px-2 py-0.5 text-[10px] font-bold tracking-wider text-text-muted uppercase"
 					aria-label="Status: Draft course"
 				>
 					Draft
@@ -177,7 +151,7 @@
 				aria-label={`Course options for ${course.title}`}
 				aria-haspopup="menu"
 				aria-expanded={showMenu}
-				class="h-7 w-7 flex items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-muted hover:text-text"
+				class="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-muted hover:text-text"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -201,7 +175,7 @@
 				<div
 					role="menu"
 					aria-label={`Options menu for ${course.title}`}
-					class="right-0 mt-1 w-36 p-1 absolute top-full z-20 rounded-md border border-border bg-surface shadow-lg"
+					class="absolute top-full right-0 z-20 mt-1 w-36 rounded-md border border-border bg-surface p-1 shadow-lg"
 				>
 					<button
 						type="button"
@@ -211,7 +185,7 @@
 							showMenu = false;
 							onShare(course.id);
 						}}
-						class="gap-2 rounded px-3 py-1.5 text-xs font-semibold flex w-full items-center text-text transition-colors hover:bg-surface-muted"
+						class="flex w-full items-center gap-2 rounded px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-surface-muted"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -250,7 +224,7 @@
 							title={course.status !== 'ready'
 								? 'Course must be ready to duplicate'
 								: 'Duplicate this course into your library'}
-							class="gap-2 rounded px-3 py-1.5 text-xs font-semibold flex w-full items-center text-text transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+							class="flex w-full items-center gap-2 rounded px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -277,7 +251,7 @@
 							e.stopPropagation();
 							triggerDelete();
 						}}
-						class="gap-2 rounded px-3 py-1.5 text-xs font-semibold flex w-full items-center text-danger transition-colors hover:bg-danger-soft"
+						class="flex w-full items-center gap-2 rounded px-3 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger-soft"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -312,7 +286,7 @@
 		>
 			{course.title}
 		</h3>
-		<p class="text-xs leading-relaxed line-clamp-3 text-text-muted">
+		<p class="line-clamp-3 text-xs leading-relaxed text-text-muted">
 			{course.description}
 		</p>
 	</div>
@@ -321,7 +295,7 @@
 	<div class="mt-auto">
 		<!-- Progress Indicator -->
 		<div
-			class="mb-2 font-bold tracking-wider flex items-center justify-between text-[10px] text-text-muted uppercase"
+			class="mb-2 flex items-center justify-between text-[10px] font-bold tracking-wider text-text-muted uppercase"
 		>
 			<span>{course.moduleCount} modules</span>
 			<span class={textAccentClasses[course.accent || 'violet'] || 'text-primary'}
@@ -356,7 +330,7 @@
 				: percent === 100
 					? `Review course: ${course.title}`
 					: `Resume learning course: ${course.title} (${percent}% complete)`}
-			class="px-4 py-3 text-xs font-bold hover:text-white flex w-full items-center justify-center rounded-md bg-primary-soft text-primary shadow-sm transition-all duration-180 hover:bg-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
+			class="flex w-full items-center justify-center rounded-md bg-primary-soft px-4 py-3 text-xs font-bold text-primary shadow-sm transition-all duration-180 hover:bg-primary hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
 		>
 			{#if percent === 0}
 				Start learning
@@ -372,15 +346,15 @@
 <!-- Delete Confirmation Modal Dialog -->
 {#if showDeleteConfirmModal}
 	<div
-		class="inset-0 bg-black/60 p-4 backdrop-blur-xs fixed z-50 flex items-center justify-center"
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="delete-course-dialog-title"
 	>
 		<div
-			class="max-w-sm gap-4 rounded-2xl p-6 shadow-2xl flex w-full flex-col border border-border bg-surface"
+			class="flex w-full max-w-sm flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-2xl"
 		>
-			<div class="gap-3 flex items-center text-danger">
+			<div class="flex items-center gap-3 text-danger">
 				<span class="text-2xl" aria-hidden="true">⚠️</span>
 				<h3 id="delete-course-dialog-title" class="font-display text-base font-bold">
 					Delete Course?
@@ -392,11 +366,11 @@
 				will permanently remove all modules, quiz progress, and certificate records.
 			</p>
 
-			<div class="gap-3 pt-2 flex items-center justify-end">
+			<div class="flex items-center justify-end gap-3 pt-2">
 				<button
 					type="button"
 					onclick={() => (showDeleteConfirmModal = false)}
-					class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl border border-border text-text-muted hover:text-text"
+					class="cursor-pointer rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text"
 				>
 					Cancel
 				</button>
@@ -405,7 +379,7 @@
 					type="button"
 					onclick={confirmDelete}
 					aria-label={`Confirm delete course ${course.title}`}
-					class="px-4 py-2 text-xs font-bold text-white cursor-pointer rounded-xl bg-danger shadow-sm hover:bg-danger/90 active:scale-95"
+					class="cursor-pointer rounded-xl bg-danger px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-danger/90 active:scale-95"
 				>
 					Delete Course
 				</button>

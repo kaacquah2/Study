@@ -23,8 +23,8 @@ export function getMLBackendSecret(): string | null {
 	return env.ML_BACKEND_SECRET || process.env.ML_BACKEND_SECRET || null;
 }
 
-/** Default timeout: 120 seconds (model inference can be slow on CPU) */
-const DEFAULT_TIMEOUT_MS = 120_000;
+/** Default timeout: 20 seconds to guarantee execution fits within Netlify Functions ceiling (~26s) */
+export const DEFAULT_TIMEOUT_MS = 20_000;
 
 import { isRedisConfigured, redisGet, redisSet, redisIncr } from '$lib/server/redis';
 
@@ -86,26 +86,16 @@ function recordFailure(): void {
 }
 
 /**
- * POST to the ML backend and return the parsed JSON response.
+ * Build request headers including Content-Type, API key, optional User ID,
+ * and HMAC-SHA256 signature (with timestamp and nonce) when ML_BACKEND_SECRET is set.
  */
-export async function callML<T>(
-	endpoint: string,
-	body: object = {},
-	timeoutMs: number = DEFAULT_TIMEOUT_MS,
-	userId?: string
-): Promise<T> {
-	if (await isCircuitOpenAsync()) {
-		throw new MLBackendError(
-			`Circuit breaker OPEN for ML backend. Routing directly to fallback.`,
-			503,
-			endpoint
-		);
-	}
-
-	const backendUrl = getMLBackendUrl();
+export function buildMLAuthHeaders(
+	bodyString: string = '{}',
+	userId?: string,
+	requestId?: string
+): Record<string, string> {
 	const apiKey = getMLBackendApiKey();
-	const url = `${backendUrl}${endpoint}`;
-
+	const secret = getMLBackendSecret();
 	const headers: Record<string, string> = {
 		'Content-Type': 'application/json'
 	};
@@ -118,8 +108,9 @@ export async function callML<T>(
 		headers['X-User-ID'] = userId;
 	}
 
-	const secret = getMLBackendSecret();
-	const bodyString = JSON.stringify(body);
+	if (requestId) {
+		headers['X-Request-ID'] = requestId;
+	}
 
 	if (secret) {
 		const timestamp = Math.floor(Date.now() / 1000).toString();
@@ -133,6 +124,34 @@ export async function callML<T>(
 		headers['X-Timestamp'] = timestamp;
 		headers['X-Nonce'] = nonce;
 	}
+
+	return headers;
+}
+
+/**
+ * POST to the ML backend and return the parsed JSON response.
+ */
+export async function callML<T>(
+	endpoint: string,
+	body: object = {},
+	timeoutMs: number = DEFAULT_TIMEOUT_MS,
+	userId?: string,
+	requestId?: string
+): Promise<T> {
+	if (await isCircuitOpenAsync()) {
+		throw new MLBackendError(
+			`Circuit breaker OPEN for ML backend. Routing directly to fallback.`,
+			503,
+			endpoint
+		);
+	}
+
+	const backendUrl = getMLBackendUrl();
+	const url = `${backendUrl}${endpoint}`;
+	const bodyString = JSON.stringify(body);
+	const headers = buildMLAuthHeaders(bodyString, userId, requestId);
+	// Propagate remaining timeout budget to downstream ML backend
+	headers['X-Timeout-Seconds'] = Math.ceil(timeoutMs / 1000).toString();
 
 	let res: Response;
 	try {
@@ -188,9 +207,7 @@ export async function pingMLBackend(timeoutMs = 3_000): Promise<MLBackendPingRes
 
 	try {
 		const backendUrl = getMLBackendUrl();
-		const apiKey = getMLBackendApiKey();
-		const headers: Record<string, string> = {};
-		if (apiKey) headers['X-API-Key'] = apiKey;
+		const headers = buildMLAuthHeaders('{}');
 
 		const res = await fetch(`${backendUrl}/healthcheck`, {
 			headers,
@@ -234,10 +251,8 @@ export async function pingMLBackend(timeoutMs = 3_000): Promise<MLBackendPingRes
 /** Explicit boot validation helper */
 export async function validateMLBackendConnection(): Promise<{ ok: boolean; status: string }> {
 	const backendUrl = getMLBackendUrl();
-	const apiKey = getMLBackendApiKey();
 	try {
-		const headers: Record<string, string> = {};
-		if (apiKey) headers['X-API-Key'] = apiKey;
+		const headers = buildMLAuthHeaders('{}');
 
 		const res = await fetch(`${backendUrl}/healthcheck`, {
 			headers,
@@ -277,9 +292,7 @@ export async function getMLBackendHealth(timeoutMs = 5_000): Promise<MLBackendHe
 
 	try {
 		const backendUrl = getMLBackendUrl();
-		const apiKey = getMLBackendApiKey();
-		const headers: Record<string, string> = {};
-		if (apiKey) headers['X-API-Key'] = apiKey;
+		const headers = buildMLAuthHeaders('{}');
 
 		const res = await fetch(`${backendUrl}/healthcheck`, {
 			method: 'GET',

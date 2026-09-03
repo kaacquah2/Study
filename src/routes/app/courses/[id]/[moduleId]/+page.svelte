@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { db, auth } from '$lib/firebase/client';
+	import { db } from '$lib/firebase/client';
+	import { apiFetch } from '$lib/api/client';
 	import { doc, onSnapshot, collection, query, orderBy } from 'firebase/firestore';
 	import { goto } from '$app/navigation';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LessonReader from '$lib/components/LessonReader.svelte';
-	import QuizRunner, { type QuizReviewRecord } from '$lib/components/QuizRunner.svelte';
+	import QuizRunner, {
+		type QuizReviewRecord,
+		type QuizGradedResult
+	} from '$lib/components/QuizRunner.svelte';
 	import CompletionScreen from '$lib/components/CompletionScreen.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { studySessionStore } from '$lib/stores/studySession.svelte';
@@ -162,15 +166,9 @@
 		if (!courseId || !moduleId) return;
 		loadingVideos = true;
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
 			const url = `/api/courses/${courseId}/modules/${moduleId}/videos${refresh ? '?refresh=true' : ''}`;
-			const res = await fetch(url, {
-				headers: idToken ? { Authorization: `Bearer ${idToken}` } : {}
-			});
-			if (res.ok) {
-				const data = await res.json();
-				moduleVideos = data.videos || [];
-			}
+			const { data } = await apiFetch<{ videos?: typeof moduleVideos }>(url);
+			moduleVideos = data.videos || [];
 		} catch (err) {
 			console.warn('Failed to fetch video recommendations:', err);
 		} finally {
@@ -178,44 +176,49 @@
 		}
 	};
 
+	// Strip answer keys (correctIndex, answerIndex, explanation) from questions passed to client runner
+	let sanitizedQuestions = $derived(
+		(moduleData?.questions || []).map((q) => ({
+			order: q.order,
+			prompt: q.prompt || q.question || '',
+			question: q.prompt || q.question || '',
+			options: q.options || [],
+			conceptId: q.conceptId,
+			conceptTag: q.conceptTag
+		}))
+	);
+
 	// Complete module and save progress
-	const handleFinishModule = async (finalScore?: number, reviewItems?: QuizReviewRecord[]) => {
+	const handleFinishModule = async (answers?: number[]) => {
 		try {
 			const elapsedSeconds = Math.round((Date.now() - pageStartTime) / 1000);
 			totalTimeSpentSeconds += elapsedSeconds;
 
-			if (reviewItems) {
-				quizReviewRecords = reviewItems;
-			}
-
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch(`/api/modules/${moduleId}/complete`, {
+			const { data } = await apiFetch<{
+				streak?: { current: number };
+				quizResult?: QuizGradedResult;
+			}>(`/api/modules/${moduleId}/complete`, {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
+				body: {
 					courseId,
 					timeSpentSeconds: totalTimeSpentSeconds,
 					timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-					...(moduleData?.type === 'quiz'
-						? { quizScore: finalScore ?? 0, quizTotal: (moduleData.questions || []).length }
-						: {})
-				})
+					...(moduleData?.type === 'quiz' && answers ? { answers } : {})
+				}
 			});
 
-			const data = await res.json();
-			if (res.ok) {
-				completionStreak = data.streak?.current;
-				isCompleted = true;
-			} else {
-				throw new Error(data.error?.message || 'Failed to complete module');
+			completionStreak = data.streak?.current;
+			if (data.quizResult?.reviewItems) {
+				quizReviewRecords = data.quizResult.reviewItems;
 			}
+			if (moduleData?.type !== 'quiz') {
+				isCompleted = true;
+			}
+			return data.quizResult;
 		} catch (err) {
 			console.error('Error completing module:', err);
-			toastStore.error('Could not save progress.');
-			isCompleted = true;
+			toastStore.error(err instanceof Error ? err.message : 'Could not save progress.');
+			throw err;
 		}
 	};
 
@@ -224,29 +227,19 @@
 		if (isRegeneratingItem || !courseId || !moduleId || !moduleData) return;
 		isRegeneratingItem = true;
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
 			const itemType = moduleData.type === 'quiz' ? 'question' : 'page';
 			const itemIndex = moduleData.type === 'quiz' ? 0 : currentPageIndex;
 
-			const res = await fetch(`/api/modules/${moduleId}/regenerate-item`, {
+			await apiFetch(`/api/modules/${moduleId}/regenerate-item`, {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
+				body: {
 					courseId,
 					itemType,
 					itemIndex
-				})
+				}
 			});
 
-			const data = await res.json();
-			if (res.ok) {
-				toastStore.success(`Single ${itemType} regenerated!`);
-			} else {
-				throw new Error(data.error?.message || 'Regeneration failed');
-			}
+			toastStore.success(`Single ${itemType} regenerated!`);
 		} catch (err) {
 			console.error('Regenerate item error:', err);
 			toastStore.error('Could not regenerate item.');
@@ -260,28 +253,19 @@
 		if (!flagReason.trim() || isSubmittingFlag) return;
 		isSubmittingFlag = true;
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch('/api/flag', {
+			await apiFetch('/api/flag', {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
+				body: {
 					courseId,
 					moduleId,
 					contentType: moduleData?.type || 'lesson',
 					reason: flagReason
-				})
+				}
 			});
 
-			if (res.ok) {
-				toastStore.success('Content flagged for review. Thank you!');
-				showFlagModal = false;
-				flagReason = '';
-			} else {
-				toastStore.error('Failed to submit content flag.');
-			}
+			toastStore.success('Content flagged for review. Thank you!');
+			showFlagModal = false;
+			flagReason = '';
 		} catch (err) {
 			console.error('Flag content error:', err);
 			toastStore.error('Error submitting content flag.');
@@ -295,22 +279,22 @@
 	<title>{moduleData?.title || 'Study Lesson'} &mdash; AI Study Buddy</title>
 </svelte:head>
 
-<div class="max-w-4xl gap-6 py-4 mx-auto flex w-full flex-col">
+<div class="mx-auto flex w-full max-w-4xl flex-col gap-6 py-4">
 	<!-- Top Navigation Bar -->
-	<div class="gap-3 pb-3 flex flex-wrap items-center justify-between border-b border-border">
+	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
 		<a
 			href={`/app/courses/${courseId}`}
-			class="gap-1.5 text-xs font-bold inline-flex items-center text-text-muted transition-colors hover:text-primary"
+			class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
 		>
 			&larr; Return to {course?.title || 'Course Overview'}
 		</a>
 
-		<div class="gap-2 flex items-center">
+		<div class="flex items-center gap-2">
 			<!-- Flag Content Action -->
 			<button
 				type="button"
 				onclick={() => (showFlagModal = true)}
-				class="gap-1 px-2.5 py-1 font-semibold inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-[11px] text-text-muted hover:border-danger hover:text-danger active:scale-95"
+				class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-2.5 py-1 text-[11px] font-semibold text-text-muted hover:border-danger hover:text-danger active:scale-95"
 				title="Report inaccuracies or formatting issues"
 			>
 				🚩 Report Issue
@@ -320,7 +304,7 @@
 
 	<!-- Loading State -->
 	{#if loading}
-		<div class="gap-6 rounded-3xl p-8 flex flex-col border border-border bg-surface shadow-sm">
+		<div class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-8 shadow-sm">
 			<Skeleton height="32px" width="60%" />
 			<Skeleton height="16px" width="40%" />
 			<div class="space-y-3 pt-4">
@@ -331,22 +315,22 @@
 		</div>
 	{:else if loadError}
 		<div
-			class="rounded-3xl p-12 flex flex-col items-center justify-center border border-danger/30 bg-danger-soft text-center"
+			class="flex flex-col items-center justify-center rounded-3xl border border-danger/30 bg-danger-soft p-12 text-center"
 		>
 			<span class="text-3xl">⚠️</span>
 			<h3 class="mt-2 font-display text-base font-bold text-danger">Unable to load module</h3>
 			<p class="mt-1 text-xs text-text-muted">{loadError}</p>
-			<div class="mt-4 gap-3 flex items-center">
+			<div class="mt-4 flex items-center gap-3">
 				<button
 					type="button"
 					onclick={() => retryFetch()}
-					class="px-5 py-2 text-xs font-semibold text-white rounded-xl bg-danger shadow-sm transition hover:bg-danger/90"
+					class="rounded-xl bg-danger px-5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-danger/90"
 				>
 					🔄 Try Again
 				</button>
 				<a
 					href={`/app/courses/${courseId}`}
-					class="px-5 py-2 text-xs font-bold rounded-xl border border-border bg-surface text-text-muted hover:text-text"
+					class="rounded-xl border border-border bg-surface px-5 py-2 text-xs font-bold text-text-muted hover:text-text"
 				>
 					Back to Course
 				</a>
@@ -385,34 +369,34 @@
 		{#if !quizStarted}
 			<!-- Quiz Pre-Session Briefing Card -->
 			<div
-				class="gap-6 rounded-3xl p-6 sm:p-8 flex flex-col border border-border bg-surface shadow-sm"
+				class="flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8"
 			>
-				<div class="gap-2 flex flex-col">
+				<div class="flex flex-col gap-2">
 					<div
-						class="gap-1.5 px-3 py-1 font-black tracking-wider inline-flex items-center self-start rounded-full border border-primary/30 bg-primary-soft text-[10px] text-primary uppercase"
+						class="inline-flex items-center gap-1.5 self-start rounded-full border border-primary/30 bg-primary-soft px-3 py-1 text-[10px] font-black tracking-wider text-primary uppercase"
 					>
 						<span>🎯 Focused Assessment</span>
 					</div>
-					<h2 class="font-display text-xl font-bold sm:text-2xl text-text">
+					<h2 class="font-display text-xl font-bold text-text sm:text-2xl">
 						{moduleData.title}
 					</h2>
-					<p class="text-xs leading-relaxed sm:text-sm text-text-muted">
+					<p class="text-xs leading-relaxed text-text-muted sm:text-sm">
 						{moduleData.summary ||
 							'Test your comprehension with adaptive questions, instant reasoning, and long-term memory scheduling.'}
 					</p>
 				</div>
 
 				<!-- Quick Session Stats -->
-				<div class="gap-3 sm:grid-cols-3 grid grid-cols-2">
-					<div class="rounded-2xl p-3.5 border border-border bg-surface-muted">
-						<span class="font-bold block text-[10px] text-text-muted uppercase">Questions</span>
+				<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+					<div class="rounded-2xl border border-border bg-surface-muted p-3.5">
+						<span class="block text-[10px] font-bold text-text-muted uppercase">Questions</span>
 						<span class="font-display text-base font-bold text-text">
 							{moduleData.questions?.length || 0} Questions
 						</span>
 					</div>
 
-					<div class="rounded-2xl p-3.5 border border-border bg-surface-muted">
-						<span class="font-bold block text-[10px] text-text-muted uppercase">Estimated Time</span
+					<div class="rounded-2xl border border-border bg-surface-muted p-3.5">
+						<span class="block text-[10px] font-bold text-text-muted uppercase">Estimated Time</span
 						>
 						<span class="font-display text-base font-bold text-text">
 							~{moduleData.estimatedMinutes ||
@@ -423,21 +407,21 @@
 					</div>
 
 					<div
-						class="rounded-2xl p-3.5 sm:col-span-1 col-span-2 border border-border bg-surface-muted"
+						class="col-span-2 rounded-2xl border border-border bg-surface-muted p-3.5 sm:col-span-1"
 					>
-						<span class="font-bold block text-[10px] text-text-muted uppercase">Difficulty</span>
+						<span class="block text-[10px] font-bold text-text-muted uppercase">Difficulty</span>
 						<span class="font-display text-base font-bold text-primary"> Adaptive FSRS </span>
 					</div>
 				</div>
 
 				<!-- Concepts Covered Tag List -->
 				{#if moduleData.concepts && moduleData.concepts.length > 0}
-					<div class="gap-2 pt-4 flex flex-col border-t border-border/80">
+					<div class="flex flex-col gap-2 border-t border-border/80 pt-4">
 						<span class="text-xs font-bold text-text">Key Concepts Tested:</span>
-						<div class="gap-1.5 flex flex-wrap">
+						<div class="flex flex-wrap gap-1.5">
 							{#each moduleData.concepts as c, idx (c.id || c.term || idx)}
 								<span
-									class="px-2.5 py-1 text-xs font-medium rounded-lg border border-border bg-surface-muted text-text"
+									class="rounded-lg border border-border bg-surface-muted px-2.5 py-1 text-xs font-medium text-text"
 								>
 									{c.term}
 								</span>
@@ -447,12 +431,12 @@
 				{/if}
 
 				<!-- Start Quiz CTA -->
-				<div class="pt-4 flex items-center justify-between border-t border-border/80">
+				<div class="flex items-center justify-between border-t border-border/80 pt-4">
 					<span class="text-xs text-text-muted">Keyboard navigation [1-4, Enter] supported</span>
 					<button
 						type="button"
 						onclick={() => (quizStarted = true)}
-						class="gap-2 rounded-2xl px-6 py-3 text-xs font-bold text-white inline-flex cursor-pointer items-center bg-primary shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-95"
+						class="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-primary/20 shadow-md transition-all hover:bg-primary-hover active:scale-95"
 					>
 						<span>Start Quiz Practice &rarr;</span>
 					</button>
@@ -464,9 +448,10 @@
 				courseId={courseId || ''}
 				moduleId={moduleId || ''}
 				moduleTitle={moduleData.title}
-				questions={moduleData.questions || []}
+				questions={sanitizedQuestions}
 				currentQuestionIndex={0}
 				onComplete={handleFinishModule}
+				onFinish={() => (isCompleted = true)}
 				onRegenerateQuestion={handleRegenerateItem}
 				onFlagContent={() => (showFlagModal = true)}
 				isRegenerating={isRegeneratingItem}
@@ -476,9 +461,9 @@
 
 	<!-- Educational Video Recommendations -->
 	{#if moduleVideos.length > 0 && !isCompleted}
-		<div class="mt-4 gap-4 rounded-3xl p-6 flex flex-col border border-border bg-surface shadow-sm">
+		<div class="mt-4 flex flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-sm">
 			<div class="flex items-center justify-between">
-				<div class="gap-2 flex items-center">
+				<div class="flex items-center gap-2">
 					<span class="text-lg">🎬</span>
 					<h3 class="font-display text-xs font-bold text-text">
 						Recommended Video Lectures ({moduleVideos.length})
@@ -488,18 +473,18 @@
 					type="button"
 					onclick={() => fetchVideos(true)}
 					disabled={loadingVideos}
-					class="font-bold cursor-pointer text-[11px] text-primary hover:underline disabled:opacity-50"
+					class="cursor-pointer text-[11px] font-bold text-primary hover:underline disabled:opacity-50"
 				>
 					{loadingVideos ? 'Refreshing...' : '🔄 Refresh Videos'}
 				</button>
 			</div>
 
-			<div class="gap-3 sm:grid-cols-2 lg:grid-cols-3 grid grid-cols-1">
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 				{#each moduleVideos as video (video.videoId)}
 					<button
 						type="button"
 						onclick={() => (activeVideoId = video.videoId)}
-						class="gap-2 rounded-2xl p-3 flex cursor-pointer flex-col border border-border bg-surface-muted/50 text-left transition-colors hover:border-primary/50"
+						class="flex cursor-pointer flex-col gap-2 rounded-2xl border border-border bg-surface-muted/50 p-3 text-left transition-colors hover:border-primary/50"
 					>
 						<img
 							src={video.thumbnailUrl}
@@ -507,26 +492,26 @@
 							class="h-28 w-full rounded-xl object-cover"
 							loading="lazy"
 						/>
-						<span class="text-xs font-bold line-clamp-2 text-text">{video.title}</span>
-						<span class="font-semibold text-[10px] text-text-muted">{video.channelTitle}</span>
+						<span class="line-clamp-2 text-xs font-bold text-text">{video.title}</span>
+						<span class="text-[10px] font-semibold text-text-muted">{video.channelTitle}</span>
 					</button>
 				{/each}
 			</div>
 
 			<!-- Embedded YouTube Player Modal -->
 			{#if activeVideoId}
-				<div class="mt-2 rounded-2xl bg-slate-950 p-3 border border-border/80">
+				<div class="mt-2 rounded-2xl border border-border/80 bg-slate-950 p-3">
 					<div class="mb-2 flex items-center justify-between">
 						<span class="text-xs font-bold text-slate-300">Video Player</span>
 						<button
 							type="button"
 							onclick={() => (activeVideoId = null)}
-							class="text-xs text-slate-400 hover:text-white cursor-pointer"
+							class="cursor-pointer text-xs text-slate-400 hover:text-white"
 						>
 							✕ Close Video
 						</button>
 					</div>
-					<div class="aspect-video relative w-full overflow-hidden rounded-xl">
+					<div class="relative aspect-video w-full overflow-hidden rounded-xl">
 						<iframe
 							src="https://www.youtube.com/embed/{activeVideoId}?autoplay=1"
 							title="YouTube video player"
@@ -543,17 +528,17 @@
 	<!-- Report Issue / Flag Content Modal -->
 	{#if showFlagModal}
 		<div
-			class="inset-0 bg-slate-950/60 p-4 backdrop-blur-xs fixed z-50 flex items-center justify-center"
+			class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
 		>
 			<div
-				class="max-w-md gap-4 rounded-3xl p-6 shadow-2xl flex w-full flex-col border border-border bg-surface"
+				class="flex w-full max-w-md flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-2xl"
 			>
-				<div class="pb-2 flex items-center justify-between border-b border-border">
+				<div class="flex items-center justify-between border-b border-border pb-2">
 					<h3 class="font-display text-sm font-bold text-text">🚩 Report Content Issue</h3>
 					<button
 						type="button"
 						onclick={() => (showFlagModal = false)}
-						class="text-xs cursor-pointer text-text-muted hover:text-text"
+						class="cursor-pointer text-xs text-text-muted hover:text-text"
 					>
 						✕
 					</button>
@@ -568,14 +553,14 @@
 					bind:value={flagReason}
 					rows="3"
 					placeholder="Describe the issue in detail..."
-					class="p-3 text-xs w-full rounded-xl border border-border bg-surface-muted text-text focus:border-primary focus:outline-none"
+					class="w-full rounded-xl border border-border bg-surface-muted p-3 text-xs text-text focus:border-primary focus:outline-none"
 				></textarea>
 
-				<div class="gap-2 flex justify-end">
+				<div class="flex justify-end gap-2">
 					<button
 						type="button"
 						onclick={() => (showFlagModal = false)}
-						class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl border border-border text-text-muted hover:text-text"
+						class="cursor-pointer rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text"
 					>
 						Cancel
 					</button>
@@ -583,7 +568,7 @@
 						type="button"
 						onclick={handleFlagSubmit}
 						disabled={!flagReason.trim() || isSubmittingFlag}
-						class="px-5 py-2 text-xs font-bold text-white shadow-xs cursor-pointer rounded-xl bg-danger hover:bg-danger/90 disabled:opacity-50"
+						class="cursor-pointer rounded-xl bg-danger px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-danger/90 disabled:opacity-50"
 					>
 						{isSubmittingFlag ? 'Submitting...' : 'Submit Report'}
 					</button>

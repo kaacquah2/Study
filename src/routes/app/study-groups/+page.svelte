@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { auth } from '$lib/firebase/client';
+	import { apiFetch } from '$lib/api/client';
 	import { toastStore } from '$lib/stores/toast.svelte';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
@@ -30,14 +30,8 @@
 	async function loadGroups() {
 		loading = true;
 		try {
-			const token = await auth.currentUser?.getIdToken();
-			const res = await fetch('/api/study-groups', {
-				headers: { Authorization: `Bearer ${token}` }
-			});
-			if (res.ok) {
-				const data = await res.json();
-				groups = data.groups || [];
-			}
+			const { data } = await apiFetch<{ groups?: StudyGroup[] }>('/api/study-groups');
+			groups = data.groups || [];
 		} catch (err) {
 			console.error('Failed to load study groups:', err);
 		} finally {
@@ -56,17 +50,10 @@
 		}
 		creating = true;
 		try {
-			const token = await auth.currentUser?.getIdToken();
-			const res = await fetch('/api/study-groups', {
+			const { data } = await apiFetch<{ group: StudyGroup }>('/api/study-groups', {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${token}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ name: newGroupName })
+				body: { name: newGroupName }
 			});
-			const data = await res.json();
-			if (!res.ok) throw new Error(data.error?.message || 'Failed to create group');
 			toastStore.success(`Study group "${data.group.name}" created!`);
 			newGroupName = '';
 			showCreateModal = false;
@@ -85,17 +72,10 @@
 		}
 		joining = true;
 		try {
-			const token = await auth.currentUser?.getIdToken();
-			const res = await fetch('/api/study-groups/join', {
+			const { data } = await apiFetch<{ message?: string }>('/api/study-groups/join', {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${token}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ inviteCode: inviteCodeInput })
+				body: { inviteCode: inviteCodeInput }
 			});
-			const data = await res.json();
-			if (!res.ok) throw new Error(data.error?.message || 'Failed to join group');
 			toastStore.success(data.message || 'Joined group successfully!');
 			inviteCodeInput = '';
 			showJoinModal = false;
@@ -112,15 +92,15 @@
 	<title>Study Groups &mdash; AI Study Buddy</title>
 </svelte:head>
 
-<div class="max-w-4xl gap-6 py-4 mx-auto flex w-full flex-col">
+<div class="mx-auto flex w-full max-w-4xl flex-col gap-6 py-4">
 	<!-- Header -->
 	<div
-		class="gap-4 pb-4 sm:flex-row sm:items-center sm:justify-between flex flex-col border-b border-border"
+		class="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between"
 	>
 		<div>
 			<a
 				href={resolve('/app')}
-				class="gap-1.5 text-xs font-bold inline-flex items-center text-text-muted transition-colors hover:text-primary"
+				class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
 			>
 				&larr; Return to Dashboard
 			</a>
@@ -129,18 +109,18 @@
 				Collaborate with classmates, share course invites, and track group progress.
 			</p>
 		</div>
-		<div class="gap-3 flex items-center">
+		<div class="flex items-center gap-3">
 			<button
 				type="button"
 				onclick={() => (showJoinModal = true)}
-				class="gap-1.5 px-4 py-2.5 text-xs font-bold inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-text hover:bg-surface-muted"
+				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-bold text-text hover:bg-surface-muted"
 			>
 				<span>🔑 Join with Code</span>
 			</button>
 			<button
 				type="button"
 				onclick={() => (showCreateModal = true)}
-				class="gap-1.5 px-4 py-2.5 text-xs font-bold text-white shadow-xs inline-flex cursor-pointer items-center rounded-xl bg-primary hover:bg-primary-hover"
+				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-primary-hover"
 			>
 				<span>➕ Create Group</span>
 			</button>
@@ -148,13 +128,13 @@
 	</div>
 
 	{#if loading}
-		<div class="gap-4 sm:grid-cols-2 grid grid-cols-1">
+		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 			<div class="h-32 animate-pulse rounded-2xl bg-surface-muted"></div>
 			<div class="h-32 animate-pulse rounded-2xl bg-surface-muted"></div>
 		</div>
 	{:else if groups.length === 0}
 		<div
-			class="rounded-3xl p-12 shadow-xs flex flex-col items-center justify-center border border-border bg-surface text-center"
+			class="flex flex-col items-center justify-center rounded-3xl border border-border bg-surface p-12 text-center shadow-xs"
 		>
 			<div class="mb-3 text-4xl">👥</div>
 			<h3 class="font-display text-lg font-bold text-text">No Study Groups Yet</h3>
@@ -162,34 +142,34 @@
 				Create a group to study with peers or enter an invite code from a classmate to join an
 				existing group.
 			</p>
-			<div class="mt-6 gap-3 flex">
+			<div class="mt-6 flex gap-3">
 				<button
 					type="button"
 					onclick={() => (showJoinModal = true)}
-					class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl border border-border text-text hover:bg-surface-muted"
+					class="cursor-pointer rounded-xl border border-border px-4 py-2 text-xs font-bold text-text hover:bg-surface-muted"
 				>
 					Join Group
 				</button>
 				<button
 					type="button"
 					onclick={() => (showCreateModal = true)}
-					class="px-4 py-2 text-xs font-bold text-white cursor-pointer rounded-xl bg-primary hover:bg-primary-hover"
+					class="cursor-pointer rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary-hover"
 				>
 					Create Group
 				</button>
 			</div>
 		</div>
 	{:else}
-		<div class="gap-4 sm:grid-cols-2 grid grid-cols-1">
+		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 			{#each groups as group (group.id)}
 				<div
-					class="rounded-2xl p-6 shadow-xs flex flex-col justify-between border border-border bg-surface"
+					class="flex flex-col justify-between rounded-2xl border border-border bg-surface p-6 shadow-xs"
 				>
 					<div>
 						<div class="mb-2 flex items-center justify-between">
 							<span class="text-xs font-bold text-primary uppercase">Study Group</span>
 							<span
-								class="px-2.5 py-0.5 font-mono font-bold rounded-full bg-primary-soft text-[10px] text-primary"
+								class="rounded-full bg-primary-soft px-2.5 py-0.5 font-mono text-[10px] font-bold text-primary"
 							>
 								Code: {group.inviteCode}
 							</span>
@@ -200,7 +180,7 @@
 						</p>
 					</div>
 					<div
-						class="mt-4 pt-3 flex items-center justify-between border-t border-border/50 text-[11px] text-text-muted"
+						class="mt-4 flex items-center justify-between border-t border-border/50 pt-3 text-[11px] text-text-muted"
 					>
 						<span>Created {new Date(group.createdAt).toLocaleDateString()}</span>
 						<span class="font-bold text-success">● Active</span>
@@ -213,23 +193,23 @@
 	<!-- Create Group Modal -->
 	{#if showCreateModal}
 		<div
-			class="inset-0 p-4 backdrop-blur-xs fixed z-50 flex items-center justify-center bg-text/30"
+			class="fixed inset-0 z-50 flex items-center justify-center bg-text/30 p-4 backdrop-blur-xs"
 		>
 			<div
-				class="max-w-md gap-4 rounded-3xl p-6 shadow-2xl flex max-h-[90vh] w-full flex-col overflow-y-auto border border-border bg-surface"
+				class="flex max-h-[90vh] w-full max-w-md flex-col gap-4 overflow-y-auto rounded-3xl border border-border bg-surface p-6 shadow-2xl"
 			>
 				<h3 class="font-display text-lg font-bold text-text">Create Study Group</h3>
 				<input
 					type="text"
 					bind:value={newGroupName}
 					placeholder="Group Name (e.g. Operating Systems Study Circle)..."
-					class="p-3 text-xs w-full rounded-xl border border-border bg-surface-muted text-text focus:ring-2 focus:ring-primary focus:outline-none"
+					class="w-full rounded-xl border border-border bg-surface-muted p-3 text-xs text-text focus:ring-2 focus:ring-primary focus:outline-none"
 				/>
-				<div class="gap-3 pt-2 flex justify-end">
+				<div class="flex justify-end gap-3 pt-2">
 					<button
 						type="button"
 						onclick={() => (showCreateModal = false)}
-						class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl border border-border text-text-muted hover:text-text"
+						class="cursor-pointer rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text"
 					>
 						Cancel
 					</button>
@@ -237,7 +217,7 @@
 						type="button"
 						onclick={handleCreateGroup}
 						disabled={creating || newGroupName.trim().length < 3}
-						class="px-4 py-2 text-xs font-bold text-white cursor-pointer rounded-xl bg-primary hover:bg-primary-hover disabled:opacity-50"
+						class="cursor-pointer rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary-hover disabled:opacity-50"
 					>
 						{creating ? 'Creating...' : 'Create Group'}
 					</button>
@@ -249,23 +229,23 @@
 	<!-- Join Group Modal -->
 	{#if showJoinModal}
 		<div
-			class="inset-0 p-4 backdrop-blur-xs fixed z-50 flex items-center justify-center bg-text/30"
+			class="fixed inset-0 z-50 flex items-center justify-center bg-text/30 p-4 backdrop-blur-xs"
 		>
 			<div
-				class="max-w-md gap-4 rounded-3xl p-6 shadow-2xl flex max-h-[90vh] w-full flex-col overflow-y-auto border border-border bg-surface"
+				class="flex max-h-[90vh] w-full max-w-md flex-col gap-4 overflow-y-auto rounded-3xl border border-border bg-surface p-6 shadow-2xl"
 			>
 				<h3 class="font-display text-lg font-bold text-text">Join Study Group</h3>
 				<input
 					type="text"
 					bind:value={inviteCodeInput}
 					placeholder="Enter 6-character Invite Code (e.g. AB12CD)..."
-					class="p-3 font-mono text-sm w-full rounded-xl border border-border bg-surface-muted text-text uppercase focus:ring-2 focus:ring-primary focus:outline-none"
+					class="w-full rounded-xl border border-border bg-surface-muted p-3 font-mono text-sm text-text uppercase focus:ring-2 focus:ring-primary focus:outline-none"
 				/>
-				<div class="gap-3 pt-2 flex justify-end">
+				<div class="flex justify-end gap-3 pt-2">
 					<button
 						type="button"
 						onclick={() => (showJoinModal = false)}
-						class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl border border-border text-text-muted hover:text-text"
+						class="cursor-pointer rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text"
 					>
 						Cancel
 					</button>
@@ -273,7 +253,7 @@
 						type="button"
 						onclick={handleJoinGroup}
 						disabled={joining || !inviteCodeInput.trim()}
-						class="px-4 py-2 text-xs font-bold text-white cursor-pointer rounded-xl bg-primary hover:bg-primary-hover disabled:opacity-50"
+						class="cursor-pointer rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary-hover disabled:opacity-50"
 					>
 						{joining ? 'Joining...' : 'Join Group'}
 					</button>

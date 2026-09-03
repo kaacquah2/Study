@@ -1,38 +1,76 @@
+export interface ToastAction {
+	label: string;
+	fn: () => void;
+}
+
 export interface ToastMessage {
 	id: string;
 	type: 'success' | 'error' | 'info' | 'warning';
 	message: string;
+	action?: ToastAction;
+	duration?: number;
 }
 
 class ToastStore {
 	toasts = $state<ToastMessage[]>([]);
+	private timers = new Map<string, ReturnType<typeof setTimeout>>();
 
-	show(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info', duration = 3500) {
+	show(
+		message: string,
+		type: 'success' | 'error' | 'info' | 'warning' = 'info',
+		duration = 3500,
+		action?: ToastAction
+	) {
 		const id = Math.random().toString(36).substring(2, 9);
-		this.toasts.push({ id, type, message });
+		const toast: ToastMessage = { id, type, message, action, duration };
+		this.toasts.push(toast);
 
-		setTimeout(() => {
+		this.scheduleDismiss(id, duration);
+		return id;
+	}
+
+	scheduleDismiss(id: string, duration = 3500) {
+		this.clearDismissTimer(id);
+		const timer = setTimeout(() => {
 			this.remove(id);
 		}, duration);
+		this.timers.set(id, timer);
 	}
 
-	success(message: string, duration?: number) {
-		this.show(message, 'success', duration);
+	clearDismissTimer(id: string) {
+		const existing = this.timers.get(id);
+		if (existing) {
+			clearTimeout(existing);
+			this.timers.delete(id);
+		}
 	}
 
-	error(message: string, duration?: number) {
-		this.show(message, 'error', duration);
+	pause(id: string) {
+		this.clearDismissTimer(id);
 	}
 
-	info(message: string, duration?: number) {
-		this.show(message, 'info', duration);
+	resume(id: string, remaining = 2000) {
+		this.scheduleDismiss(id, remaining);
 	}
 
-	warning(message: string, duration?: number) {
-		this.show(message, 'warning', duration);
+	success(message: string, duration?: number, action?: ToastAction) {
+		this.show(message, 'success', duration, action);
+	}
+
+	error(message: string, duration?: number, action?: ToastAction) {
+		this.show(message, 'error', duration, action);
+	}
+
+	info(message: string, duration?: number, action?: ToastAction) {
+		this.show(message, 'info', duration, action);
+	}
+
+	warning(message: string, duration?: number, action?: ToastAction) {
+		this.show(message, 'warning', duration, action);
 	}
 
 	remove(id: string) {
+		this.clearDismissTimer(id);
 		this.toasts = this.toasts.filter((t) => t.id !== id);
 	}
 }

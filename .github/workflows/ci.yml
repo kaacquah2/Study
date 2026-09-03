@@ -36,6 +36,9 @@ jobs:
       - name: Run Unit Tests
         run: npm run test:unit -- --run
 
+      - name: Build Application (Production Bundle)
+        run: npm run build
+
       - name: Run Pipeline Integration Tests
         run: npm run test:pipeline
 
@@ -74,8 +77,16 @@ jobs:
       - name: Run Pytest Suite
         run: |
           cd ml_backend
-          pytest test_ml_backend.py -v
+          pytest -v
 
+      # Dependency vulnerability audit:
+      # Suppression justification for PYSEC-2025-217 (CVE-2025-14929):
+      # PYSEC-2025-217 affects HuggingFace transformers X-CLIP checkpoint conversion
+      # utilities (untrusted deserialization). The Study platform ML microservice
+      # exclusively employs text-based models (FLAN-T5, TinyLlama, sentence-transformers)
+      # for text summarization, outline generation, and FAISS dense semantic embeddings.
+      # The service never invokes X-CLIP computer vision checkpoint conversion or loads
+      # untrusted checkpoint files.
       - name: Run Python Dependency Audit
         run: |
           cd ml_backend
@@ -94,3 +105,38 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           extra_args: --only-verified
+
+  deploy:
+    name: Deploy to Production (Netlify)
+    needs: [frontend-check, ml-backend-check, secret-scan]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Create .env File
+        run: cp .env.example .env
+
+      - name: Build Application
+        run: npm run build
+
+      - name: Deploy to Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          if [ -n "$NETLIFY_AUTH_TOKEN" ] && [ -n "$NETLIFY_SITE_ID" ]; then
+            npx netlify-cli deploy --prod --dir=.netlify/build --auth="$NETLIFY_AUTH_TOKEN" --site="$NETLIFY_SITE_ID"
+          else
+            echo "NETLIFY_AUTH_TOKEN or NETLIFY_SITE_ID secret is unset; skipping automated deploy."
+          fi

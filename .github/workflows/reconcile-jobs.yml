@@ -1,0 +1,33 @@
+name: Reconcile Stalled Generation Jobs
+
+on:
+  schedule:
+    # Run every 10 minutes
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  reconcile:
+    name: Trigger Reconcile Endpoint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Worker Reconcile Endpoint
+        env:
+          WORKER_URL: ${{ secrets.WORKER_URL }}
+          INTERNAL_WORKER_SECRET: ${{ secrets.INTERNAL_WORKER_SECRET }}
+        run: |
+          if [ -n "$WORKER_URL" ] && [ -n "$INTERNAL_WORKER_SECRET" ]; then
+            echo "Triggering reconciliation endpoint at $WORKER_URL..."
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${WORKER_URL%/}/api/internal/worker/reconcile" \
+              -H "Content-Type: application/json" \
+              -H "X-Worker-Secret: $INTERNAL_WORKER_SECRET")
+            HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
+            echo "Response (HTTP $HTTP_STATUS): $BODY"
+            if [ "$HTTP_STATUS" -ge 400 ]; then
+              echo "Reconciliation failed with HTTP $HTTP_STATUS"
+              exit 1
+            fi
+          else
+            echo "WORKER_URL or INTERNAL_WORKER_SECRET secret is unset; skipping automated execution."
+          fi

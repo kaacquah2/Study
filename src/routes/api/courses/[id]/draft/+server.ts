@@ -5,6 +5,7 @@ import { verifySessionUser } from '$lib/server/auth';
 import { z } from 'zod';
 import { invalidateCachedOutline } from '$lib/server/outlineCache';
 import { enqueueModuleGenerationJob } from '$lib/server/ai/generationQueue';
+import { handleServerError } from '$lib/server/apiError';
 
 const UpdateDraftZod = z.object({
 	title: z.string().min(3).max(120),
@@ -28,8 +29,9 @@ const UpdateDraftZod = z.object({
 		.max(6)
 });
 
-// PATCH /api/courses/[id]/draft - Save edited draft outline
-export const PATCH: RequestHandler = async ({ params, request }) => {
+// PATCH /api/courses/[id]/draft - Update draft outline and metadata
+export const PATCH: RequestHandler = async (event) => {
+	const { params, request } = event;
 	const { id: courseId } = params;
 
 	try {
@@ -38,12 +40,12 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 		const parsed = UpdateDraftZod.safeParse(body);
 
 		if (!parsed.success) {
+			console.warn('[courses/[id]/draft PATCH] Validation failed:', parsed.error.issues);
 			return json(
 				{
 					error: {
 						code: 'INVALID_INPUT',
-						message: 'Validation failed',
-						fields: parsed.error.format()
+						message: 'Validation failed'
 					}
 				},
 				{ status: 400 }
@@ -96,6 +98,8 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 					modRef,
 					{
 						id: modRef.id,
+						courseId: courseRef.id,
+						ownerUid: user.uid,
 						order: mod.order,
 						type: mod.type,
 						title: mod.title,
@@ -116,20 +120,17 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 
 		return json({ status: 'draft', message: 'Draft outline updated successfully' });
 	} catch (err) {
-		console.error('Update draft API error:', err);
 		const message = err instanceof Error ? err.message : '';
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
-		return json(
-			{ error: { code: 'SERVER_ERROR', message: message || 'Failed to update draft' } },
-			{ status: 500 }
-		);
+		return handleServerError(err, event);
 	}
 };
 
 // POST /api/courses/[id]/draft - Confirm draft and start full course generation
-export const POST: RequestHandler = async ({ params, request }) => {
+export const POST: RequestHandler = async (event) => {
+	const { params, request } = event;
 	const { id: courseId } = params;
 
 	try {
@@ -172,14 +173,10 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			message: 'Course confirmed. Module generation dispatched.'
 		});
 	} catch (err) {
-		console.error('Confirm draft API error:', err);
 		const message = err instanceof Error ? err.message : '';
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
-		return json(
-			{ error: { code: 'SERVER_ERROR', message: message || 'Failed to confirm course draft' } },
-			{ status: 500 }
-		);
+		return handleServerError(err, event);
 	}
 };

@@ -5,14 +5,15 @@ import { paraphrase } from '$lib/server/ai/provider';
 import { z } from 'zod';
 import { adminDb } from '$lib/server/admin';
 import { enforceRateLimit } from '$lib/server/rateLimiter';
-import { MLBackendError } from '$lib/server/ai/client';
+import { handleServerError } from '$lib/server/apiError';
 
 const ParaphraseBodySchema = z.object({
 	text: z.string().min(10).max(2_000),
 	style: z.enum(['academic', 'simple', 'formal']).optional()
 });
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+	const { request } = event;
 	try {
 		const user = await verifySessionUser(request);
 
@@ -40,12 +41,12 @@ export const POST: RequestHandler = async ({ request }) => {
 		const parsed = ParaphraseBodySchema.safeParse(body);
 
 		if (!parsed.success) {
+			console.warn('[paraphrase POST] Validation failed:', parsed.error.issues);
 			return json(
 				{
 					error: {
 						code: 'INVALID_INPUT',
-						message: 'Validation failed',
-						fields: parsed.error.format()
+						message: 'Validation failed'
 					}
 				},
 				{ status: 400 }
@@ -60,12 +61,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		console.error('Paraphrase API error:', err);
 		const message = err instanceof Error ? err.message : '';
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
-		const clientMessage =
-			err instanceof MLBackendError
-				? 'Failed to paraphrase text. Please try again later.'
-				: message || 'Internal Server Error';
-		return json({ error: { code: 'SERVER_ERROR', message: clientMessage } }, { status: 500 });
+		return handleServerError(err, event, 'Failed to paraphrase text. Please try again later.');
 	}
 };

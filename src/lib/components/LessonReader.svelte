@@ -8,6 +8,8 @@
 	import StudyLensToolbar from '$lib/components/StudyLensToolbar.svelte';
 	import { interceptMermaidBlocks } from '$lib/components/MermaidInterceptor';
 	import { studySessionStore, type CanonicalConcept } from '$lib/stores/studySession.svelte';
+	import { uiState } from '$lib/stores/uiState.svelte';
+	import { authStore } from '$lib/stores/auth.svelte';
 	import type { AIProvenanceMetadata } from '$lib/server/ai/provider';
 	import type { LessonBlock } from '$lib/firebase/converters';
 
@@ -57,6 +59,44 @@
 
 	// Table of contents drawer toggle
 	let showToc = $state(false);
+
+	// Position and preference restoration
+	let initialized = $state(false);
+	let resumePageIndex = $state<number | null>(null);
+
+	$effect(() => {
+		const uid = authStore.user?.uid;
+		if (uid && !initialized) {
+			fontSize = uiState.get<'sm' | 'md' | 'lg'>(uid, 'reader:fontSize', 'md');
+			zenMode = uiState.get<boolean>(uid, 'reader:zenMode', false);
+
+			const savedPage = uiState.get<number>(uid, `lesson:${moduleId}:page`, 0);
+			if (savedPage > 0 && savedPage < pages.length && currentPageIndex === 0) {
+				resumePageIndex = savedPage;
+			}
+			initialized = true;
+		}
+	});
+
+	// Auto-save current position per user and module
+	$effect(() => {
+		const uid = authStore.user?.uid;
+		if (uid && moduleId && currentPageIndex >= 0) {
+			uiState.set(uid, `lesson:${moduleId}:page`, currentPageIndex);
+		}
+	});
+
+	const handleSetFontSize = (size: 'sm' | 'md' | 'lg') => {
+		fontSize = size;
+		const uid = authStore.user?.uid;
+		if (uid) uiState.set(uid, 'reader:fontSize', size);
+	};
+
+	const handleToggleZen = () => {
+		zenMode = !zenMode;
+		const uid = authStore.user?.uid;
+		if (uid) uiState.set(uid, 'reader:zenMode', zenMode);
+	};
 
 	// Derived active page
 	let activePage = $derived(pages[currentPageIndex] || null);
@@ -131,15 +171,25 @@
 
 <svelte:window
 	onkeydown={(e) => {
+		const target = e.target as HTMLElement;
+		if (target?.matches('input, textarea, select, [contenteditable]')) return;
 		if (e.key === 'Escape' && showToc) {
 			showToc = false;
+		} else if (e.key === 'ArrowLeft') {
+			handlePrevPage();
+		} else if (e.key === 'ArrowRight') {
+			handleNextPage();
+		} else if (e.key === 'z' || e.key === 'Z') {
+			handleToggleZen();
+		} else if (e.key === 't' || e.key === 'T') {
+			showToc = !showToc;
 		}
 	}}
 />
 
 <div
-	class="lesson-container gap-5 flex w-full flex-col transition-all duration-200 {zenMode
-		? 'inset-0 p-6 sm:p-12 fixed z-50 overflow-y-auto bg-bg'
+	class="lesson-container flex w-full flex-col gap-5 transition-all duration-200 {zenMode
+		? 'fixed inset-0 z-50 overflow-y-auto bg-bg p-6 sm:p-12'
 		: 'relative'}"
 >
 	<!-- Contextual Selection Toolbar for Study Lens AI -->
@@ -150,14 +200,41 @@
 		containerSelector=".lesson-content-area"
 	/>
 
+	{#if resumePageIndex !== null && resumePageIndex !== currentPageIndex}
+		<div
+			class="flex items-center justify-between rounded-xl border border-primary/30 bg-primary-soft/50 px-4 py-2.5 text-xs text-text shadow-2xs"
+		>
+			<span>You previously read up to <strong>Page {resumePageIndex + 1}</strong>.</span>
+			<div class="flex items-center gap-2">
+				<button
+					type="button"
+					onclick={() => {
+						if (resumePageIndex !== null) onPageChange(resumePageIndex);
+						resumePageIndex = null;
+					}}
+					class="cursor-pointer rounded-lg bg-primary px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-primary-hover"
+				>
+					Resume →
+				</button>
+				<button
+					type="button"
+					onclick={() => (resumePageIndex = null)}
+					class="cursor-pointer px-2 py-1 text-xs font-semibold text-text-muted hover:text-text"
+				>
+					Dismiss
+				</button>
+			</div>
+		</div>
+	{/if}
+
 	<!-- Top Action & Navigation Bar -->
 	<div
-		class="gap-3 pb-3.5 flex flex-wrap items-center justify-between border-b border-border/80 {zenMode
-			? 'max-w-4xl mx-auto w-full'
+		class="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-3.5 {zenMode
+			? 'mx-auto w-full max-w-4xl'
 			: ''}"
 	>
 		<!-- Left: TOC & Page Indicator -->
-		<div class="gap-3 flex items-center">
+		<div class="flex items-center gap-3">
 			{#if pages.length > 1}
 				<button
 					type="button"
@@ -165,11 +242,11 @@
 					aria-expanded={showToc}
 					aria-controls="lesson-toc-modal"
 					aria-label={`Table of contents: ${pages.length} pages`}
-					class="gap-1.5 px-3 py-1.5 text-xs font-semibold shadow-2xs inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-text hover:border-primary/50"
+					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text shadow-2xs hover:border-primary/50"
 				>
 					<span>📖 Contents</span>
 					<span
-						class="px-1.5 py-0.5 font-bold rounded-md bg-surface-muted text-[10px] text-text-muted"
+						class="rounded-md bg-surface-muted px-1.5 py-0.5 text-[10px] font-bold text-text-muted"
 						>{pages.length} Pages</span
 					>
 				</button>
@@ -179,20 +256,20 @@
 		</div>
 
 		<!-- Right: Tools (Zen Mode, Font Size, Audio, Regenerate) -->
-		<div class="gap-2 flex flex-wrap items-center">
+		<div class="flex flex-wrap items-center gap-2">
 			<!-- Font Sizing Buttons -->
 			<div
-				class="p-0.5 shadow-2xs flex items-center rounded-xl border border-border bg-surface"
+				class="flex items-center rounded-xl border border-border bg-surface p-0.5 shadow-2xs"
 				role="group"
 				aria-label="Reading font size"
 			>
 				<button
 					type="button"
-					onclick={() => (fontSize = 'sm')}
+					onclick={() => handleSetFontSize('sm')}
 					aria-pressed={fontSize === 'sm'}
-					class="px-2 py-1 text-xs font-bold cursor-pointer rounded-lg transition-colors {fontSize ===
+					class="cursor-pointer rounded-lg px-2 py-1 text-xs font-bold transition-colors {fontSize ===
 					'sm'
-						? 'text-white bg-primary'
+						? 'bg-primary text-white'
 						: 'text-text-muted hover:text-text'}"
 					title="Small font"
 					aria-label="Small font size"
@@ -201,11 +278,11 @@
 				</button>
 				<button
 					type="button"
-					onclick={() => (fontSize = 'md')}
+					onclick={() => handleSetFontSize('md')}
 					aria-pressed={fontSize === 'md'}
-					class="px-2 py-1 text-xs font-bold cursor-pointer rounded-lg transition-colors {fontSize ===
+					class="cursor-pointer rounded-lg px-2 py-1 text-xs font-bold transition-colors {fontSize ===
 					'md'
-						? 'text-white bg-primary'
+						? 'bg-primary text-white'
 						: 'text-text-muted hover:text-text'}"
 					title="Medium font"
 					aria-label="Medium font size"
@@ -214,11 +291,11 @@
 				</button>
 				<button
 					type="button"
-					onclick={() => (fontSize = 'lg')}
+					onclick={() => handleSetFontSize('lg')}
 					aria-pressed={fontSize === 'lg'}
-					class="px-2 py-1 text-xs font-bold cursor-pointer rounded-lg transition-colors {fontSize ===
+					class="cursor-pointer rounded-lg px-2 py-1 text-xs font-bold transition-colors {fontSize ===
 					'lg'
-						? 'text-white bg-primary'
+						? 'bg-primary text-white'
 						: 'text-text-muted hover:text-text'}"
 					title="Large font"
 					aria-label="Large font size"
@@ -230,10 +307,10 @@
 			<!-- Zen Focus Mode Toggle -->
 			<button
 				type="button"
-				onclick={() => (zenMode = !zenMode)}
+				onclick={handleToggleZen}
 				aria-pressed={zenMode}
 				aria-label={zenMode ? 'Exit Zen Focus Mode' : 'Enter Distraction-Free Zen Focus Mode'}
-				class="gap-1.5 px-3 py-1.5 text-xs font-bold shadow-2xs inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-text transition-colors hover:border-primary"
+				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-bold text-text shadow-2xs transition-colors hover:border-primary"
 				title={zenMode ? 'Exit Zen Focus Mode' : 'Enter Distraction-Free Zen Focus Mode'}
 			>
 				<span>{zenMode ? '🪟 Exit Zen' : '🧘 Zen Mode'}</span>
@@ -246,7 +323,7 @@
 					onclick={onRegeneratePage}
 					disabled={isRegenerating}
 					aria-label="Regenerate this specific lesson page with AI"
-					class="gap-1.5 px-3 py-1.5 text-xs font-bold hover:text-white inline-flex cursor-pointer items-center rounded-xl border border-primary/40 bg-primary-soft/50 text-primary transition-all hover:bg-primary disabled:opacity-50"
+					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-primary/40 bg-primary-soft/50 px-3 py-1.5 text-xs font-bold text-primary transition-all hover:bg-primary hover:text-white disabled:opacity-50"
 					title="Regenerate this specific lesson page with AI"
 				>
 					{#if isRegenerating}
@@ -267,7 +344,7 @@
 				<button
 					type="button"
 					onclick={onFlagContent}
-					class="gap-1 px-2.5 py-1.5 text-xs font-semibold shadow-2xs hover:border-rose-500/40 hover:text-rose-400 inline-flex cursor-pointer items-center rounded-xl border border-border bg-surface text-text-muted transition-colors"
+					class="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-text-muted shadow-2xs transition-colors hover:border-rose-500/40 hover:text-rose-400"
 					title="Report an issue or flag content"
 					aria-label="Flag or report content issue"
 				>
@@ -282,11 +359,11 @@
 	{#if provenance && provenance.degradedTier}
 		<div
 			role="status"
-			class="border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-semibold text-amber-300 shadow-2xs flex items-center justify-between rounded-xl border {zenMode
-				? 'max-w-4xl mx-auto w-full'
+			class="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-semibold text-amber-300 shadow-2xs {zenMode
+				? 'mx-auto w-full max-w-4xl'
 				: ''}"
 		>
-			<div class="gap-2 flex items-center">
+			<div class="flex items-center gap-2">
 				<span aria-hidden="true">⚡</span>
 				<span>Generated with lightweight model tier ({provenance.provider}).</span>
 			</div>
@@ -295,7 +372,7 @@
 					type="button"
 					onclick={onRegeneratePage}
 					aria-label="Regenerate lesson page with full quality AI"
-					class="text-xs font-bold text-amber-300 hover:text-amber-200 cursor-pointer underline"
+					class="cursor-pointer text-xs font-bold text-amber-300 underline hover:text-amber-200"
 				>
 					Regenerate with Full AI
 				</button>
@@ -310,22 +387,22 @@
 			role="dialog"
 			aria-modal="true"
 			aria-label="Lesson outline table of contents"
-			class="gap-2 rounded-2xl p-4 flex flex-col border border-border bg-surface shadow-lg {zenMode
-				? 'max-w-4xl mx-auto w-full'
+			class="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-4 shadow-lg {zenMode
+				? 'mx-auto w-full max-w-4xl'
 				: ''}"
 		>
-			<div class="pb-2 flex items-center justify-between border-b border-border/60">
+			<div class="flex items-center justify-between border-b border-border/60 pb-2">
 				<h4 class="font-display text-xs font-bold text-text">Lesson Outline</h4>
 				<button
 					type="button"
 					onclick={() => (showToc = false)}
 					aria-label="Close table of contents"
-					class="text-xs cursor-pointer text-text-muted hover:text-text"
+					class="cursor-pointer text-xs text-text-muted hover:text-text"
 				>
 					✕
 				</button>
 			</div>
-			<div class="gap-1.5 flex flex-col" role="list">
+			<div class="flex flex-col gap-1.5" role="list">
 				{#each pages as page, idx (page.order || idx)}
 					<div role="listitem">
 						<button
@@ -335,9 +412,9 @@
 								showToc = false;
 							}}
 							aria-current={idx === currentPageIndex ? 'page' : undefined}
-							class="px-3 py-2 text-xs flex w-full cursor-pointer items-center justify-between rounded-xl text-left transition-colors {idx ===
+							class="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition-colors {idx ===
 							currentPageIndex
-								? 'font-bold text-white shadow-xs bg-primary'
+								? 'bg-primary font-bold text-white shadow-xs'
 								: 'text-text hover:bg-surface-muted'}"
 						>
 							<span class="truncate">{idx + 1}. {page.heading || `Page ${idx + 1}`}</span>
@@ -353,20 +430,20 @@
 
 	<!-- Main Reading Card -->
 	<div
-		class="lesson-content-area gap-6 rounded-3xl p-6 sm:p-10 flex flex-col border border-border bg-surface shadow-sm {zenMode
-			? 'max-w-4xl mx-auto w-full'
+		class="lesson-content-area flex flex-col gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-10 {zenMode
+			? 'mx-auto w-full max-w-4xl'
 			: ''}"
 	>
 		{#if activePage}
 			<!-- Heading & Reading Metadata -->
-			<div class="gap-2 pb-4 flex flex-col border-b border-border/60">
-				<div class="text-xs flex items-center justify-between text-text-muted">
+			<div class="flex flex-col gap-2 border-b border-border/60 pb-4">
+				<div class="flex items-center justify-between text-xs text-text-muted">
 					<span class="font-bold text-primary uppercase"
 						>Page {currentPageIndex + 1} of {pages.length}</span
 					>
 					<span>⏱️ ~{estReadingMins} min read</span>
 				</div>
-				<h2 class="font-display text-2xl font-bold tracking-tight sm:text-3xl text-text">
+				<h2 class="font-display text-2xl font-bold tracking-tight text-text sm:text-3xl">
 					{activePage.heading}
 				</h2>
 				{#if activePage.subheading}
@@ -400,7 +477,7 @@
 							{@html section.content}
 						{:else if section.type === 'mermaid'}
 							<div
-								class="my-6 rounded-2xl p-4 shadow-xs border border-border/80 bg-surface-muted/60"
+								class="my-6 rounded-2xl border border-border/80 bg-surface-muted/60 p-4 shadow-xs"
 							>
 								<MermaidDiagram code={section.code} />
 							</div>
@@ -415,13 +492,13 @@
 	</div>
 
 	<!-- Bottom Navigation & Page Controls -->
-	<div class="pt-2 flex items-center justify-between {zenMode ? 'max-w-4xl mx-auto w-full' : ''}">
+	<div class="flex items-center justify-between pt-2 {zenMode ? 'mx-auto w-full max-w-4xl' : ''}">
 		<button
 			type="button"
 			onclick={handlePrevPage}
 			disabled={currentPageIndex === 0}
 			aria-label="Previous lesson page"
-			class="gap-2 rounded-2xl px-5 py-3 text-xs font-bold shadow-2xs inline-flex cursor-pointer items-center border border-border bg-surface text-text transition-all hover:border-primary disabled:cursor-not-allowed disabled:opacity-40"
+			class="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-border bg-surface px-5 py-3 text-xs font-bold text-text shadow-2xs transition-all hover:border-primary disabled:cursor-not-allowed disabled:opacity-40"
 		>
 			<span>&larr; Previous Page</span>
 		</button>
@@ -430,7 +507,7 @@
 			type="button"
 			onclick={handleNextPage}
 			aria-label={currentPageIndex < pages.length - 1 ? 'Next lesson page' : 'Complete lesson'}
-			class="gap-2 rounded-2xl px-6 py-3 text-xs font-bold text-white inline-flex cursor-pointer items-center bg-primary shadow-md shadow-primary/20 transition-all hover:bg-primary-hover active:scale-95"
+			class="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-xs font-bold text-white shadow-primary/20 shadow-md transition-all hover:bg-primary-hover active:scale-95"
 		>
 			<span>{currentPageIndex < pages.length - 1 ? 'Next Page &rarr;' : 'Complete Lesson 🎉'}</span>
 		</button>

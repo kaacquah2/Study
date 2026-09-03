@@ -1,51 +1,51 @@
-question_id,course,topic,bloom_taxonomy,rater1_relevance,rater2_relevance,mean_relevance,rater1_clarity,rater2_clarity,mean_clarity,rater1_correctness,rater2_correctness,mean_correctness,rater1_distractor,rater2_distractor,mean_distractor,rater1_difficulty,rater2_difficulty,mean_difficulty,overall_question_mean
-QZ-01,Computer Networks,IPv4 Subnetting,Apply,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4.9
-QZ-02,Computer Networks,Transport Layer,Understand,5,5,5.0,5,4,4.5,5,5,5.0,5,5,5.0,4,4,4.0,4.7
-QZ-03,Computer Networks,Data Link Layer,Remember,5,4,4.5,5,5,5.0,5,5,5.0,5,4,4.5,4,3,3.5,4.5
-QZ-04,Computer Networks,Routing Protocols,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5.0
-QZ-05,Computer Networks,Network Security,Understand,5,5,5.0,5,4,4.5,5,5,5.0,5,5,5.0,4,4,4.0,4.7
-QZ-06,Computer Networks,Application Layer,Understand,5,5,5.0,5,4,4.5,5,5,5.0,5,5,5.0,4,3,3.5,4.6
-QZ-07,Computer Networks,TCP Congestion Control,Analyze,5,5,5.0,5,4,4.5,5,4,4.5,5,5,5.0,5,5,5.0,4.8
-QZ-08,Computer Networks,Network Layer,Remember,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,4,4,4.0,4.7
-QZ-09,Computer Networks,Wireless Networks,Understand,5,4,4.5,5,5,5.0,5,4,4.5,5,5,5.0,4,4,4.0,4.6
-QZ-10,Computer Networks,IPv6 Architecture,Remember,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,3,3.5,4.7
-QZ-11,Algorithms,Sorting Algorithms,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
-QZ-12,Algorithms,Graph Algorithms,Apply,5,5,5.0,5,4,4.5,5,5,5.0,5,4,4.5,5,5,5.0,4.8
-QZ-13,Algorithms,Binary Search Trees,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
-QZ-14,Algorithms,Dynamic Programming,Analyze,5,5,5.0,5,4,4.5,5,5,5.0,5,4,4.5,5,5,5.0,4.8
-QZ-15,Algorithms,Greedy Algorithms,Apply,5,5,5.0,5,4,4.5,5,4,4.5,5,5,5.0,5,5,5.0,4.8
-QZ-16,Algorithms,Hash Tables,Understand,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,4,3,3.5,4.6
-QZ-17,Algorithms,Heaps & Priority Queues,Apply,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,4.9
-QZ-18,Algorithms,Complexity Theory,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
-QZ-19,Algorithms,String Matching,Analyze,5,4,4.5,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4.9
-QZ-20,Algorithms,Graph Traversals,Remember,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4,3,3.5,4.6
-QZ-21,Operating Systems,Deadlocks,Understand,5,4,4.5,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.7
-QZ-22,Operating Systems,CPU Scheduling,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,5,4,4.5,4.8
-QZ-23,Operating Systems,Memory Management,Understand,5,5,5.0,5,4,4.5,5,5,5.0,5,5,5.0,4,4,4.0,4.7
-QZ-24,Operating Systems,Page Replacement,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5.0
-QZ-25,Operating Systems,Process Synchronization,Apply,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,5,4,4.5,4.8
-QZ-26,Operating Systems,File Systems,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4,4,4.0,4.7
-QZ-27,Operating Systems,Threads & Concurrency,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,4.9
-QZ-28,Operating Systems,Inter-Process Communication,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
-QZ-29,Operating Systems,I/O Management,Remember,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4,4,4.0,4.7
-QZ-30,Operating Systems,Virtualization,Understand,5,4,4.5,5,5,5.0,5,5,5.0,5,4,4.5,4,4,4.0,4.6
-QZ-31,Database Systems,Transactions & ACID,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
-QZ-32,Database Systems,Relational Normalization,Apply,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,4.9
-QZ-33,Database Systems,Indexing,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4.9
-QZ-34,Database Systems,Concurrency Control,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4,4,4.0,4.7
-QZ-35,Database Systems,SQL & Query Execution,Apply,5,5,5.0,5,4,4.5,5,5,5.0,5,4,4.5,5,5,5.0,4.8
-QZ-36,Database Systems,Isolation Levels,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,4.9
-QZ-37,Database Systems,Distributed Databases,Understand,5,5,5.0,4,3,3.5,5,5,5.0,5,5,5.0,4,4,4.0,4.5
-QZ-38,Database Systems,NoSQL Architectures,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,3,3.5,4.7
-QZ-39,Database Systems,Query Optimization,Analyze,5,4,4.5,5,5,5.0,5,5,5.0,4,4,4.0,5,5,5.0,4.7
-QZ-40,Database Systems,Storage Engines,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
-QZ-41,Compilers,Lexical Analysis,Understand,5,5,5.0,5,4,4.5,5,5,5.0,4,4,4.0,4,4,4.0,4.5
-QZ-42,Compilers,Syntax Analysis,Understand,5,4,4.5,5,4,4.5,5,5,5.0,5,4,4.5,4,3,3.5,4.4
-QZ-43,Compilers,Parsing Techniques,Analyze,5,5,5.0,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,4.9
-QZ-44,Compilers,Semantic Analysis,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
-QZ-45,Compilers,Code Optimization,Analyze,5,5,5.0,5,5,5.0,5,4,4.5,5,5,5.0,5,5,5.0,4.9
-QZ-46,Artificial Intelligence,Search Algorithms,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
-QZ-47,Artificial Intelligence,Machine Learning,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,3,3.5,4.7
-QZ-48,Artificial Intelligence,Neural Networks,Analyze,5,5,5.0,5,5,5.0,5,4,4.5,4,4,4.0,5,4,4.5,4.6
-QZ-49,Computer Architecture,Pipelining,Analyze,5,5,5.0,4,4,4.0,5,5,5.0,5,5,5.0,5,4,4.5,4.7
-QZ-50,Computer Architecture,Memory Hierarchy,Understand,5,5,5.0,5,5,5.0,5,5,5.0,5,5,5.0,4,4,4.0,4.8
+question_id,course,topic,bloom_taxonomy,relevance,clarity,correctness,distractor_plausibility,difficulty_appropriateness,overall_score,expert_notes
+QZ-01,Computer Networks,IPv4 Subnetting,Apply,5.0,5.0,5.0,5.0,4.0,4.8,Standard /26 broadcast address calculation with canonical boundary distractors.
+QZ-02,Computer Networks,Transport Layer,Understand,5.0,5.0,5.0,4.0,3.0,4.4,TCP 3-way handshake step 2 flags (SYN-ACK); plausible flag combinations.
+QZ-03,Computer Networks,Data Link Layer,Remember,5.0,5.0,5.0,4.0,3.0,4.4,Direct ARP protocol mapping from IPv4 to physical MAC.
+QZ-04,Computer Networks,Routing Protocols,Analyze,5.0,5.0,5.0,4.0,4.0,4.6,Tests conceptual limit of RIP distance-vector count-to-infinity problem.
+QZ-05,Network Security,Network Security,Understand,5.0,4.0,5.0,4.0,3.0,4.2,Core TLS security guarantees; distractors test network layer vs transport layer.
+QZ-06,Computer Networks,Application Layer,Understand,5.0,5.0,5.0,4.0,3.0,4.4,Standard HTTP 301 permanent redirect semantics.
+QZ-07,Computer Networks,TCP Congestion Control,Analyze,5.0,5.0,5.0,5.0,5.0,5.0,High diagnostic quality testing Fast Retransmit cwnd halving in TCP Reno.
+QZ-08,Computer Networks,Network Layer,Remember,5.0,5.0,5.0,4.0,3.0,4.4,ICMP diagnostic and error reporting function.
+QZ-09,Computer Networks,Wireless Networks,Understand,5.0,5.0,5.0,4.0,4.0,4.6,Distinguishes CSMA/CA in wireless vs CSMA/CD in wired Ethernet.
+QZ-10,Computer Networks,IPv6 Architecture,Remember,5.0,5.0,5.0,3.0,2.0,4.0,Standard recall question on 128-bit address size.
+QZ-11,Algorithms,Sorting Algorithms,Understand,5.0,5.0,5.0,4.0,4.0,4.6,Canonical worst-case QuickSort pivot imbalance on sorted inputs.
+QZ-12,Algorithms,Graph Algorithms,Apply,5.0,4.0,5.0,4.0,4.0,4.4,All-pairs shortest path selection in dense graphs (Floyd-Warshall).
+QZ-13,Algorithms,Binary Search Trees,Understand,5.0,5.0,5.0,4.0,3.0,4.4,In-order traversal yielding monotonic key ordering.
+QZ-14,Algorithms,Dynamic Programming,Analyze,5.0,5.0,5.0,5.0,4.0,4.8,Exact theoretical prerequisites: optimal substructure and overlapping subproblems.
+QZ-15,Algorithms,Greedy Algorithms,Apply,5.0,5.0,5.0,4.0,4.0,4.6,Kruskal edge-sorting and cycle avoidance logic.
+QZ-16,Algorithms,Hash Tables,Understand,5.0,5.0,5.0,4.0,3.0,4.4,Average case O(1) time complexity under uniform hashing.
+QZ-17,Algorithms,Heaps & Priority Queues,Apply,5.0,5.0,5.0,4.0,3.0,4.4,0-indexed binary heap array child calculation (2i+1).
+QZ-18,Algorithms,Complexity Theory,Understand,5.0,4.0,5.0,5.0,4.0,4.6,Addresses common misconception between NP verification vs exponential runtime.
+QZ-19,Algorithms,String Matching,Analyze,5.0,4.0,5.0,4.0,4.0,4.4,KMP Longest Prefix Suffix (LPS) table usage for linear search.
+QZ-20,Algorithms,Graph Traversals,Remember,5.0,5.0,5.0,4.0,2.0,4.2,Queue data structure association for BFS.
+QZ-21,Operating Systems,Deadlocks,Understand,5.0,4.0,5.0,4.0,4.0,4.4,Negative question structure ('NOT') slightly lowers clarity but distractors are valid Coffman conditions.
+QZ-22,Operating Systems,CPU Scheduling,Analyze,5.0,5.0,5.0,4.0,4.0,4.6,Priority scheduling starvation and aging mechanism context.
+QZ-23,Operating Systems,Memory Management,Understand,5.0,5.0,5.0,4.0,4.0,4.6,Translation Lookaside Buffer (TLB) virtual address translation cache role.
+QZ-24,Operating Systems,Page Replacement,Analyze,5.0,5.0,5.0,5.0,4.0,4.8,Classic Belady anomaly manifestation in non-stack FIFO paging.
+QZ-25,Operating Systems,Process Synchronization,Apply,5.0,5.0,5.0,4.0,4.0,4.6,Atomic Compare-and-Swap / Test-and-Set primitives for lock-free sync.
+QZ-26,Operating Systems,File Systems,Understand,5.0,5.0,5.0,4.0,3.0,4.4,UNIX inode metadata and block pointer architecture.
+QZ-27,Operating Systems,Threads & Concurrency,Analyze,5.0,5.0,5.0,5.0,4.0,4.8,High pedagogical clarity contrasting thread-private stack/PC vs shared heap.
+QZ-28,Operating Systems,Inter-Process Communication,Understand,5.0,5.0,5.0,4.0,3.0,4.4,Zero-copy shared memory as lowest latency IPC mechanism.
+QZ-29,Operating Systems,I/O Management,Remember,5.0,5.0,5.0,4.0,3.0,4.4,Direct Memory Access (DMA) controller operation without CPU polling.
+QZ-30,Operating Systems,Virtualization,Understand,5.0,5.0,5.0,4.0,3.0,4.4,Clear distinction between Type 1 bare-metal and Type 2 hosted hypervisors.
+QZ-31,Database Systems,Transactions & ACID,Understand,5.0,5.0,5.0,5.0,3.0,4.6,Durability crash-resilience definition through WAL.
+QZ-32,Database Systems,Relational Normalization,Apply,5.0,4.0,5.0,4.0,4.0,4.4,2NF partial dependency removal requirement on composite keys.
+QZ-33,Database Systems,Indexing,Analyze,5.0,5.0,5.0,5.0,5.0,5.0,High-depth systems rationale for B+ Tree disk page fan-out over BSTs.
+QZ-34,Database Systems,Concurrency Control,Understand,5.0,5.0,5.0,4.0,4.0,4.6,Strict 2PL holding exclusive write locks until commit/abort to prevent cascading aborts.
+QZ-35,Database Systems,SQL & Query Execution,Apply,5.0,5.0,5.0,4.0,3.0,4.4,WHERE pre-aggregation row filter vs HAVING post-aggregation group filter.
+QZ-36,Database Systems,Isolation Levels,Analyze,5.0,4.0,5.0,4.0,5.0,4.6,Non-repeatable read phenomenon isolation boundary.
+QZ-37,Database Systems,Distributed Databases,Understand,5.0,5.0,5.0,4.0,3.0,4.4,Brewer's CAP theorem tripartite trade-off.
+QZ-38,Database Systems,NoSQL Architectures,Understand,5.0,5.0,5.0,4.0,3.0,4.4,Graph database index-free adjacency for relationship traversal.
+QZ-39,Database Systems,Query Optimization,Analyze,5.0,5.0,5.0,4.0,4.0,4.6,Predicate pushdown to reduce intermediate query pipeline data volume.
+QZ-40,Database Systems,Storage Engines,Understand,5.0,5.0,5.0,4.0,4.0,4.6,LSM tree sequential append-only writes via MemTable and SSTables.
+QZ-41,Compilers,Lexical Analysis,Understand,5.0,5.0,5.0,4.0,3.0,4.4,Finite Automata (DFA/NFA) for Type 3 regular grammar tokenization.
+QZ-42,Compilers,Syntax Analysis,Understand,5.0,5.0,5.0,4.0,3.0,4.4,Context-Free Grammars for parser generators (Yacc/ANTLR).
+QZ-43,Compilers,Parsing Techniques,Analyze,5.0,5.0,5.0,4.0,4.0,4.6,Left recursion infinite recursion failure in top-down recursive descent.
+QZ-44,Compilers,Semantic Analysis,Understand,5.0,5.0,5.0,4.0,3.0,4.4,Symbol table tracking identifier types
+QZ-45,Compilers,Code Optimization,Analyze,5.0,5.0,5.0,4.0,4.0,4.6,Static Single Assignment (SSA) form with phi-functions for optimization.
+QZ-46,Artificial Intelligence,Search Algorithms,Understand,5.0,5.0,5.0,4.0,4.0,4.6,Admissible heuristic criterion guaranteeing A* optimality.
+QZ-47,Artificial Intelligence,Machine Learning,Understand,5.0,5.0,5.0,4.0,3.0,4.4,Reinforcement learning policy optimization via reward signals.
+QZ-48,Artificial Intelligence,Neural Networks,Analyze,5.0,5.0,5.0,4.0,4.0,4.6,Transformer self-attention eliminating sequential recurrence bottlenecks.
+QZ-49,Computer Architecture,Pipelining,Analyze,5.0,5.0,5.0,4.0,4.0,4.6,Operand forwarding/bypassing to resolve RAW data hazards without stalls.
+QZ-50,Computer Architecture,Memory Hierarchy,Understand,5.0,5.0,5.0,4.0,3.0,4.4,Principle of spatial and temporal locality justifying hardware caches.

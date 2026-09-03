@@ -115,12 +115,8 @@ Below is the complete manifest of all source files in `src/` and `ml_backend/` (
 
 ### `src/routes/courses/` & `src/routes/share/` (Public & Viewer Pages)
 
-- [courses/[id]/+page.svelte](../src/routes/courses/[id]/+page.svelte) — Direct course detail viewer page with progress tracking and module list.
-- [courses/[id]/complete/+page.svelte](../src/routes/courses/[id]/complete/+page.svelte) — Celebration page displaying course completion badge and certificate download link.
-- [courses/[id]/lessons/[mid]/+page.svelte](../src/routes/courses/[id]/lessons/[mid]/+page.svelte) — Multi-page lesson reader component with page navigation, markdown rendering, and complete button.
-- [courses/[id]/quizzes/[mid]/+page.svelte](../src/routes/courses/[id]/quizzes/[mid]/+page.svelte) — Interactive quiz viewer component with option selection, answer validation, and score calculation.
-- [share/[token]/+page.svelte](../src/routes/share/[token]/+page.svelte) — Shared course landing page displaying preview metadata and "Claim Course" action button.
-- [shared/[shareId]/+page.svelte](../src/routes/shared/[shareId]/+page.svelte) — Public certificate viewer page displaying verified completion details.
+- [courses/[id]/+page.ts](../src/routes/courses/[id]/+page.ts) — Compatibility redirect route performing HTTP 308 forwarding to authenticated app course routes.
+- [share/[token]/+page.svelte](../src/routes/share/[token]/+page.svelte) — Shared course and certificate landing page displaying preview metadata and "Claim Course" action button.
 
 ### `ml_backend/` (Python FastAPI Backend & ML Models)
 

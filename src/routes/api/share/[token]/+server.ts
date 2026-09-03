@@ -56,12 +56,13 @@ export const GET: RequestHandler = async ({ params, getClientAddress }) => {
 			);
 		}
 
-		const snapshot = shareData.snapshot;
+		const snapshot = shareData.snapshot || {};
+		const modules = Array.isArray(snapshot.modules) ? snapshot.modules : [];
 		return json({
-			title: snapshot.title,
-			description: snapshot.description,
-			sharedByName: shareData.sharedByName,
-			moduleCount: snapshot.modules.length
+			title: snapshot.title || shareData.title || 'Untitled Course',
+			description: snapshot.description || shareData.description || '',
+			sharedByName: shareData.sharedByName || 'Community Member',
+			moduleCount: modules.length || shareData.moduleCount || 0
 		});
 	} catch (err) {
 		console.error('Get shared course preview error:', err);

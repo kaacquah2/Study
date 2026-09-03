@@ -43,7 +43,7 @@
 </script>
 
 <div
-	class="my-4 rounded-2xl overflow-hidden border {currentStyle.border} transition-all"
+	class="my-4 overflow-hidden rounded-2xl border {currentStyle.border} transition-all"
 	role="region"
 	aria-label={`Callout: ${title}`}
 >
@@ -53,9 +53,9 @@
 		aria-expanded={isOpen}
 		aria-controls="callout-body"
 		aria-label={`${isOpen ? 'Collapse' : 'Expand'} callout: ${title}`}
-		class="p-3.5 text-xs font-bold flex w-full cursor-pointer items-center justify-between text-left"
+		class="flex w-full cursor-pointer items-center justify-between p-3.5 text-left text-xs font-bold"
 	>
-		<div class="gap-2 flex items-center">
+		<div class="flex items-center gap-2">
 			<span aria-hidden="true">{currentStyle.icon}</span>
 			<span class={currentStyle.accent}>{title}</span>
 		</div>
@@ -68,7 +68,7 @@
 	</button>
 
 	{#if isOpen}
-		<div id="callout-body" class="px-4 py-3 text-xs leading-relaxed border-t border-border/20">
+		<div id="callout-body" class="border-t border-border/20 px-4 py-3 text-xs leading-relaxed">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			{@html renderedHtml}
 		</div>

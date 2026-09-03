@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { auth } from '$lib/firebase/client';
+	import { apiFetch } from '$lib/api/client';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import { resolve } from '$app/paths';
@@ -41,18 +41,7 @@
 		loading = true;
 		errorMsg = '';
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch(`/api/superadmin/users/${targetUid}`, {
-				headers: {
-					Authorization: `Bearer ${idToken}`
-				}
-			});
-
-			const data = await res.json();
-			if (!res.ok) {
-				throw new Error(data.error?.message || 'Failed to fetch user profile');
-			}
-
+			const { data } = await apiFetch<{ user: DetailedUser }>(`/api/superadmin/users/${targetUid}`);
 			user = data.user;
 			if (user) {
 				targetRole = user.role;
@@ -73,24 +62,14 @@
 		updateMsg = '';
 
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch(`/api/superadmin/users/${targetUid}`, {
+			await apiFetch(`/api/superadmin/users/${targetUid}`, {
 				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${idToken}`
-				},
-				body: JSON.stringify({
+				body: {
 					role: targetRole,
 					isBanned: targetBanned,
 					bannedReason: banReason
-				})
+				}
 			});
-
-			const data = await res.json();
-			if (!res.ok) {
-				throw new Error(data.error?.message || 'Failed to update user status');
-			}
 
 			updateMsg = 'User updated successfully!';
 			await fetchUserDetails();
@@ -107,9 +86,9 @@
 	<title>{user ? user.displayName || user.email : 'User Detail'} &mdash; Super Admin</title>
 </svelte:head>
 
-<div class="gap-6 flex w-full flex-col">
+<div class="flex w-full flex-col gap-6">
 	<!-- Breadcrumb Navigation -->
-	<div class="gap-2 text-xs font-bold flex items-center text-text-muted">
+	<div class="flex items-center gap-2 text-xs font-bold text-text-muted">
 		<a href={resolve('/superadmin/user-management')} class="transition-colors hover:text-primary">
 			← Back to User Directory
 		</a>
@@ -119,16 +98,16 @@
 		<Skeleton variant="card" />
 	{:else if errorMsg}
 		<div
-			class="rounded-2xl p-8 text-xs font-bold border border-danger/20 bg-danger-soft text-center text-danger"
+			class="rounded-2xl border border-danger/20 bg-danger-soft p-8 text-center text-xs font-bold text-danger"
 		>
 			{errorMsg}
 		</div>
 	{:else if user}
 		<!-- Header Profile Card -->
 		<div
-			class="gap-6 rounded-2xl p-6 shadow-xs sm:flex-row sm:items-center sm:justify-between flex flex-col border border-border bg-surface"
+			class="flex flex-col gap-6 rounded-2xl border border-border bg-surface p-6 shadow-xs sm:flex-row sm:items-center sm:justify-between"
 		>
-			<div class="gap-4 flex items-center">
+			<div class="flex items-center gap-4">
 				{#if user.photoURL}
 					<img
 						src={user.photoURL}
@@ -137,26 +116,26 @@
 					/>
 				{:else}
 					<div
-						class="h-16 w-16 bg-violet-600 text-xl font-black text-white flex items-center justify-center rounded-full"
+						class="flex h-16 w-16 items-center justify-center rounded-full bg-violet-600 text-xl font-black text-white"
 					>
 						{(user.displayName || user.email || 'U').slice(0, 2).toUpperCase()}
 					</div>
 				{/if}
 
-				<div class="gap-1 flex flex-col">
-					<div class="gap-2 flex items-center">
-						<h1 class="font-display text-xl font-bold sm:text-2xl text-text">
+				<div class="flex flex-col gap-1">
+					<div class="flex items-center gap-2">
+						<h1 class="font-display text-xl font-bold text-text sm:text-2xl">
 							{user.displayName || 'Unnamed User'}
 						</h1>
 						{#if user.role === 'superadmin'}
 							<span
-								class="border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 font-extrabold text-violet-500 rounded-full border text-[10px]"
+								class="rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-violet-500"
 							>
 								👑 Super Admin
 							</span>
 						{:else if user.role === 'admin'}
 							<span
-								class="px-2.5 py-0.5 font-extrabold rounded-full border border-primary/30 bg-primary-soft text-[10px] text-primary"
+								class="rounded-full border border-primary/30 bg-primary-soft px-2.5 py-0.5 text-[10px] font-extrabold text-primary"
 							>
 								🛡️ Admin
 							</span>
@@ -164,7 +143,7 @@
 
 						{#if user.isBanned}
 							<span
-								class="px-2.5 py-0.5 font-extrabold rounded-full border border-danger/30 bg-danger-soft text-[10px] text-danger"
+								class="rounded-full border border-danger/30 bg-danger-soft px-2.5 py-0.5 text-[10px] font-extrabold text-danger"
 							>
 								🚫 Suspended
 							</span>
@@ -175,7 +154,7 @@
 				</div>
 			</div>
 
-			<div class="gap-4 pt-4 sm:border-t-0 sm:pt-0 flex items-center border-t border-border">
+			<div class="flex items-center gap-4 border-t border-border pt-4 sm:border-t-0 sm:pt-0">
 				<div class="flex flex-col text-right">
 					<span class="text-xs font-bold text-text-muted">Streak</span>
 					<span class="font-display text-base font-black text-primary"
@@ -193,23 +172,23 @@
 		</div>
 
 		<!-- Action Panel & Course List Grid -->
-		<div class="gap-6 md:grid-cols-3 grid grid-cols-1">
+		<div class="grid grid-cols-1 gap-6 md:grid-cols-3">
 			<!-- Column 1: Administrative Controls -->
 			<div
-				class="gap-4 rounded-2xl p-6 shadow-xs md:col-span-1 flex flex-col border border-border bg-surface"
+				class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-xs md:col-span-1"
 			>
 				<h2 class="font-display text-base font-bold text-text">Account Control Panel</h2>
 
 				{#if updateMsg}
 					<div
-						class="border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-bold text-emerald-500 rounded-xl border text-center"
+						class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-center text-xs font-bold text-emerald-500"
 					>
 						{updateMsg}
 					</div>
 				{/if}
 
-				<div class="gap-4 flex flex-col">
-					<div class="gap-2 flex flex-col">
+				<div class="flex flex-col gap-4">
+					<div class="flex flex-col gap-2">
 						<label
 							for="detail-user-role"
 							class="text-xs font-bold tracking-wider text-text uppercase">Access Role</label
@@ -217,7 +196,7 @@
 						<select
 							id="detail-user-role"
 							bind:value={targetRole}
-							class="p-2.5 text-xs font-bold rounded-xl border border-border bg-surface-muted text-text focus:border-primary focus:outline-none"
+							class="rounded-xl border border-border bg-surface-muted p-2.5 text-xs font-bold text-text focus:border-primary focus:outline-none"
 						>
 							<option value="user">Student User</option>
 							<option value="admin">Administrator</option>
@@ -225,8 +204,8 @@
 						</select>
 					</div>
 
-					<div class="gap-2 pt-4 flex flex-col border-t border-border/60">
-						<label class="gap-2 flex cursor-pointer items-center">
+					<div class="flex flex-col gap-2 border-t border-border/60 pt-4">
+						<label class="flex cursor-pointer items-center gap-2">
 							<input
 								type="checkbox"
 								bind:checked={targetBanned}
@@ -240,7 +219,7 @@
 								type="text"
 								placeholder="Reason for suspension..."
 								bind:value={banReason}
-								class="mt-2 p-2.5 text-xs font-semibold w-full rounded-xl border border-danger/30 bg-danger-soft text-danger placeholder-danger/60 focus:outline-none"
+								class="mt-2 w-full rounded-xl border border-danger/30 bg-danger-soft p-2.5 text-xs font-semibold text-danger placeholder-danger/60 focus:outline-none"
 							/>
 						{/if}
 					</div>
@@ -249,7 +228,7 @@
 						type="button"
 						onclick={handleSave}
 						disabled={updating}
-						class="mt-2 py-2.5 text-xs font-bold text-white cursor-pointer rounded-xl bg-primary transition-all hover:bg-primary-hover disabled:opacity-50"
+						class="mt-2 cursor-pointer rounded-xl bg-primary py-2.5 text-xs font-bold text-white transition-all hover:bg-primary-hover disabled:opacity-50"
 					>
 						{updating ? 'Saving...' : 'Save Privileges'}
 					</button>
@@ -258,7 +237,7 @@
 
 			<!-- Column 2 & 3: Generated Courses -->
 			<div
-				class="gap-4 rounded-2xl p-6 shadow-xs md:col-span-2 flex flex-col border border-border bg-surface"
+				class="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-xs md:col-span-2"
 			>
 				<h2 class="font-display text-base font-bold text-text">
 					Generated Courses ({user.courses.length})
@@ -266,15 +245,15 @@
 
 				{#if user.courses.length === 0}
 					<div
-						class="p-8 text-xs rounded-xl border border-border bg-surface-muted text-center text-text-muted"
+						class="rounded-xl border border-border bg-surface-muted p-8 text-center text-xs text-text-muted"
 					>
 						This user has not generated any courses yet.
 					</div>
 				{:else}
-					<div class="max-h-96 gap-2.5 pr-1 flex flex-col overflow-y-auto">
+					<div class="flex max-h-96 flex-col gap-2.5 overflow-y-auto pr-1">
 						{#each user.courses as course (course.id)}
 							<div
-								class="p-3 text-xs flex items-center justify-between rounded-xl border border-border/70 bg-surface-muted/50"
+								class="flex items-center justify-between rounded-xl border border-border/70 bg-surface-muted/50 p-3 text-xs"
 							>
 								<div class="flex flex-col">
 									<span class="font-bold text-text">{course.title}</span>
@@ -284,7 +263,7 @@
 								</div>
 								<a
 									href={resolve(`/app/courses/${course.id}` as '/app')}
-									class="px-3 py-1.5 text-xs font-bold rounded-lg border border-border bg-surface text-primary transition-colors hover:bg-primary-soft"
+									class="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary-soft"
 								>
 									Open Course →
 								</a>

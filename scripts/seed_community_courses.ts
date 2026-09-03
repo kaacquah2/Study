@@ -747,6 +747,8 @@ async function seedSharedCourses() {
 		await docRef.set(
 			{
 				...courseData,
+				isPublic: true,
+				revoked: false,
 				createdAt: FieldValue.serverTimestamp()
 			},
 			{ merge: true }

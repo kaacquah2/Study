@@ -27,10 +27,11 @@ export interface FSRSOutput {
 }
 
 // Default FSRS-4.5 weights (W)
-const W = [
+export const FSRS_WEIGHTS = [
 	0.40255, 1.18385, 3.173, 15.69105, 7.1949, 0.5345, 1.4604, 0.0046, 1.5457, 0.1192, 1.0192, 1.9395,
 	0.11, 0.29605, 2.2698, 0.2315, 2.9898
 ];
+const W = FSRS_WEIGHTS;
 
 /** Map 0-5 quality score to FSRS rating 1-4 */
 export function qualityToRating(quality: number): 1 | 2 | 3 | 4 {
@@ -209,4 +210,12 @@ export function convertSM2ToFSRS(sm2Card: {
 		state,
 		lastReview: new Date().toISOString()
 	};
+}
+
+/**
+ * Calculates current estimated retrievability R(t, S) for a card given elapsed days.
+ */
+export function calculateRetrievability(stability: number, elapsedDays: number): number {
+	if (stability <= 0) return 0;
+	return Math.pow(1 + elapsedDays / (9 * stability), -1);
 }

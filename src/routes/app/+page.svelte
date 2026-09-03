@@ -8,9 +8,10 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { chatStore } from '$lib/stores/chat.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import { db, auth } from '$lib/firebase/client';
+	import { db } from '$lib/firebase/client';
 	import { collection, query, where, onSnapshot } from 'firebase/firestore';
 	import { goto } from '$app/navigation';
+	import { apiFetch } from '$lib/api/client';
 	import type { CourseDoc } from '$lib/firebase/converters';
 
 	let courses = $state<CourseDoc[]>([]);
@@ -240,22 +241,33 @@
 
 	const fetchDueReviews = async () => {
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch('/api/spaced-repetition/due', {
-				headers: { Authorization: `Bearer ${idToken}` }
-			});
-			if (res.ok) {
-				const data = await res.json();
-				dueReviewsCount = data.count || 0;
-			}
+			const { data } = await apiFetch<{ count?: number }>('/api/spaced-repetition/due');
+			dueReviewsCount = data.count || 0;
 		} catch (e) {
 			console.error('Error loading due reviews:', e);
 		}
 	};
 
+	let sharingCourseId = $state<string | null>(null);
+
 	const handleOpenShare = async (courseId: string) => {
-		shareUrl = `${window.location.origin}/shared/${courseId}`;
-		showShareModal = true;
+		if (!courseId || sharingCourseId) return;
+		sharingCourseId = courseId;
+		try {
+			const { data } = await apiFetch<{ token: string; url: string }>(
+				`/api/courses/${courseId}/share`,
+				{
+					method: 'POST'
+				}
+			);
+			shareUrl = data.url;
+			showShareModal = true;
+		} catch (err) {
+			console.error('Share course error:', err);
+			toastStore.error(err instanceof Error ? err.message : 'Could not generate share link');
+		} finally {
+			sharingCourseId = null;
+		}
 	};
 
 	let forkingCourseId = $state<string | null>(null);
@@ -264,16 +276,9 @@
 		if (forkingCourseId) return;
 		forkingCourseId = courseId;
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch(`/api/courses/${courseId}/fork`, {
-				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json'
-				}
+			const { data } = await apiFetch<{ courseId: string }>(`/api/courses/${courseId}/fork`, {
+				method: 'POST'
 			});
-			const data = await res.json();
-			if (!res.ok) throw new Error(data.error?.message || 'Failed to duplicate course');
 			toastStore.success('Course duplicated! Opening your copy...');
 			goto(`/app/courses/${data.courseId}`);
 		} catch (err) {
@@ -289,23 +294,23 @@
 	<title>Dashboard &mdash; Study AI</title>
 </svelte:head>
 
-<div class="gap-7 flex w-full flex-col">
+<div class="flex w-full flex-col gap-7">
 	<!-- Zone 1: Personalized Header Banner with Verified Streak Stats -->
 	<div
-		class="rounded-3xl from-indigo-950 via-indigo-900 to-purple-950 p-6 text-white shadow-xl sm:p-8 relative overflow-hidden bg-linear-to-r"
+		class="relative overflow-hidden rounded-3xl bg-linear-to-r from-indigo-950 via-indigo-900 to-purple-950 p-6 text-white shadow-xl sm:p-8"
 	>
-		<div class="-top-12 -right-12 h-64 w-64 bg-purple-500/15 blur-3xl absolute rounded-full"></div>
-		<div class="gap-6 md:flex-row md:items-center relative z-10 flex flex-col justify-between">
-			<div class="gap-2 flex flex-col">
-				<div class="gap-2 inline-flex items-center">
+		<div class="absolute -top-12 -right-12 h-64 w-64 rounded-full bg-purple-500/15 blur-3xl"></div>
+		<div class="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
+			<div class="flex flex-col gap-2">
+				<div class="inline-flex items-center gap-2">
 					<span
-						class="border-indigo-300/30 bg-indigo-500/25 px-3 py-1 text-xs font-semibold text-indigo-200 rounded-full border"
+						class="rounded-full border border-indigo-300/30 bg-indigo-500/25 px-3 py-1 text-xs font-semibold text-indigo-200"
 					>
 						{greetingTime}, {firstName} 👋
 					</span>
 					{#if studiedToday}
 						<span
-							class="border-emerald-400/30 bg-emerald-500/20 px-2.5 py-1 font-bold text-emerald-300 rounded-full border text-[11px]"
+							class="rounded-full border border-emerald-400/30 bg-emerald-500/20 px-2.5 py-1 text-[11px] font-bold text-emerald-300"
 						>
 							✓ Studied Today
 						</span>
@@ -317,8 +322,8 @@
 				</h1>
 
 				<!-- Verified Streak Info Pill -->
-				<div class="mt-1 gap-3 text-xs text-indigo-200/90 flex flex-wrap items-center">
-					<span class="gap-1.5 font-semibold flex items-center">
+				<div class="mt-1 flex flex-wrap items-center gap-3 text-xs text-indigo-200/90">
+					<span class="flex items-center gap-1.5 font-semibold">
 						<span class="text-base">🔥</span>
 						<strong>{currentStreak} day streak</strong>
 						{#if longestStreak > currentStreak}
@@ -334,10 +339,10 @@
 				</div>
 			</div>
 
-			<div class="gap-3 flex shrink-0 items-center">
+			<div class="flex shrink-0 items-center gap-3">
 				<a
 					href="/app/courses/createCourse"
-					class="gap-2 rounded-2xl bg-white px-5 py-3 text-xs font-bold text-indigo-950 hover:bg-indigo-50 inline-flex items-center justify-center shadow-lg transition-all duration-180 active:scale-95"
+					class="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-xs font-bold text-indigo-950 shadow-lg transition-all duration-180 hover:bg-indigo-50 active:scale-95"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -360,40 +365,40 @@
 	</div>
 
 	<!-- Zone 2: Today's Focus — Deterministic Primary Learning Recommendation -->
-	<section class="gap-3 flex flex-col">
+	<section class="flex flex-col gap-3">
 		<div class="flex items-center justify-between">
 			<h2 class="font-display text-sm font-bold tracking-wider text-text-muted uppercase">
 				🎯 Today's Learning Focus
 			</h2>
 			{#if dueReviewsCount > 0}
 				<span
-					class="bg-amber-500/10 px-2.5 py-0.5 font-bold text-amber-500 rounded-full text-[11px]"
+					class="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-500"
 				>
 					{dueReviewsCount} due for review
 				</span>
 			{/if}
 		</div>
 
-		<div class="rounded-3xl p-6 sm:p-7 border shadow-sm {primaryRecommendation.cardBg}">
-			<div class="gap-6 md:flex-row md:items-center flex flex-col justify-between">
-				<div class="max-w-2xl gap-2 flex flex-col">
+		<div class="rounded-3xl border p-6 shadow-sm sm:p-7 {primaryRecommendation.cardBg}">
+			<div class="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+				<div class="flex max-w-2xl flex-col gap-2">
 					<div
-						class="gap-1.5 px-3 py-1 font-black tracking-wider inline-flex items-center self-start rounded-full border text-[10px] uppercase {primaryRecommendation.badgeBg}"
+						class="inline-flex items-center gap-1.5 self-start rounded-full border px-3 py-1 text-[10px] font-black tracking-wider uppercase {primaryRecommendation.badgeBg}"
 					>
 						<span>{primaryRecommendation.badge}</span>
 					</div>
-					<h3 class="font-display text-lg font-bold sm:text-xl text-text">
+					<h3 class="font-display text-lg font-bold text-text sm:text-xl">
 						{primaryRecommendation.title}
 					</h3>
-					<p class="text-xs leading-relaxed sm:text-sm text-text-muted">
+					<p class="text-xs leading-relaxed text-text-muted sm:text-sm">
 						{primaryRecommendation.description}
 					</p>
 				</div>
 
-				<div class="gap-3 flex shrink-0 items-center">
+				<div class="flex shrink-0 items-center gap-3">
 					<a
 						href={primaryRecommendation.actionHref}
-						class="gap-2 rounded-2xl px-6 py-3.5 text-xs font-bold inline-flex items-center justify-center shadow-md transition-all duration-180 hover:scale-[1.02] active:scale-95 {primaryRecommendation.btnBg}"
+						class="inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-xs font-bold shadow-md transition-all duration-180 hover:scale-[1.02] active:scale-95 {primaryRecommendation.btnBg}"
 					>
 						<span>{primaryRecommendation.actionLabel}</span>
 					</a>
@@ -403,15 +408,15 @@
 	</section>
 
 	<!-- Quick Action Learning Grid -->
-	<div class="gap-4 sm:grid-cols-3 grid grid-cols-1">
+	<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
 		<!-- 1. Practice & Recall -->
 		<a
 			href="/app/review"
-			class="group rounded-2xl p-4.5 shadow-2xs flex items-center justify-between border border-border bg-surface transition-all duration-180 hover:border-primary/40 hover:bg-surface-muted/50"
+			class="group flex items-center justify-between rounded-2xl border border-border bg-surface p-4.5 shadow-2xs transition-all duration-180 hover:border-primary/40 hover:bg-surface-muted/50"
 		>
-			<div class="gap-3.5 flex items-center">
+			<div class="flex items-center gap-3.5">
 				<div
-					class="h-10 w-10 bg-amber-500/15 text-lg flex shrink-0 items-center justify-center rounded-xl"
+					class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-lg"
 				>
 					🧠
 				</div>
@@ -424,18 +429,18 @@
 					</p>
 				</div>
 			</div>
-			<span class="text-xs group-hover:translate-x-0.5 text-text-muted transition-transform">→</span
+			<span class="text-xs text-text-muted transition-transform group-hover:translate-x-0.5">→</span
 			>
 		</a>
 
 		<!-- 2. Knowledge Map -->
 		<a
 			href="/app/knowledge-map"
-			class="group rounded-2xl p-4.5 shadow-2xs flex items-center justify-between border border-border bg-surface transition-all duration-180 hover:border-primary/40 hover:bg-surface-muted/50"
+			class="group flex items-center justify-between rounded-2xl border border-border bg-surface p-4.5 shadow-2xs transition-all duration-180 hover:border-primary/40 hover:bg-surface-muted/50"
 		>
-			<div class="gap-3.5 flex items-center">
+			<div class="flex items-center gap-3.5">
 				<div
-					class="h-10 w-10 text-lg flex shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary"
+					class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-lg text-primary"
 				>
 					🗺️
 				</div>
@@ -446,7 +451,7 @@
 					<p class="text-[11px] text-text-muted">Prerequisite concept tree</p>
 				</div>
 			</div>
-			<span class="text-xs group-hover:translate-x-0.5 text-text-muted transition-transform">→</span
+			<span class="text-xs text-text-muted transition-transform group-hover:translate-x-0.5">→</span
 			>
 		</a>
 
@@ -454,11 +459,11 @@
 		<button
 			type="button"
 			onclick={() => chatStore.toggle()}
-			class="group rounded-2xl p-4.5 shadow-2xs flex cursor-pointer items-center justify-between border border-border bg-surface text-left transition-all duration-180 hover:border-primary/40 hover:bg-surface-muted/50"
+			class="group flex cursor-pointer items-center justify-between rounded-2xl border border-border bg-surface p-4.5 text-left shadow-2xs transition-all duration-180 hover:border-primary/40 hover:bg-surface-muted/50"
 		>
-			<div class="gap-3.5 flex items-center">
+			<div class="flex items-center gap-3.5">
 				<div
-					class="h-10 w-10 bg-purple-500/15 text-lg text-purple-600 flex shrink-0 items-center justify-center rounded-xl"
+					class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-lg text-purple-600"
 				>
 					✨
 				</div>
@@ -469,13 +474,13 @@
 					<p class="text-[11px] text-text-muted">Ask questions & explanations</p>
 				</div>
 			</div>
-			<span class="text-xs group-hover:translate-x-0.5 text-text-muted transition-transform">→</span
+			<span class="text-xs text-text-muted transition-transform group-hover:translate-x-0.5">→</span
 			>
 		</button>
 	</div>
 
 	<!-- Zone 3 & 4: Course Section -->
-	<section class="gap-6 pt-2 flex flex-col">
+	<section class="flex flex-col gap-6 pt-2">
 		<div class="flex items-center justify-between">
 			<h2 class="font-display text-lg font-bold text-text">
 				My Courses ({courses.length})
@@ -488,20 +493,20 @@
 		</div>
 
 		{#if loading}
-			<div class="gap-6 md:grid-cols-2 xl:grid-cols-3 grid grid-cols-1">
+			<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
 				<Skeleton variant="card" />
 				<Skeleton variant="card" />
 				<Skeleton variant="card" />
 			</div>
 		{:else if loadError}
 			<div
-				class="gap-3 rounded-2xl p-6 text-xs font-bold flex flex-col items-center justify-center border border-danger/20 bg-danger-soft text-center text-danger"
+				class="flex flex-col items-center justify-center gap-3 rounded-2xl border border-danger/20 bg-danger-soft p-6 text-center text-xs font-bold text-danger"
 			>
 				<span>{loadError}</span>
 				<button
 					type="button"
 					onclick={() => retryFetch()}
-					class="px-4 py-2 font-semibold text-white rounded-xl bg-danger shadow-sm transition hover:bg-danger/90"
+					class="rounded-xl bg-danger px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-danger/90"
 				>
 					🔄 Try Again
 				</button>
@@ -525,25 +530,25 @@
 
 			<!-- Prominent Resume / Active Course Card -->
 			<div
-				class="rounded-3xl p-6 shadow-xs sm:p-8 relative overflow-hidden border border-primary/25 bg-surface"
+				class="relative overflow-hidden rounded-3xl border border-primary/25 bg-surface p-6 shadow-xs sm:p-8"
 			>
-				<div class="gap-6 md:flex-row md:items-center flex flex-col justify-between">
-					<div class="max-w-2xl gap-2.5 flex flex-col">
+				<div class="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+					<div class="flex max-w-2xl flex-col gap-2.5">
 						<div
-							class="gap-1.5 px-3 py-1 font-black tracking-wider inline-flex items-center self-start rounded-full border border-primary/30 bg-primary-soft/80 text-[10px] text-primary uppercase"
+							class="inline-flex items-center gap-1.5 self-start rounded-full border border-primary/30 bg-primary-soft/80 px-3 py-1 text-[10px] font-black tracking-wider text-primary uppercase"
 						>
 							<span>📍 Pick up where you left off</span>
 						</div>
-						<h3 class="font-display text-xl font-bold tracking-tight sm:text-2xl text-text">
+						<h3 class="font-display text-xl font-bold tracking-tight text-text sm:text-2xl">
 							{recentCourse.title}
 						</h3>
-						<p class="text-xs leading-relaxed sm:text-sm line-clamp-2 text-text-muted">
+						<p class="line-clamp-2 text-xs leading-relaxed text-text-muted sm:text-sm">
 							{recentCourse.description}
 						</p>
 
 						<!-- Progress Stats -->
-						<div class="mt-2 gap-1.5 flex flex-col">
-							<div class="text-xs font-bold flex items-center justify-between">
+						<div class="mt-2 flex flex-col gap-1.5">
+							<div class="flex items-center justify-between text-xs font-bold">
 								<span class="text-text-muted"
 									>{completedCount} of {totalCount} modules completed</span
 								>
@@ -558,10 +563,10 @@
 						</div>
 					</div>
 
-					<div class="gap-3 sm:flex-row md:flex-col flex shrink-0 flex-col items-stretch">
+					<div class="flex shrink-0 flex-col items-stretch gap-3 sm:flex-row md:flex-col">
 						<a
 							href={`/app/courses/${recentCourse.id}`}
-							class="gap-2 rounded-2xl px-6 py-3.5 text-xs font-bold text-white inline-flex items-center justify-center bg-primary shadow-md shadow-primary/20 transition-all duration-180 hover:scale-[1.02] hover:bg-primary-hover active:scale-95"
+							class="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-xs font-bold text-white shadow-primary/20 shadow-md transition-all duration-180 hover:scale-[1.02] hover:bg-primary-hover active:scale-95"
 						>
 							<span>Resume Learning</span>
 							<svg
@@ -583,7 +588,7 @@
 						<button
 							type="button"
 							onclick={() => handleOpenShare(recentCourse.id || '')}
-							class="gap-2 rounded-2xl px-4 py-3 text-xs font-bold inline-flex items-center justify-center border border-border bg-surface text-text-muted hover:border-primary/40 hover:text-text"
+							class="inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-4 py-3 text-xs font-bold text-text-muted hover:border-primary/40 hover:text-text"
 						>
 							<span>🔗 Share Course</span>
 						</button>
@@ -593,11 +598,11 @@
 
 			<!-- In Progress Courses -->
 			{#if inProgressCourses.length > 0}
-				<div class="gap-4 pt-2 flex flex-col">
+				<div class="flex flex-col gap-4 pt-2">
 					<h3 class="font-display text-xs font-bold tracking-wider text-text-muted uppercase">
 						In Progress ({inProgressCourses.length})
 					</h3>
-					<div class="gap-6 md:grid-cols-2 xl:grid-cols-3 grid grid-cols-1">
+					<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
 						{#each inProgressCourses as course, idx (course.id)}
 							<div class="anim-slide-up" style="animation-delay: {idx * 60}ms">
 								<CourseCard
@@ -619,11 +624,11 @@
 
 			<!-- Completed Courses -->
 			{#if completedCourses.length > 0}
-				<div class="gap-4 pt-4 flex flex-col">
+				<div class="flex flex-col gap-4 pt-4">
 					<h3 class="font-display text-xs font-bold tracking-wider text-emerald-500 uppercase">
 						🎓 Completed Courses & Certificates ({completedCourses.length})
 					</h3>
-					<div class="gap-6 md:grid-cols-2 xl:grid-cols-3 grid grid-cols-1">
+					<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
 						{#each completedCourses as course, idx (course.id)}
 							<div class="anim-slide-up" style="animation-delay: {idx * 60}ms">
 								<CourseCard
@@ -647,16 +652,16 @@
 
 	<!-- Zone 5: Collapsible Achievements Section -->
 	{#if userBadges.length > 0}
-		<section class="gap-3 rounded-2xl p-5 shadow-xs flex flex-col border border-border bg-surface">
+		<section class="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-xs">
 			<button
 				type="button"
 				onclick={() => (showAchievements = !showAchievements)}
 				class="flex w-full cursor-pointer items-center justify-between text-left"
 			>
-				<div class="gap-2 flex items-center">
+				<div class="flex items-center gap-2">
 					<span class="text-base">🏆</span>
 					<h3 class="font-display text-sm font-bold text-text">Your Achievements</h3>
-					<span class="px-2 py-0.5 font-bold rounded-full bg-primary-soft text-[10px] text-primary">
+					<span class="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-bold text-primary">
 						{userBadges.length} Unlocked
 					</span>
 				</div>

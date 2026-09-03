@@ -164,7 +164,9 @@ export async function verifySessionUser(request: Request): Promise<Authenticated
 						current: 0,
 						longest: 0,
 						lastStudiedOn: null,
-						timezone: tz
+						timezone: tz,
+						freezesAvailable: 1,
+						lastFreezeRefill: null
 					},
 					createdAt: FieldValue.serverTimestamp()
 				});

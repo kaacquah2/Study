@@ -10,6 +10,24 @@
 	import DesktopSidebar from '$lib/components/DesktopSidebar.svelte';
 	import MobileNav from '$lib/components/MobileNav.svelte';
 	import { chatStore } from '$lib/stores/chat.svelte';
+	import { focusTrap } from '$lib/utils/focusTrap';
+	import {
+		LayoutDashboard,
+		PlusCircle,
+		Compass,
+		Network,
+		BookOpen,
+		BrainCircuit,
+		AlertCircle,
+		Users,
+		Menu,
+		GraduationCap,
+		Crown,
+		Settings,
+		LogOut,
+		TriangleAlert,
+		ShieldCheck
+	} from '@lucide/svelte';
 
 	// View Transitions API — smooth cross-page animations (respects prefers-reduced-motion)
 	onNavigate((navigation) => {
@@ -34,6 +52,29 @@
 
 	let mobileMenuOpen = $state(false);
 	let userMenuOpen = $state(false);
+	let userMenuContainer = $state<HTMLElement | null>(null);
+	let userMenuTrigger = $state<HTMLButtonElement | null>(null);
+
+	function closeUserMenu(restoreFocus = true) {
+		userMenuOpen = false;
+		if (restoreFocus && userMenuTrigger) {
+			userMenuTrigger.focus();
+		}
+	}
+
+	function handleWindowClick(event: MouseEvent) {
+		if (!userMenuOpen) return;
+		const target = event.target as Node;
+		if (
+			userMenuContainer &&
+			!userMenuContainer.contains(target) &&
+			userMenuTrigger &&
+			!userMenuTrigger.contains(target)
+		) {
+			closeUserMenu(false);
+		}
+	}
+
 	let currentPath = $derived(page.url.pathname);
 
 	// Protect all /app/* routes
@@ -65,142 +106,142 @@
 			return { parent: 'Dashboard', current: 'Create New Course' };
 		if (currentPath.includes('/explore'))
 			return { parent: 'Dashboard', current: 'Explore Courses' };
+		if (currentPath.includes('/review'))
+			return { parent: 'Workspace', current: 'Practice & Review' };
+		if (currentPath.includes('/mistakes')) return { parent: 'Workspace', current: 'Mistake Bank' };
+		if (currentPath.includes('/study-groups'))
+			return { parent: 'Workspace', current: 'Study Groups' };
 		if (currentPath.includes('/settings'))
 			return { parent: 'Workspace', current: 'Profile & Settings' };
 		if (currentPath.includes('/knowledge-map'))
 			return { parent: 'Workspace', current: 'Knowledge Map' };
 		if (currentPath.includes('/knowledge'))
 			return { parent: 'Workspace', current: 'Knowledge Base' };
+		if (currentPath.includes('/admin')) return { parent: 'Workspace', current: 'System Analytics' };
 		if (currentPath.includes('/courses/'))
 			return { parent: 'Dashboard', current: 'Course Workspace' };
 		return { parent: 'Workspace', current: 'Dashboard' };
 	});
 
-	const navItems = [
-		{
-			label: 'Dashboard',
-			href: '/app',
-			icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'
-		},
-		{ label: '+ New Course', href: '/app/courses/createCourse', icon: 'M12 4v16m8-8H4' },
-		{ label: 'Explore', href: '/app/explore', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' },
-		{
-			label: 'Knowledge Map',
-			href: '/app/knowledge-map',
-			icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
-		},
-		{
-			label: 'Study Library',
-			href: '/app/knowledge',
-			icon: 'M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4'
-		},
-		{
-			label: 'Practice & Review',
-			href: '/app/review',
-			icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 01-2 2h-4a2 2 0 01-2-2v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z'
-		},
-		{
-			label: 'Mistake Bank',
-			href: '/app/mistakes',
-			icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
-		},
-		{
-			label: 'Study Groups',
-			href: '/app/study-groups',
-			icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5 5 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'
+	let isAdmin = $derived(
+		Boolean(
+			authStore.profile?.role === 'admin' ||
+			authStore.profile?.isAdmin ||
+			authStore.profile?.role === 'superadmin' ||
+			authStore.profile?.isSuperAdmin
+		)
+	);
+
+	let isSuperAdmin = $derived(
+		Boolean(authStore.profile?.role === 'superadmin' || authStore.profile?.isSuperAdmin)
+	);
+
+	let navItems = $derived.by(() => {
+		const items = [
+			{
+				label: 'Dashboard',
+				href: '/app',
+				icon: LayoutDashboard
+			},
+			{ label: 'New Course', href: '/app/courses/createCourse', icon: PlusCircle },
+			{ label: 'Explore', href: '/app/explore', icon: Compass },
+			{
+				label: 'Knowledge Map',
+				href: '/app/knowledge-map',
+				icon: Network
+			},
+			{
+				label: 'Study Library',
+				href: '/app/knowledge',
+				icon: BookOpen
+			},
+			{
+				label: 'Practice & Review',
+				href: '/app/review',
+				icon: BrainCircuit
+			},
+			{
+				label: 'Mistake Bank',
+				href: '/app/mistakes',
+				icon: AlertCircle
+			},
+			{
+				label: 'Study Groups',
+				href: '/app/study-groups',
+				icon: Users
+			}
+		];
+		if (isAdmin) {
+			items.push({
+				label: 'System Analytics',
+				href: '/app/admin',
+				icon: ShieldCheck
+			});
 		}
-	];
+		return items;
+	});
 </script>
 
-<div
-	class="relative flex min-h-screen bg-bg text-text selection:bg-primary-soft selection:text-primary"
->
-	<!-- Popover Overlay -->
-	{#if userMenuOpen}
-		<button
-			type="button"
-			aria-label="Close popover menu"
-			class="inset-0 fixed z-40 cursor-default border-none bg-transparent"
-			onclick={() => {
-				userMenuOpen = false;
-			}}
-		></button>
-	{/if}
+<svelte:window
+	onclick={handleWindowClick}
+	onkeydown={(e) => {
+		if (e.key === 'Escape' && userMenuOpen) {
+			closeUserMenu(true);
+		}
+	}}
+/>
 
-	<DesktopSidebar {currentPath} {navItems} />
+{#if authStore.user}
+	<div
+		class="relative flex min-h-screen bg-bg text-text selection:bg-primary-soft selection:text-primary"
+	>
+		<!-- Keyboard Skip to Content Navigation -->
+		<a href="#main-content" class="skip-link">Skip to main content</a>
 
-	<!-- Main Content Area -->
-	<div class="min-w-0 flex grow flex-col">
-		<!-- Header -->
-		<header
-			class="px-6 py-4 relative z-30 flex items-center justify-between border-b border-border bg-surface"
-		>
-			<div class="gap-3 md:hidden flex items-center">
-				<button
-					type="button"
-					onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
-					aria-label="Toggle menu"
-					class="p-2 cursor-pointer rounded-xl border border-border text-text-muted hover:text-text"
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-5 w-5"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M4 6h16M4 12h16M4 18h16"
-						/>
-					</svg>
-				</button>
-				<span class="font-display text-sm font-bold text-text">AI Study Buddy</span>
-			</div>
+		<DesktopSidebar {currentPath} {navItems} />
 
-			<div
-				class="gap-2 px-3.5 py-1.5 text-xs font-semibold shadow-2xs md:flex hidden items-center rounded-full border border-border/80 bg-surface-muted/60 text-text-muted"
+		<!-- Main Content Area -->
+		<div class="flex min-w-0 grow flex-col">
+			<!-- Header -->
+			<header
+				class="relative z-30 flex items-center justify-between border-b border-border bg-surface px-6 py-4"
 			>
-				<span class="gap-1.5 flex items-center text-primary">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-3.5 w-3.5"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
+				<div class="flex items-center gap-3 md:hidden">
+					<button
+						type="button"
+						onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
+						aria-label="Toggle menu"
+						class="flex cursor-pointer items-center justify-center rounded-xl border border-border p-2 text-text-muted hover:text-text"
 					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M12 14l9-5-9-5-9 5 9 5z"
-						/>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"
-						/>
-					</svg>
-					<a href="/app" class="transition-colors hover:underline">{pageBreadcrumb.parent}</a>
-				</span>
-				<span class="text-text-muted/40">/</span>
-				<span class="font-bold text-text">{pageBreadcrumb.current}</span>
-			</div>
+						<Menu class="h-5 w-5" aria-hidden="true" />
+					</button>
+					<span class="font-display text-sm font-bold text-text">AI Study Buddy</span>
+				</div>
 
-			<div class="gap-3 relative z-40 flex items-center">
-				<StreakChip />
+				<div
+					class="hidden items-center gap-2 rounded-full border border-border/80 bg-surface-muted/60 px-3.5 py-1.5 text-xs font-semibold text-text-muted shadow-2xs md:flex"
+				>
+					<span class="flex items-center gap-1.5 text-primary">
+						<GraduationCap class="h-4 w-4" aria-hidden="true" />
+						<a href="/app" class="transition-colors hover:underline">{pageBreadcrumb.parent}</a>
+					</span>
+					<span class="text-text-muted/40">/</span>
+					<span class="font-bold text-text">{pageBreadcrumb.current}</span>
+				</div>
 
-				{#if authStore.user}
+				<div class="relative z-40 flex items-center gap-3">
+					<StreakChip />
+
 					<div class="relative">
 						<button
+							bind:this={userMenuTrigger}
 							type="button"
-							onclick={() => (userMenuOpen = !userMenuOpen)}
-							class="h-9 w-9 flex cursor-pointer items-center justify-center rounded-full border border-border bg-surface-muted transition-all duration-180 hover:border-primary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+							onclick={() => (userMenuOpen ? closeUserMenu(false) : (userMenuOpen = true))}
+							class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-border bg-surface-muted transition-all duration-180 hover:border-primary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 							aria-label="User account menu"
+							aria-haspopup="menu"
 							aria-expanded={userMenuOpen}
+							aria-controls="user-account-menu"
 						>
 							{#if authStore.user.photoURL}
 								<img
@@ -210,7 +251,7 @@
 								/>
 							{:else}
 								<div
-									class="h-8 w-8 text-xs font-bold flex items-center justify-center rounded-full bg-primary-soft text-primary"
+									class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary"
 								>
 									{userInitials}
 								</div>
@@ -219,9 +260,17 @@
 
 						{#if userMenuOpen}
 							<div
-								class="right-0 mt-2 w-64 gap-3 rounded-2xl p-4 shadow-2xl absolute top-full z-50 flex flex-col border border-border bg-surface"
+								bind:this={userMenuContainer}
+								id="user-account-menu"
+								role="menu"
+								aria-label="User account options"
+								use:focusTrap={{
+									onEscape: () => closeUserMenu(true),
+									restoreFocus: true
+								}}
+								class="absolute top-full right-0 z-50 mt-2 flex w-64 flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-2xl"
 							>
-								<div class="gap-3 pb-3 flex items-center border-b border-border/60">
+								<div class="flex items-center gap-3 border-b border-border/60 pb-3">
 									{#if authStore.user.photoURL}
 										<img
 											src={authStore.user.photoURL}
@@ -230,13 +279,13 @@
 										/>
 									{:else}
 										<div
-											class="h-10 w-10 text-sm font-bold flex shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"
+											class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-bold text-primary"
 										>
 											{userInitials}
 										</div>
 									{/if}
 									<div class="truncate">
-										<span class="text-xs font-bold block truncate text-text">
+										<span class="block truncate text-xs font-bold text-text">
 											{authStore.user.displayName || 'Student'}
 										</span>
 										<span class="block truncate text-[11px] text-text-muted">
@@ -245,91 +294,159 @@
 									</div>
 								</div>
 
-								<div class="gap-1 text-xs font-semibold flex flex-col">
+								<div class="flex flex-col gap-1 text-xs font-semibold">
 									<a
+										role="menuitem"
 										href="/app"
-										onclick={() => (userMenuOpen = false)}
-										class="gap-2 px-3 py-2 flex items-center rounded-xl text-text hover:bg-surface-muted"
+										onclick={() => closeUserMenu(false)}
+										class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-text hover:bg-surface-muted focus:bg-surface-muted focus:outline-none"
 									>
-										<span>📊</span>
+										<LayoutDashboard class="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
 										<span>Dashboard</span>
 									</a>
 									<a
+										role="menuitem"
 										href="/app/explore"
-										onclick={() => (userMenuOpen = false)}
-										class="gap-2 px-3 py-2 flex items-center rounded-xl text-text hover:bg-surface-muted"
+										onclick={() => closeUserMenu(false)}
+										class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-text hover:bg-surface-muted focus:bg-surface-muted focus:outline-none"
 									>
-										<span>🔍</span>
+										<Compass class="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
 										<span>Explore Courses</span>
 									</a>
-									{#if authStore.profile?.role === 'superadmin' || authStore.profile?.isSuperAdmin || authStore.profile?.role === 'admin' || authStore.profile?.isAdmin}
+									{#if isSuperAdmin}
 										<a
+											role="menuitem"
 											href="/superadmin"
-											onclick={() => (userMenuOpen = false)}
-											class="gap-2 bg-violet-500/10 px-3 py-2 font-bold text-violet-500 hover:bg-violet-500/20 flex items-center rounded-xl"
+											onclick={() => closeUserMenu(false)}
+											class="flex items-center gap-2.5 rounded-xl bg-violet-500/10 px-3 py-2 font-bold text-violet-500 hover:bg-violet-500/20 focus:bg-violet-500/20 focus:outline-none"
 										>
-											<span>👑</span>
+											<Crown class="h-4 w-4 shrink-0" aria-hidden="true" />
 											<span>Super Admin Console</span>
 										</a>
 									{/if}
+									{#if isAdmin}
+										<a
+											role="menuitem"
+											href="/app/admin"
+											onclick={() => closeUserMenu(false)}
+											class="flex items-center gap-2.5 rounded-xl bg-primary-soft/60 px-3 py-2 font-bold text-primary hover:bg-primary-soft focus:bg-primary-soft focus:outline-none"
+										>
+											<ShieldCheck class="h-4 w-4 shrink-0" aria-hidden="true" />
+											<span>Admin Dashboard</span>
+										</a>
+									{/if}
 									<a
+										role="menuitem"
 										href="/app/settings"
-										onclick={() => (userMenuOpen = false)}
-										class="gap-2 px-3 py-2 flex items-center rounded-xl text-text hover:bg-surface-muted"
+										onclick={() => closeUserMenu(false)}
+										class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-text hover:bg-surface-muted focus:bg-surface-muted focus:outline-none"
 									>
-										<span>⚙️</span>
+										<Settings class="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
 										<span>Profile & Settings</span>
 									</a>
 								</div>
 
-								<div class="pt-2 flex items-center justify-between border-t border-border/60">
+								<div class="flex items-center justify-between border-t border-border/60 pt-2">
 									<span class="text-xs font-bold text-text-muted">Theme</span>
 									<ThemeSwitcher />
 								</div>
 
 								<button
+									role="menuitem"
 									type="button"
 									onclick={() => {
-										userMenuOpen = false;
+										closeUserMenu(false);
 										authStore.logout();
 									}}
-									class="gap-2 py-2.5 text-xs font-bold flex w-full cursor-pointer items-center justify-center rounded-xl bg-danger-soft text-danger transition-colors hover:bg-danger/15"
+									class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-danger-soft py-2.5 text-xs font-bold text-danger transition-colors hover:bg-danger/15 focus:bg-danger/15 focus:outline-none"
 								>
+									<LogOut class="h-4 w-4" aria-hidden="true" />
 									<span>Log out</span>
 								</button>
 							</div>
 						{/if}
 					</div>
-				{/if}
 
-				<div class="md:hidden">
-					<ThemeSwitcher />
+					<div class="md:hidden">
+						<ThemeSwitcher />
+					</div>
+				</div>
+			</header>
+
+			<MobileNav
+				{currentPath}
+				{navItems}
+				{mobileMenuOpen}
+				onCloseMenu={() => (mobileMenuOpen = false)}
+			/>
+
+			<!-- Body View Render -->
+			<div class="flex min-h-0 grow overflow-hidden">
+				<main
+					id="main-content"
+					tabindex="-1"
+					class="mx-auto flex w-full max-w-7xl grow flex-col overflow-y-auto px-4 py-5 focus:outline-none sm:px-6 sm:py-6 lg:px-8"
+				>
+					{@render children()}
+				</main>
+				<div
+					class={chatStore.isDocked && chatStore.isOpen
+						? 'relative z-20 flex h-full shrink-0'
+						: 'contents'}
+				>
+					<AssistantChat />
 				</div>
 			</div>
-		</header>
+		</div>
 
-		<MobileNav
-			{currentPath}
-			{navItems}
-			{mobileMenuOpen}
-			onCloseMenu={() => (mobileMenuOpen = false)}
-		/>
-
-		<!-- Body View Render -->
-		<div class="min-h-0 flex grow overflow-hidden">
-			<main
-				class="max-w-7xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8 mx-auto flex w-full grow flex-col overflow-y-auto"
+		<Toast />
+	</div>
+{:else if authStore.timedOut}
+	<!-- Session Timeout / Slow Connection State -->
+	<div class="flex min-h-screen flex-col items-center justify-center bg-bg p-6 text-text">
+		<div
+			class="w-full max-w-md rounded-2xl border border-border bg-surface p-8 text-center shadow-xl"
+		>
+			<div
+				class="bg-warning-soft text-warning mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl"
 			>
-				{@render children()}
-			</main>
-			{#if chatStore.isDocked && chatStore.isOpen}
-				<AssistantChat />
-			{/if}
+				<TriangleAlert class="h-7 w-7" aria-hidden="true" />
+			</div>
+
+			<h2 class="font-display text-xl font-bold text-text">Connection Timeout</h2>
+			<p class="mt-2 text-sm leading-relaxed text-text-muted">
+				Verifying your session is taking longer than expected due to a slow or unstable network
+				connection. You have not been signed out.
+			</p>
+
+			<div class="mt-6 flex flex-col gap-3 sm:flex-row">
+				<button
+					type="button"
+					onclick={() => authStore.retry()}
+					class="flex-1 cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all duration-180 hover:bg-primary-hover active:scale-98"
+				>
+					Retry Connection
+				</button>
+				<a
+					href="/?redirect={encodeURIComponent(page.url.pathname + page.url.search)}"
+					class="flex flex-1 items-center justify-center rounded-xl border border-border bg-surface-muted px-4 py-2.5 text-xs font-bold text-text-muted transition-colors hover:text-text"
+				>
+					Sign In Screen
+				</a>
+			</div>
 		</div>
 	</div>
-
-	<Toast />
-	{#if !chatStore.isDocked || !chatStore.isOpen}
-		<AssistantChat />
-	{/if}
-</div>
+{:else}
+	<!-- Session Loading State -->
+	<div class="flex min-h-screen flex-col items-center justify-center bg-bg p-6 text-text">
+		<div class="relative flex h-12 w-12 items-center justify-center">
+			<div class="absolute h-full w-full rounded-full border-4 border-primary/20"></div>
+			<div
+				class="absolute h-full w-full animate-spin rounded-full border-4 border-primary border-t-transparent"
+			></div>
+		</div>
+		<p class="mt-6 animate-pulse text-xs font-bold tracking-widest text-text-muted uppercase">
+			Securing session...
+		</p>
+	</div>
+{/if}

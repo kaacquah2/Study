@@ -12,36 +12,41 @@ import type { RequestHandler } from './$types';
 
 import { json } from '@sveltejs/kit';
 import { verifySessionUser } from '$lib/server/auth';
+import { buildMLAuthHeaders } from '$lib/server/ai/client';
 import { env } from '$env/dynamic/private';
+import { handleServerError } from '$lib/server/apiError';
 
 const ML_BACKEND_URL = env.ML_BACKEND_URL || 'http://127.0.0.1:8000';
-const ML_BACKEND_API_KEY = env.ML_BACKEND_API_KEY || '';
-
-/** Build headers for forwarding requests to the Python ML backend */
-function mlHeaders(userId?: string): Record<string, string> {
-	const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-	if (ML_BACKEND_API_KEY) {
-		headers['X-API-Key'] = ML_BACKEND_API_KEY;
-	}
-	if (userId) {
-		headers['X-User-ID'] = userId;
-	}
-	return headers;
-}
 
 // ── GET /api/documents ─────────────────────────────────────────────────────────
 
-export const GET: RequestHandler = async ({ request }) => {
+export const GET: RequestHandler = async (event) => {
+	const { request } = event;
 	try {
 		const user = await verifySessionUser(request);
+		const requestId = event.locals?.requestId || crypto.randomUUID();
 
 		const res = await fetch(`${ML_BACKEND_URL}/rag-stats`, {
-			headers: mlHeaders(user.uid)
+			headers: buildMLAuthHeaders('{}', user.uid, requestId)
 		});
 
 		if (!res.ok) {
 			const text = await res.text();
-			return json({ error: { code: 'ML_ERROR', message: text } }, { status: 502 });
+			console.error(
+				`[documents GET] ML backend error [req_id=${requestId}] (${res.status}):`,
+				text
+			);
+			return json(
+				{
+					error: {
+						code: 'ML_ERROR',
+						message: 'ML backend service unavailable',
+						requestId
+					},
+					requestId
+				},
+				{ status: 502, headers: { 'X-Request-ID': requestId } }
+			);
 		}
 
 		const data = await res.json();
@@ -49,17 +54,19 @@ export const GET: RequestHandler = async ({ request }) => {
 	} catch (err) {
 		const message = err instanceof Error ? err.message : 'Unknown error';
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
-		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
+		return handleServerError(err, event);
 	}
 };
 
 // ── POST /api/documents ────────────────────────────────────────────────────────
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+	const { request } = event;
 	try {
 		const user = await verifySessionUser(request);
+		const requestId = event.locals?.requestId || crypto.randomUUID();
 
 		const body = await request.json();
 		const texts: string[] = body?.texts;
@@ -90,15 +97,30 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 
+		const bodyString = JSON.stringify({ texts: cleaned });
 		const res = await fetch(`${ML_BACKEND_URL}/documents`, {
 			method: 'POST',
-			headers: mlHeaders(user.uid),
-			body: JSON.stringify({ texts: cleaned })
+			headers: buildMLAuthHeaders(bodyString, user.uid, requestId),
+			body: bodyString
 		});
 
 		if (!res.ok) {
 			const text = await res.text();
-			return json({ error: { code: 'ML_ERROR', message: text } }, { status: 502 });
+			console.error(
+				`[documents POST] ML backend error [req_id=${requestId}] (${res.status}):`,
+				text
+			);
+			return json(
+				{
+					error: {
+						code: 'ML_ERROR',
+						message: 'ML backend service unavailable',
+						requestId
+					},
+					requestId
+				},
+				{ status: 502, headers: { 'X-Request-ID': requestId } }
+			);
 		}
 
 		const data = await res.json();
@@ -106,26 +128,42 @@ export const POST: RequestHandler = async ({ request }) => {
 	} catch (err) {
 		const message = err instanceof Error ? err.message : 'Unknown error';
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
-		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
+		return handleServerError(err, event);
 	}
 };
 
 // ── DELETE /api/documents ──────────────────────────────────────────────────────
 
-export const DELETE: RequestHandler = async ({ request }) => {
+export const DELETE: RequestHandler = async (event) => {
+	const { request } = event;
 	try {
 		const user = await verifySessionUser(request);
+		const requestId = event.locals?.requestId || crypto.randomUUID();
 
 		const res = await fetch(`${ML_BACKEND_URL}/documents`, {
 			method: 'DELETE',
-			headers: mlHeaders(user.uid)
+			headers: buildMLAuthHeaders('{}', user.uid, requestId)
 		});
 
 		if (!res.ok) {
 			const text = await res.text();
-			return json({ error: { code: 'ML_ERROR', message: text } }, { status: 502 });
+			console.error(
+				`[documents DELETE] ML backend error [req_id=${requestId}] (${res.status}):`,
+				text
+			);
+			return json(
+				{
+					error: {
+						code: 'ML_ERROR',
+						message: 'ML backend service unavailable',
+						requestId
+					},
+					requestId
+				},
+				{ status: 502, headers: { 'X-Request-ID': requestId } }
+			);
 		}
 
 		const data = await res.json();
@@ -133,8 +171,8 @@ export const DELETE: RequestHandler = async ({ request }) => {
 	} catch (err) {
 		const message = err instanceof Error ? err.message : 'Unknown error';
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
-		return json({ error: { code: 'SERVER_ERROR', message } }, { status: 500 });
+		return handleServerError(err, event);
 	}
 };

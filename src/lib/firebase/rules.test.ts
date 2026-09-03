@@ -139,72 +139,163 @@ describe.runIf(emulatorAvailable)('Firestore Security Rules', () => {
 		).rejects.toThrow();
 	});
 
-	it('allows authenticated users to read unrevoked shared courses, but denies write', async () => {
+	it('allows owner to read course modules using denormalized ownerUid, but denies others and client writes', async () => {
+		const aliceDb = testEnv.authenticatedContext('alice').firestore();
+		const bobDb = testEnv.authenticatedContext('bob').firestore();
+
+		await testEnv.withSecurityRulesDisabled(async (context) => {
+			await setDoc(doc(context.firestore(), 'courses/course1'), {
+				id: 'course1',
+				ownerUid: 'alice',
+				title: 'Intro to AI'
+			});
+			await setDoc(doc(context.firestore(), 'courses/course1/modules/mod1'), {
+				id: 'mod1',
+				courseId: 'course1',
+				ownerUid: 'alice',
+				title: 'Module 1',
+				order: 1
+			});
+		});
+
+		// Alice reads her module directly via denormalized ownerUid (Success without parent get())
+		const modSnap = await getDoc(doc(aliceDb, 'courses/course1/modules/mod1'));
+		expect(modSnap.exists()).toBe(true);
+
+		// Bob cannot read Alice module (Failure)
+		await expect(getDoc(doc(bobDb, 'courses/course1/modules/mod1'))).rejects.toThrow();
+
+		// Direct client writes to modules are blocked (Admin SDK only)
+		await expect(
+			updateDoc(doc(aliceDb, 'courses/course1/modules/mod1'), {
+				title: 'Hacked Title'
+			})
+		).rejects.toThrow();
+	});
+
+	it('allows authenticated users to get unrevoked shared courses, but restricts list to public courses and denies writes', async () => {
 		const aliceDb = testEnv.authenticatedContext('alice').firestore();
 		const unauthDb = testEnv.unauthenticatedContext().firestore();
 
-		// Setup share link in admin context
+		// Setup share links in admin context: one private, one public, one revoked
 		await testEnv.withSecurityRulesDisabled(async (context) => {
-			await setDoc(doc(context.firestore(), 'sharedCourses/token1'), {
-				token: 'token1',
+			await setDoc(doc(context.firestore(), 'sharedCourses/tokenPrivate'), {
+				token: 'tokenPrivate',
+				isPublic: false,
 				revoked: false,
-				snapshot: { title: 'Shared Course' }
+				snapshot: { title: 'Private Shared Course' }
+			});
+			await setDoc(doc(context.firestore(), 'sharedCourses/tokenPublic'), {
+				token: 'tokenPublic',
+				isPublic: true,
+				revoked: false,
+				snapshot: { title: 'Community Public Course' }
 			});
 			await setDoc(doc(context.firestore(), 'sharedCourses/tokenRevoked'), {
 				token: 'tokenRevoked',
+				isPublic: true,
 				revoked: true,
 				snapshot: { title: 'Revoked Course' }
 			});
 		});
 
-		// Alice reads unrevoked share (Success)
-		const shareSnap = await getDoc(doc(aliceDb, 'sharedCourses/token1'));
-		expect(shareSnap.exists()).toBe(true);
+		// 1. Direct get capability on private unrevoked share (Success)
+		const privateSnap = await getDoc(doc(aliceDb, 'sharedCourses/tokenPrivate'));
+		expect(privateSnap.exists()).toBe(true);
 
-		// Alice reads revoked share (Failure)
+		// 2. Direct get capability on public unrevoked share (Success)
+		const publicSnap = await getDoc(doc(aliceDb, 'sharedCourses/tokenPublic'));
+		expect(publicSnap.exists()).toBe(true);
+
+		// 3. Direct get on revoked share (Failure)
 		await expect(getDoc(doc(aliceDb, 'sharedCourses/tokenRevoked'))).rejects.toThrow();
 
-		// Unauthenticated user reads unrevoked share (Failure)
-		await expect(getDoc(doc(unauthDb, 'sharedCourses/token1'))).rejects.toThrow();
+		// 4. Unauthenticated user get (Failure)
+		await expect(getDoc(doc(unauthDb, 'sharedCourses/tokenPublic'))).rejects.toThrow();
 
-		// Alice queries unrevoked shared courses via collection query (Success)
-		const listQuery = query(collection(aliceDb, 'sharedCourses'), where('revoked', '==', false));
+		// 5. Query public unrevoked shared courses via collection list (Success)
+		const listQuery = query(
+			collection(aliceDb, 'sharedCourses'),
+			where('isPublic', '==', true),
+			where('revoked', '==', false)
+		);
 		const querySnap = await getDocs(listQuery);
 		expect(querySnap.docs.length).toBe(1);
+		expect(querySnap.docs[0].id).toBe('tokenPublic');
 
-		// Alice tries to write share link directly on client (Failure)
+		// 6. Attempting to enumerate all shared courses (including private ones) without isPublic == true (Failure)
+		const leakQuery = query(collection(aliceDb, 'sharedCourses'), where('revoked', '==', false));
+		await expect(getDocs(leakQuery)).rejects.toThrow();
+
+		// 7. Alice tries to write share link directly on client (Failure - Admin SDK only)
 		await expect(
 			setDoc(doc(aliceDb, 'sharedCourses/token2'), {
 				token: 'token2',
+				isPublic: true,
 				revoked: false
 			})
 		).rejects.toThrow();
 	});
 
-	it('enforces ownership for flashcards and blocks cross-user access', async () => {
+	it('enforces ownership, blocks client creation, and protects FSRS scheduling fields on flashcards', async () => {
 		const aliceDb = testEnv.authenticatedContext('alice').firestore();
 		const bobDb = testEnv.authenticatedContext('bob').firestore();
 
-		// Alice creates card for Alice (Success)
-		await expect(
-			setDoc(doc(aliceDb, 'flashcards/card1'), {
+		// Setup flashcard via Admin context with authoritative FSRS engine parameters
+		await testEnv.withSecurityRulesDisabled(async (context) => {
+			await setDoc(doc(context.firestore(), 'flashcards/card1'), {
 				id: 'card1',
 				uid: 'alice',
-				front: 'Q',
-				back: 'A'
+				front: 'What is FSRS?',
+				back: 'Free Spaced Repetition Scheduler',
+				engine: 'fsrs',
+				stability: 2.5,
+				difficulty: 4.2,
+				reps: 3,
+				lapses: 0,
+				state: 'Review',
+				dueDate: '2026-09-10',
+				tags: ['ai', 'learning']
+			});
+		});
+
+		// 1. Direct client creation is blocked (creation is Admin SDK only via /api/spaced-repetition)
+		await expect(
+			setDoc(doc(aliceDb, 'flashcards/card2'), {
+				id: 'card2',
+				uid: 'alice',
+				front: 'Direct write',
+				back: 'Should fail'
+			})
+		).rejects.toThrow();
+
+		// 2. Owner can read their flashcard
+		const aliceSnap = await getDoc(doc(aliceDb, 'flashcards/card1'));
+		expect(aliceSnap.exists()).toBe(true);
+
+		// 3. Bob cannot read Alice card (Failure)
+		await expect(getDoc(doc(bobDb, 'flashcards/card1'))).rejects.toThrow();
+
+		// 4. Alice can update allowed content fields (front, back, tags, updatedAt)
+		await expect(
+			updateDoc(doc(aliceDb, 'flashcards/card1'), {
+				front: 'What is FSRS-4.5?',
+				back: 'Updated description',
+				tags: ['fsrs', 'spaced-repetition'],
+				updatedAt: '2026-09-03T12:00:00Z'
 			})
 		).resolves.not.toThrow();
 
-		// Bob reads Alice card (Failure)
-		await expect(getDoc(doc(bobDb, 'flashcards/card1'))).rejects.toThrow();
-
-		// Bob attempts to create card with Alice uid (Failure)
+		// 5. Alice CANNOT tamper with FSRS scheduling parameters directly on the client
 		await expect(
-			setDoc(doc(bobDb, 'flashcards/card2'), {
-				id: 'card2',
-				uid: 'alice',
-				front: 'Fake',
-				back: 'Card'
+			updateDoc(doc(aliceDb, 'flashcards/card1'), {
+				stability: 999.0
+			})
+		).rejects.toThrow();
+
+		await expect(
+			updateDoc(doc(aliceDb, 'flashcards/card1'), {
+				dueDate: '2099-01-01'
 			})
 		).rejects.toThrow();
 	});
@@ -236,32 +327,47 @@ describe.runIf(emulatorAvailable)('Firestore Security Rules', () => {
 		).rejects.toThrow();
 	});
 
-	it('handles peerQuestions lifecycle security (pending submission vs approved reading)', async () => {
+	it('handles peerQuestions lifecycle security (blocks direct client creation, permits owner & approved reads)', async () => {
 		const aliceDb = testEnv.authenticatedContext('alice').firestore();
 		const bobDb = testEnv.authenticatedContext('bob').firestore();
 
-		// Alice submits question with pending status (Success)
+		// 1. Direct client submission is blocked (must use /api/courses/peer-questions for moderation & rate-limits)
 		await expect(
 			setDoc(doc(aliceDb, 'peerQuestions/q1'), {
 				id: 'q1',
 				courseId: 'c1',
 				submittedBy: 'alice',
 				status: 'pending',
-				question: 'What is SM-2?'
+				question: 'Direct client submission'
 			})
-		).resolves.not.toThrow();
+		).rejects.toThrow();
 
-		// Bob reads Alice pending question (Failure)
+		// 2. Setup pending question via server/Admin context
+		await testEnv.withSecurityRulesDisabled(async (context) => {
+			await setDoc(doc(context.firestore(), 'peerQuestions/q1'), {
+				id: 'q1',
+				courseId: 'c1',
+				submittedBy: 'alice',
+				status: 'pending',
+				question: 'What is SM-2?'
+			});
+		});
+
+		// 3. Submitter (Alice) can read her own pending question
+		const alicePendingSnap = await getDoc(doc(aliceDb, 'peerQuestions/q1'));
+		expect(alicePendingSnap.exists()).toBe(true);
+
+		// 4. Bob cannot read Alice pending question (Failure)
 		await expect(getDoc(doc(bobDb, 'peerQuestions/q1'))).rejects.toThrow();
 
-		// Admin approves question
+		// 5. Admin approves question
 		await testEnv.withSecurityRulesDisabled(async (context) => {
 			await updateDoc(doc(context.firestore(), 'peerQuestions/q1'), {
 				status: 'approved'
 			});
 		});
 
-		// Bob reads approved question (Success)
+		// 6. Bob can read approved question (Success)
 		const approvedSnap = await getDoc(doc(bobDb, 'peerQuestions/q1'));
 		expect(approvedSnap.exists()).toBe(true);
 	});

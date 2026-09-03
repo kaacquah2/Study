@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { auth } from '$lib/firebase/client';
+	import { apiFetch } from '$lib/api/client';
 	import { toastStore } from '$lib/stores/toast.svelte';
 
 	interface Props {
@@ -27,34 +27,20 @@
 		isSaving = true;
 
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			if (!idToken) {
-				toastStore.warning('Sign in to save flashcards to your review queue');
-				return;
-			}
-
-			const res = await fetch('/api/spaced-repetition', {
+			await apiFetch('/api/spaced-repetition', {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
+				body: {
 					front,
 					back,
 					courseId: courseId || '',
 					moduleId: moduleId || '',
 					type: 'flashcard',
 					selfRating: selfRating || 'medium'
-				})
+				}
 			});
 
-			if (res.ok) {
-				isSaved = true;
-				toastStore.success('Added flashcard to Spaced Repetition Queue!');
-			} else {
-				toastStore.error('Could not save flashcard.');
-			}
+			isSaved = true;
+			toastStore.success('Added flashcard to Spaced Repetition Queue!');
 		} catch (err) {
 			console.error('Save flashcard error:', err);
 			toastStore.error('Failed to save flashcard');
@@ -83,13 +69,13 @@
 </script>
 
 <div
-	class="my-6 gap-3 flex flex-col items-center"
+	class="my-6 flex flex-col items-center gap-3"
 	role="region"
 	aria-label="Interactive memory flashcard"
 >
 	<!-- 3D Flip Card -->
 	<div
-		class="flip-card h-52 max-w-md w-full cursor-pointer"
+		class="flip-card h-52 w-full max-w-md cursor-pointer"
 		onclick={flipCard}
 		onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && flipCard()}
 		role="button"
@@ -102,14 +88,14 @@
 		<div class="flip-card-inner {isFlipped ? 'is-flipped' : ''}">
 			<!-- Front face -->
 			<div
-				class="flip-card-front rounded-2xl p-5 flex flex-col justify-between border border-primary/30 bg-surface shadow-md"
+				class="flip-card-front flex flex-col justify-between rounded-2xl border border-primary/30 bg-surface p-5 shadow-md"
 			>
-				<div class="font-bold flex items-center justify-between text-[10px] text-text-muted">
+				<div class="flex items-center justify-between text-[10px] font-bold text-text-muted">
 					<span>🎴 Flashcard (Front)</span>
 					<span class="text-primary">Tap to flip 🔄</span>
 				</div>
 				<div
-					class="py-2 font-display text-sm font-bold flex flex-1 items-center justify-center text-center text-text"
+					class="flex flex-1 items-center justify-center py-2 text-center font-display text-sm font-bold text-text"
 				>
 					{front}
 				</div>
@@ -118,21 +104,21 @@
 
 			<!-- Back face -->
 			<div
-				class="flip-card-back rounded-2xl p-5 flex flex-col justify-between border border-primary/50 bg-primary-soft/20 shadow-md"
+				class="flip-card-back flex flex-col justify-between rounded-2xl border border-primary/50 bg-primary-soft/20 p-5 shadow-md"
 			>
-				<div class="font-bold flex items-center justify-between text-[10px] text-text-muted">
+				<div class="flex items-center justify-between text-[10px] font-bold text-text-muted">
 					<span>🎴 Flashcard (Back)</span>
 					<span class="text-primary/70">Tap to flip back</span>
 				</div>
 				<div
-					class="py-2 font-display text-sm font-bold flex flex-1 items-center justify-center text-center text-primary"
+					class="flex flex-1 items-center justify-center py-2 text-center font-display text-sm font-bold text-primary"
 				>
 					{back}
 				</div>
 
 				<!-- Self-rating buttons -->
 				<div
-					class="gap-2 pt-1 flex items-center justify-center"
+					class="flex items-center justify-center gap-2 pt-1"
 					role="group"
 					aria-label="Flashcard difficulty rating"
 				>
@@ -145,7 +131,7 @@
 							}}
 							aria-pressed={selfRating === r.key}
 							aria-label={`Rate difficulty: ${r.key}`}
-							class="px-2 py-1 font-bold cursor-pointer rounded-lg border text-[10px] transition-all active:scale-90 {selfRating ===
+							class="cursor-pointer rounded-lg border px-2 py-1 text-[10px] font-bold transition-all active:scale-90 {selfRating ===
 							r.key
 								? r.cls + ' scale-105 shadow-sm'
 								: 'border-border bg-surface text-text-muted hover:border-border/80'}"
@@ -161,7 +147,7 @@
 	<!-- Save button (shown after flip) -->
 	{#if isFlipped}
 		<div
-			class="anim-slide-up max-w-md gap-2 px-4 py-2.5 flex w-full items-center justify-between rounded-xl border border-border bg-surface"
+			class="anim-slide-up flex w-full max-w-md items-center justify-between gap-2 rounded-xl border border-border bg-surface px-4 py-2.5"
 			role="status"
 			aria-live="polite"
 		>
@@ -175,7 +161,7 @@
 				aria-label={isSaved
 					? 'Flashcard already added to review'
 					: 'Save flashcard to Spaced Repetition queue'}
-				class="gap-1.5 px-3 py-1.5 font-bold hover:text-white inline-flex cursor-pointer items-center rounded-xl border border-primary/40 bg-primary-soft/60 text-[11px] text-primary transition-all hover:bg-primary active:scale-95 disabled:opacity-50"
+				class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-primary/40 bg-primary-soft/60 px-3 py-1.5 text-[11px] font-bold text-primary transition-all hover:bg-primary hover:text-white active:scale-95 disabled:opacity-50"
 			>
 				{#if isSaved}
 					<span>✓ Added to Review</span>

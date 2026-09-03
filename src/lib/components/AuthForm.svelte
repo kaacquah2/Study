@@ -132,7 +132,7 @@
 	};
 </script>
 
-<div class="max-w-md gap-8 py-8 md:py-0 mx-auto my-auto flex w-full flex-col">
+<div class="mx-auto my-auto flex w-full max-w-md flex-col gap-8 py-8 md:py-0">
 	<!-- Tabs: Linear-style bottom-border indicator -->
 	{#if !isResetPassword}
 		<div
@@ -146,7 +146,7 @@
 				role="tab"
 				aria-selected={!isSignUp}
 				aria-controls="auth-form-panel"
-				class="relative pb-3 pr-6 text-sm font-semibold cursor-pointer transition-colors duration-180 {!isSignUp
+				class="relative cursor-pointer pr-6 pb-3 text-sm font-semibold transition-colors duration-180 {!isSignUp
 					? 'text-text'
 					: 'text-text-subtle hover:text-text-muted'}"
 				onclick={() => {
@@ -158,7 +158,7 @@
 				Sign In
 				{#if !isSignUp}
 					<span
-						class="absolute -bottom-px left-0 right-6 h-0.5 rounded-full"
+						class="absolute right-6 -bottom-px left-0 h-0.5 rounded-full"
 						style="background: var(--primary);"
 					></span>
 				{/if}
@@ -168,7 +168,7 @@
 				role="tab"
 				aria-selected={isSignUp}
 				aria-controls="auth-form-panel"
-				class="relative pb-3 pr-6 text-sm font-semibold cursor-pointer transition-colors duration-180 {isSignUp
+				class="relative cursor-pointer pr-6 pb-3 text-sm font-semibold transition-colors duration-180 {isSignUp
 					? 'text-text'
 					: 'text-text-subtle hover:text-text-muted'}"
 				onclick={() => {
@@ -180,7 +180,7 @@
 				Create Account
 				{#if isSignUp}
 					<span
-						class="absolute -bottom-px left-0 right-6 h-0.5 rounded-full"
+						class="absolute right-6 -bottom-px left-0 h-0.5 rounded-full"
 						style="background: var(--primary);"
 					></span>
 				{/if}
@@ -215,7 +215,7 @@
 		<div
 			role="alert"
 			aria-live="polite"
-			class="animate-shake gap-2.5 p-3.5 text-xs font-semibold shadow-xs flex items-start rounded-xl border border-danger/20 bg-danger-soft text-danger"
+			class="animate-shake flex items-start gap-2.5 rounded-xl border border-danger/20 bg-danger-soft p-3.5 text-xs font-semibold text-danger shadow-xs"
 		>
 			<span class="leading-relaxed">{authError}</span>
 		</div>
@@ -225,7 +225,7 @@
 		<div
 			role="status"
 			aria-live="polite"
-			class="gap-2.5 p-3.5 text-xs font-semibold shadow-xs flex items-start rounded-xl border border-success/20 bg-success-soft text-success"
+			class="flex items-start gap-2.5 rounded-xl border border-success/20 bg-success-soft p-3.5 text-xs font-semibold text-success shadow-xs"
 		>
 			<span class="leading-relaxed">{successMessage}</span>
 		</div>
@@ -269,15 +269,22 @@
 
 		<div class="flex items-center gap-3 select-none" aria-hidden="true">
 			<div class="h-px flex-1" style="background: var(--border);"></div>
-			<span class="text-[11px] font-semibold tracking-wider uppercase" style="color: var(--text-subtle);">or</span>
+			<span
+				class="text-[11px] font-semibold tracking-wider uppercase"
+				style="color: var(--text-subtle);">or</span
+			>
 			<div class="h-px flex-1" style="background: var(--border);"></div>
 		</div>
 	{/if}
 
 	<!-- Form -->
-	<form id="auth-form-panel" class="gap-4 flex flex-col" onsubmit={handleSubmit}>
+	<form id="auth-form-panel" class="flex flex-col gap-4" onsubmit={handleSubmit}>
 		<div class="flex flex-col gap-1.5">
-			<label for="email" class="text-xs font-semibold tracking-wide" style="color: var(--text-muted);">
+			<label
+				for="email"
+				class="text-xs font-semibold tracking-wide"
+				style="color: var(--text-muted);"
+			>
 				Email address
 			</label>
 			<input
@@ -288,10 +295,22 @@
 				aria-describedby={emailError ? 'email-error-msg' : undefined}
 				class="w-full rounded-xl border px-4 py-3 text-sm transition-all duration-180 outline-none
 					{emailError ? 'border-danger' : ''}"
-				style="background: var(--surface); color: var(--text); border-color: {emailError ? 'var(--danger)' : 'var(--border-strong)'};
+				style="background: var(--surface); color: var(--text); border-color: {emailError
+					? 'var(--danger)'
+					: 'var(--border-strong)'};
 					box-shadow: {emailError ? '0 0 0 3px rgba(220,38,38,0.12)' : 'none'};"
-				onfocus={(e) => { if (!emailError) (e.currentTarget as HTMLInputElement).style.boxShadow = '0 0 0 3px var(--primary-glow)'; (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--primary)'; }}
-				onblur={(e) => { validateForm(); if (!emailError) { (e.currentTarget as HTMLInputElement).style.boxShadow = 'none'; (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--border-strong)'; }}}
+				onfocus={(e) => {
+					if (!emailError)
+						(e.currentTarget as HTMLInputElement).style.boxShadow = '0 0 0 3px var(--primary-glow)';
+					(e.currentTarget as HTMLInputElement).style.borderColor = 'var(--primary)';
+				}}
+				onblur={(e) => {
+					validateForm();
+					if (!emailError) {
+						(e.currentTarget as HTMLInputElement).style.boxShadow = 'none';
+						(e.currentTarget as HTMLInputElement).style.borderColor = 'var(--border-strong)';
+					}
+				}}
 				placeholder="alex@example.com"
 				bind:value={email}
 				disabled={loading}
@@ -306,12 +325,16 @@
 		{#if !isResetPassword}
 			<div class="flex flex-col gap-1.5">
 				<div class="flex items-center justify-between">
-					<label for="password" class="text-xs font-semibold tracking-wide" style="color: var(--text-muted);">
+					<label
+						for="password"
+						class="text-xs font-semibold tracking-wide"
+						style="color: var(--text-muted);"
+					>
 						Password
 					</label>
 					<button
 						type="button"
-						class="text-xs font-semibold cursor-pointer transition-colors hover:text-text"
+						class="cursor-pointer text-xs font-semibold transition-colors hover:text-text"
 						style="color: var(--primary);"
 						onclick={() => {
 							isResetPassword = true;
@@ -329,11 +352,25 @@
 						aria-required="true"
 						aria-invalid={!!passwordError}
 						aria-describedby={passwordError ? 'password-error-msg' : undefined}
-						class="w-full rounded-xl border py-3 pl-4 pr-10 text-sm transition-all duration-180 outline-none"
-						style="background: var(--surface); color: var(--text); border-color: {passwordError ? 'var(--danger)' : 'var(--border-strong)'};
+						class="w-full rounded-xl border py-3 pr-10 pl-4 text-sm transition-all duration-180 outline-none"
+						style="background: var(--surface); color: var(--text); border-color: {passwordError
+							? 'var(--danger)'
+							: 'var(--border-strong)'};
 							box-shadow: {passwordError ? '0 0 0 3px rgba(220,38,38,0.12)' : 'none'};"
-						onfocus={(e) => { if (!passwordError) { (e.currentTarget as HTMLInputElement).style.boxShadow = '0 0 0 3px var(--primary-glow)'; (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--primary)'; }}}
-						onblur={(e) => { validateForm(); if (!passwordError) { (e.currentTarget as HTMLInputElement).style.boxShadow = 'none'; (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--border-strong)'; }}}
+						onfocus={(e) => {
+							if (!passwordError) {
+								(e.currentTarget as HTMLInputElement).style.boxShadow =
+									'0 0 0 3px var(--primary-glow)';
+								(e.currentTarget as HTMLInputElement).style.borderColor = 'var(--primary)';
+							}
+						}}
+						onblur={(e) => {
+							validateForm();
+							if (!passwordError) {
+								(e.currentTarget as HTMLInputElement).style.boxShadow = 'none';
+								(e.currentTarget as HTMLInputElement).style.borderColor = 'var(--border-strong)';
+							}
+						}}
 						placeholder="••••••••••••"
 						bind:value={password}
 						disabled={loading}
@@ -362,7 +399,7 @@
 
 		<button
 			type="submit"
-			class="relative mt-2 flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl px-4 py-3.5 text-sm font-semibold text-white transition-all duration-200 select-none hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+			class="relative mt-2 flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl px-4 py-3.5 text-sm font-semibold text-white transition-all duration-200 select-none hover:-translate-y-px disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
 			style="background: var(--primary); box-shadow: var(--shadow-primary);"
 			disabled={loading}
 		>
@@ -382,11 +419,11 @@
 	</form>
 
 	<!-- Footer switcher -->
-	<div class="mt-1 text-xs text-center text-text-muted">
+	<div class="mt-1 text-center text-xs text-text-muted">
 		{#if isResetPassword}
 			<button
 				type="button"
-				class="font-semibold cursor-pointer text-primary"
+				class="cursor-pointer font-semibold text-primary"
 				onclick={() => {
 					isResetPassword = false;
 					authError = '';
@@ -399,7 +436,7 @@
 			<span>{isSignUp ? 'Already have an account?' : "Don't have an account yet?"}</span>
 			<button
 				type="button"
-				class="ml-1 font-bold cursor-pointer text-primary"
+				class="ml-1 cursor-pointer font-bold text-primary"
 				onclick={() => {
 					isSignUp = !isSignUp;
 					authError = '';

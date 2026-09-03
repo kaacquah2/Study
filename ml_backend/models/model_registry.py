@@ -64,6 +64,63 @@ def is_any_inference_busy() -> bool:
 _pipelines: dict[str, Pipeline] = {}
 _loading_locks: dict[str, threading.Lock] = {}
 
+from transformers import pipeline, Pipeline, AutoModelForSeq2SeqLM, AutoTokenizer
+
+
+class Seq2SeqPipelineWrapper:
+    """Wrapper providing pipeline-compatible interface for Seq2Seq architectures across transformers versions."""
+    def __init__(self, model, tokenizer, device: int = -1):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.task = "text2text-generation"
+        self.device = device
+
+    def __call__(self, text, **kwargs):
+        is_single = isinstance(text, str)
+        texts = [text] if is_single else list(text)
+
+        max_new_tokens = kwargs.get("max_new_tokens", kwargs.get("max_length", 128))
+        min_length = kwargs.get("min_length", 0)
+        do_sample = kwargs.get("do_sample", False)
+        temperature = kwargs.get("temperature", 1.0)
+        top_p = kwargs.get("top_p", 1.0)
+        repetition_penalty = kwargs.get("repetition_penalty", 1.0)
+        truncation = kwargs.get("truncation", True)
+        max_input_length = kwargs.get("max_input_length", 512)
+
+        inputs = self.tokenizer(
+            texts,
+            return_tensors="pt",
+            padding=True,
+            truncation=truncation,
+            max_length=max_input_length
+        )
+        if self.device != -1 and torch.cuda.is_available():
+            inputs = {k: v.to("cuda") for k, v in inputs.items()}
+
+        gen_kwargs = {
+            "max_new_tokens": max_new_tokens,
+            "do_sample": do_sample,
+        }
+        if min_length > 0:
+            gen_kwargs["min_length"] = min_length
+        if do_sample:
+            gen_kwargs["temperature"] = temperature
+            gen_kwargs["top_p"] = top_p
+        if repetition_penalty != 1.0:
+            gen_kwargs["repetition_penalty"] = repetition_penalty
+
+        with torch.no_grad():
+            outputs = self.model.generate(**inputs, **gen_kwargs)
+
+        results = []
+        for out in outputs:
+            gen_text = self.tokenizer.decode(out, skip_special_tokens=True).strip()
+            results.append({"generated_text": gen_text, "summary_text": gen_text})
+
+        return results
+
+
 def get_pipeline(task: str, model_id: str, **kwargs) -> Pipeline:
     """
     Retrieve an existing pipeline from the registry, or initialize and cache it.
@@ -99,38 +156,46 @@ def get_pipeline(task: str, model_id: str, **kwargs) -> Pipeline:
             or os.getenv("HF_HUB_OFFLINE") == "1"
         )
 
+        def _build_pipeline(t: str, offline: bool) -> Any:
+            kw = dict(kwargs)
+            mk = dict(model_kwargs) if model_kwargs else {}
+            if offline:
+                mk["local_files_only"] = True
+            if t in ("text2text-generation", "summarization"):
+                try:
+                    tok = AutoTokenizer.from_pretrained(model_id, **mk)
+                    mod = AutoModelForSeq2SeqLM.from_pretrained(model_id, **mk)
+                    if DEVICE != -1 and CUDA_AVAILABLE:
+                        mod = mod.to("cuda")
+                    return Seq2SeqPipelineWrapper(mod, tok, device=DEVICE)
+                except Exception as seq2seq_err:
+                    logger.debug(f"Direct Seq2Seq load for {model_id} skipped: {seq2seq_err}")
+            return pipeline(
+                task=cast(Any, t),
+                model=model_id,
+                tokenizer=model_id,
+                model_kwargs=mk if mk else None,
+                **kw
+            )
+
         try:
-            if prefer_local:
-                offline_kwargs = dict(model_kwargs)
-                offline_kwargs["local_files_only"] = True
-                pipe: Any = pipeline(
-                    task=cast(Any, task),
-                    model=model_id,
-                    tokenizer=model_id,
-                    model_kwargs=offline_kwargs,
-                    **kwargs
-                )  # type: ignore
-            else:
-                pipe = pipeline(
-                    task=cast(Any, task),
-                    model=model_id,
-                    tokenizer=model_id,
-                    model_kwargs=model_kwargs if model_kwargs else None,
-                    **kwargs
-                )  # type: ignore
+            try:
+                pipe = _build_pipeline(task, prefer_local)
+            except (KeyError, ValueError) as task_err:
+                alt_task = "text-generation" if task in ("summarization", "text2text-generation") else "text2text-generation"
+                logger.info(f"Model Registry: Retrying pipeline load with fallback task '{alt_task}' ({task_err})")
+                pipe = _build_pipeline(alt_task, prefer_local)
         except Exception as load_err:
             if prefer_local and os.getenv("TRANSFORMERS_OFFLINE") != "1" and os.getenv("HF_HUB_OFFLINE") != "1":
                 logger.warning(
                     f"Model Registry: Local cached load failed for '{model_id}' ({load_err}). "
                     "Attempting online fallback download..."
                 )
-                pipe = pipeline(
-                    task=cast(Any, task),
-                    model=model_id,
-                    tokenizer=model_id,
-                    model_kwargs=model_kwargs if model_kwargs else None,
-                    **kwargs
-                )  # type: ignore
+                try:
+                    pipe = _build_pipeline(task, False)
+                except (KeyError, ValueError):
+                    alt_task = "text-generation" if task in ("summarization", "text2text-generation") else "text2text-generation"
+                    pipe = _build_pipeline(alt_task, False)
             else:
                 logger.error(f"Model Registry: Failed to load model '{model_id}': {load_err}")
                 raise

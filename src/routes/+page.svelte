@@ -35,7 +35,7 @@
 	/>
 </svelte:head>
 
-<div class="md:flex-row flex min-h-screen flex-col bg-bg text-text">
+<div class="flex min-h-screen flex-col bg-bg text-text md:flex-row">
 	<HeroPanel />
 
 	<!-- Auth panel — right side -->
@@ -52,7 +52,7 @@
 		<!-- Mobile Header Logo -->
 		<div class="relative z-10 flex items-center gap-2.5 md:hidden">
 			<div
-				class="h-9 w-9 flex items-center justify-center rounded-xl text-white"
+				class="flex h-9 w-9 items-center justify-center rounded-xl text-white"
 				style="background: var(--primary); box-shadow: 0 4px 12px var(--primary-glow);"
 			>
 				<svg
@@ -75,15 +75,15 @@
 
 		{#if authStore.user}
 			<!-- Logged-in state -->
-			<div class="relative z-10 max-w-md mx-auto my-auto w-full py-8 md:py-0">
+			<div class="relative z-10 mx-auto my-auto w-full max-w-md py-8 md:py-0">
 				<div
 					class="rounded-2xl p-6 text-center"
 					style="background: var(--surface); border: 1px solid var(--border-strong); border-top-color: rgba(107,92,246,0.3); box-shadow: var(--shadow-lg), 0 0 0 1px var(--border);"
 				>
 					<!-- Avatar -->
-					<div class="mb-4 relative inline-block">
+					<div class="relative mb-4 inline-block">
 						<div
-							class="h-15 w-15 flex items-center justify-center rounded-full text-sm font-bold text-primary mx-auto"
+							class="mx-auto flex h-15 w-15 items-center justify-center rounded-full text-sm font-bold text-primary"
 							style="background: var(--primary-soft); border: 2px solid var(--border-strong); box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--border);"
 						>
 							{#if authStore.user.photoURL && !avatarBroken}
@@ -99,12 +99,12 @@
 						</div>
 						<!-- Online indicator -->
 						<span
-							class="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full block"
+							class="absolute right-0.5 bottom-0.5 block h-3.5 w-3.5 rounded-full"
 							style="background: var(--success); border: 2px solid var(--surface); box-shadow: 0 0 6px var(--success);"
 						></span>
 					</div>
 
-					<h3 class="text-xl font-bold text-text tracking-tight">Welcome back!</h3>
+					<h3 class="text-xl font-bold tracking-tight text-text">Welcome back!</h3>
 					<p class="mt-1.5 text-[12px] text-text-muted">
 						Signed in as <span class="font-semibold text-text">{authStore.user.email}</span>
 					</p>
@@ -112,7 +112,7 @@
 					<div class="mt-6 flex flex-col gap-3">
 						<a
 							href="/app"
-							class="relative overflow-hidden flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold text-white transition-all duration-180"
+							class="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-3.5 text-sm font-semibold text-white transition-all duration-180"
 							style="background: var(--primary); box-shadow: var(--shadow-primary);"
 						>
 							<!-- Shine overlay -->
@@ -126,7 +126,7 @@
 						<button
 							type="button"
 							onclick={() => authStore.logout()}
-							class="w-full cursor-pointer rounded-xl border px-4 py-2.5 text-[12px] font-semibold transition-colors duration-180 hover:bg-danger-soft text-danger border-border bg-surface"
+							class="w-full cursor-pointer rounded-xl border border-border bg-surface px-4 py-2.5 text-[12px] font-semibold text-danger transition-colors duration-180 hover:bg-danger-soft"
 						>
 							Sign Out / Switch Account
 						</button>
@@ -145,11 +145,23 @@
 		>
 			<span>&copy; 2026 AI Study Buddy</span>
 			<span style="opacity: 0.4;">&bull;</span>
-			<a href="#terms" onclick={(e) => e.preventDefault()} class="transition-colors hover:text-text-muted">Terms</a>
+			<a
+				href="#terms"
+				onclick={(e) => e.preventDefault()}
+				class="transition-colors hover:text-text-muted">Terms</a
+			>
 			<span style="opacity: 0.4;">&bull;</span>
-			<a href="#privacy" onclick={(e) => e.preventDefault()} class="transition-colors hover:text-text-muted">Privacy</a>
+			<a
+				href="#privacy"
+				onclick={(e) => e.preventDefault()}
+				class="transition-colors hover:text-text-muted">Privacy</a
+			>
 			<span style="opacity: 0.4;">&bull;</span>
-			<a href="#help" onclick={(e) => e.preventDefault()} class="transition-colors hover:text-text-muted">Help</a>
+			<a
+				href="#help"
+				onclick={(e) => e.preventDefault()}
+				class="transition-colors hover:text-text-muted">Help</a
+			>
 		</div>
 	</div>
 </div>

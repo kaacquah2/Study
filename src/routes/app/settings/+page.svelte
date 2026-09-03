@@ -3,7 +3,7 @@
 	import StreakHeatmap from '$lib/components/StreakHeatmap.svelte';
 	import BadgeStrip from '$lib/components/BadgeStrip.svelte';
 	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
-	import { auth } from '$lib/firebase/client';
+	import { apiFetch } from '$lib/api/client';
 	import { toastStore } from '$lib/stores/toast.svelte';
 
 	let displayName = $derived(
@@ -40,12 +40,9 @@
 	async function handleExportData() {
 		exporting = true;
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch('/api/user/export', {
-				headers: { Authorization: `Bearer ${idToken}` }
+			const { data: blob } = await apiFetch<Blob>('/api/user/export', {
+				responseType: 'blob'
 			});
-			if (!res.ok) throw new Error('Failed to export data');
-			const blob = await res.blob();
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url;
@@ -63,12 +60,9 @@
 	async function handleDeleteAccount() {
 		deleting = true;
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch('/api/user/delete-account', {
-				method: 'POST',
-				headers: { Authorization: `Bearer ${idToken}` }
+			await apiFetch('/api/user/delete-account', {
+				method: 'POST'
 			});
-			if (!res.ok) throw new Error('Account deletion failed');
 			toastStore.success('Account successfully deleted.');
 			await authStore.logout();
 		} catch {
@@ -84,12 +78,12 @@
 	<title>Profile &amp; Settings &mdash; AI Study Buddy</title>
 </svelte:head>
 
-<div class="max-w-4xl gap-8 mx-auto flex w-full flex-col">
+<div class="mx-auto flex w-full max-w-4xl flex-col gap-8">
 	<!-- Profile Header Banner -->
 	<div
-		class="gap-6 rounded-3xl p-6 sm:flex-row sm:items-center sm:p-8 flex flex-col items-start justify-between border border-border bg-surface shadow-sm"
+		class="flex flex-col items-start justify-between gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:flex-row sm:items-center sm:p-8"
 	>
-		<div class="gap-5 flex items-center">
+		<div class="flex items-center gap-5">
 			{#if photoURL}
 				<img
 					src={photoURL}
@@ -98,17 +92,17 @@
 				/>
 			{:else}
 				<div
-					class="h-16 w-16 rounded-2xl text-xl font-black shadow-inner flex items-center justify-center bg-primary-soft text-primary"
+					class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft text-xl font-black text-primary shadow-inner"
 				>
 					{initials}
 				</div>
 			{/if}
 
 			<div>
-				<h1 class="font-display text-xl font-bold sm:text-2xl text-text">{displayName}</h1>
-				<p class="mt-0.5 text-xs sm:text-sm text-text-muted">{email}</p>
+				<h1 class="font-display text-xl font-bold text-text sm:text-2xl">{displayName}</h1>
+				<p class="mt-0.5 text-xs text-text-muted sm:text-sm">{email}</p>
 				<div
-					class="mt-2.5 gap-2 px-3 py-0.5 font-semibold inline-flex items-center rounded-full border border-primary/20 bg-primary-soft/60 text-[11px] text-primary"
+					class="mt-2.5 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary-soft/60 px-3 py-0.5 text-[11px] font-semibold text-primary"
 				>
 					<span>🔥 Current Streak: {currentStreak} {currentStreak === 1 ? 'day' : 'days'}</span>
 				</div>
@@ -118,7 +112,7 @@
 		<button
 			type="button"
 			onclick={() => authStore.logout()}
-			class="gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold sm:self-auto inline-flex cursor-pointer items-center justify-center self-stretch bg-danger-soft text-danger transition-all duration-180 hover:bg-danger/15 active:scale-95"
+			class="inline-flex cursor-pointer items-center justify-center gap-2 self-stretch rounded-2xl bg-danger-soft px-5 py-2.5 text-xs font-bold text-danger transition-all duration-180 hover:bg-danger/15 active:scale-95 sm:self-auto"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -139,26 +133,26 @@
 	</div>
 
 	<!-- Streak & Activity Overview -->
-	<div class="gap-6 md:grid-cols-2 grid grid-cols-1">
-		<div class="gap-4 rounded-3xl p-6 flex flex-col border border-border bg-surface shadow-sm">
-			<h3 class="gap-2 font-display text-base font-bold flex items-center text-text">
+	<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+		<div class="flex flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-sm">
+			<h3 class="flex items-center gap-2 font-display text-base font-bold text-text">
 				<span>⚡</span>
 				<span>Streak Statistics</span>
 			</h3>
-			<div class="gap-4 grid grid-cols-2">
-				<div class="rounded-2xl p-4 border border-border/50 bg-surface-muted">
-					<span class="font-semibold tracking-wider block text-[11px] text-text-muted uppercase"
+			<div class="grid grid-cols-2 gap-4">
+				<div class="rounded-2xl border border-border/50 bg-surface-muted p-4">
+					<span class="block text-[11px] font-semibold tracking-wider text-text-muted uppercase"
 						>Current Streak</span
 					>
-					<span class="mt-1 text-2xl font-black block text-primary"
+					<span class="mt-1 block text-2xl font-black text-primary"
 						>{currentStreak} <span class="text-xs font-semibold">days</span></span
 					>
 				</div>
-				<div class="rounded-2xl p-4 border border-border/50 bg-surface-muted">
-					<span class="font-semibold tracking-wider block text-[11px] text-text-muted uppercase"
+				<div class="rounded-2xl border border-border/50 bg-surface-muted p-4">
+					<span class="block text-[11px] font-semibold tracking-wider text-text-muted uppercase"
 						>Longest Streak</span
 					>
-					<span class="mt-1 text-2xl font-black block text-text"
+					<span class="mt-1 block text-2xl font-black text-text"
 						>{longestStreak} <span class="text-xs font-semibold">days</span></span
 					>
 				</div>
@@ -172,16 +166,16 @@
 			{/if}
 		</div>
 
-		<div class="gap-4 rounded-3xl p-6 flex flex-col border border-border bg-surface shadow-sm">
-			<h3 class="gap-2 font-display text-base font-bold flex items-center text-text">
+		<div class="flex flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-sm">
+			<h3 class="flex items-center gap-2 font-display text-base font-bold text-text">
 				<span>🎨</span>
 				<span>Appearance & Preferences</span>
 			</h3>
 			<div
-				class="rounded-2xl p-4 flex items-center justify-between border border-border/50 bg-surface-muted"
+				class="flex items-center justify-between rounded-2xl border border-border/50 bg-surface-muted p-4"
 			>
 				<div>
-					<span class="text-xs font-bold block text-text">Theme Preference</span>
+					<span class="block text-xs font-bold text-text">Theme Preference</span>
 					<span class="block text-[11px] text-text-muted"
 						>Switch between light, dark, or system mode</span
 					>
@@ -192,8 +186,8 @@
 	</div>
 
 	<!-- Activity Calendar Heatmap -->
-	<div class="gap-4 rounded-3xl p-6 flex flex-col border border-border bg-surface shadow-sm">
-		<h3 class="gap-2 font-display text-base font-bold flex items-center text-text">
+	<div class="flex flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-sm">
+		<h3 class="flex items-center gap-2 font-display text-base font-bold text-text">
 			<span>📅</span>
 			<span>Study Activity History</span>
 		</h3>
@@ -201,9 +195,9 @@
 	</div>
 
 	<!-- Achievements & Badges -->
-	<div class="gap-4 rounded-3xl p-6 flex flex-col border border-border bg-surface shadow-sm">
+	<div class="flex flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-sm">
 		<div class="flex items-center justify-between">
-			<h3 class="gap-2 font-display text-base font-bold flex items-center text-text">
+			<h3 class="flex items-center gap-2 font-display text-base font-bold text-text">
 				<span>🏆</span>
 				<span>Unlocked Achievements</span>
 			</h3>
@@ -213,14 +207,14 @@
 	</div>
 
 	<!-- Data & Privacy (GDPR/CCPA Compliance) -->
-	<div class="gap-4 rounded-3xl p-6 flex flex-col border border-border bg-surface shadow-sm">
-		<h3 class="gap-2 font-display text-base font-bold flex items-center text-text">
+	<div class="flex flex-col gap-4 rounded-3xl border border-border bg-surface p-6 shadow-sm">
+		<h3 class="flex items-center gap-2 font-display text-base font-bold text-text">
 			<span>🛡️</span>
 			<span>Data & Privacy Controls</span>
 		</h3>
-		<div class="gap-4 sm:flex-row sm:items-center sm:justify-between flex flex-col">
+		<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 			<div>
-				<span class="text-xs font-bold block text-text">Export Study Data</span>
+				<span class="block text-xs font-bold text-text">Export Study Data</span>
 				<span class="block text-[11px] text-text-muted"
 					>Download a complete JSON export of your progress, courses, and quiz attempts</span
 				>
@@ -229,7 +223,7 @@
 				type="button"
 				onclick={handleExportData}
 				disabled={exporting}
-				class="gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold inline-flex cursor-pointer items-center justify-center border border-border bg-surface text-text hover:bg-surface-muted disabled:opacity-50"
+				class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-5 py-2.5 text-xs font-bold text-text hover:bg-surface-muted disabled:opacity-50"
 			>
 				<span>📥</span>
 				<span>{exporting ? 'Exporting...' : 'Export JSON Data'}</span>
@@ -238,9 +232,9 @@
 
 		<hr class="border-border/50" />
 
-		<div class="gap-4 sm:flex-row sm:items-center sm:justify-between flex flex-col">
+		<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 			<div>
-				<span class="text-xs font-bold block text-danger">Delete Account & Data</span>
+				<span class="block text-xs font-bold text-danger">Delete Account & Data</span>
 				<span class="block text-[11px] text-text-muted"
 					>Permanently delete your profile, generated courses, and progress metrics</span
 				>
@@ -248,7 +242,7 @@
 			<button
 				type="button"
 				onclick={() => (showDeleteModal = true)}
-				class="gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold inline-flex cursor-pointer items-center justify-center bg-danger-soft text-danger hover:bg-danger/20"
+				class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-danger-soft px-5 py-2.5 text-xs font-bold text-danger hover:bg-danger/20"
 			>
 				<span>🗑️</span>
 				<span>Delete Account</span>
@@ -258,21 +252,21 @@
 
 	{#if showDeleteModal}
 		<div
-			class="inset-0 p-4 backdrop-blur-xs fixed z-50 flex items-center justify-center bg-text/30"
+			class="fixed inset-0 z-50 flex items-center justify-center bg-text/30 p-4 backdrop-blur-xs"
 		>
 			<div
-				class="max-w-md gap-4 rounded-3xl p-6 shadow-2xl flex max-h-[90vh] flex-col overflow-y-auto border border-danger/30 bg-surface"
+				class="flex max-h-[90vh] max-w-md flex-col gap-4 overflow-y-auto rounded-3xl border border-danger/30 bg-surface p-6 shadow-2xl"
 			>
 				<h3 class="font-display text-lg font-bold text-danger">Confirm Account Deletion</h3>
 				<p class="text-xs leading-relaxed text-text-muted">
 					This action is permanent and cannot be undone. All your generated courses, custom RAG
 					documents, quiz attempts, and spaced repetition cards will be purged.
 				</p>
-				<div class="gap-3 pt-2 flex justify-end">
+				<div class="flex justify-end gap-3 pt-2">
 					<button
 						type="button"
 						onclick={() => (showDeleteModal = false)}
-						class="px-4 py-2 text-xs font-bold cursor-pointer rounded-xl border border-border text-text-muted hover:text-text"
+						class="cursor-pointer rounded-xl border border-border px-4 py-2 text-xs font-bold text-text-muted hover:text-text"
 					>
 						Cancel
 					</button>
@@ -280,7 +274,7 @@
 						type="button"
 						onclick={handleDeleteAccount}
 						disabled={deleting}
-						class="px-4 py-2 text-xs font-bold text-white cursor-pointer rounded-xl bg-danger hover:opacity-90 disabled:opacity-50"
+						class="cursor-pointer rounded-xl bg-danger px-4 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
 					>
 						{deleting ? 'Deleting...' : 'Yes, Delete Everything'}
 					</button>

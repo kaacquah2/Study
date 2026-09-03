@@ -1,5 +1,12 @@
 const CACHE_NAME = 'study-buddy-pwa-v1';
-const ASSETS = ['/', '/app', '/manifest.json', '/favicon.png'];
+const ASSETS = [
+	'/',
+	'/app',
+	'/manifest.json',
+	'/favicon.png',
+	'/icon-192.png',
+	'/icon-512.png'
+];
 
 self.addEventListener('install', (event) => {
 	event.waitUntil(

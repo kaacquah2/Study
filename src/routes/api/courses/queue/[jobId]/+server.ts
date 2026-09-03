@@ -7,15 +7,15 @@ export const GET: RequestHandler = async ({ params, request }) => {
 	const { jobId } = params;
 
 	try {
-		await verifySessionUser(request);
+		const user = await verifySessionUser(request);
 
 		const job = await getGenerationJobStatus(jobId);
-		if (!job) {
+		if (!job || job.userId !== user.uid) {
 			return json({ error: { code: 'NOT_FOUND', message: 'Job not found' } }, { status: 404 });
 		}
 
-		// If job has been stuck queued, attempt processing
-		if (job.status === 'queued') {
+		// If job has been stuck queued and is not waiting for backoff, attempt processing
+		if (job.status === 'queued' && (!job.nextRetryAt || job.nextRetryAt <= Date.now())) {
 			processQueuedJob(jobId).catch(() => {});
 		}
 

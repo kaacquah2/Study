@@ -16,11 +16,12 @@ evaluation/
 │   ├── rag_queries_30.json                # 30 academic test queries with gold concepts & domain keywords
 │   ├── summarization_eval_data.json       # Academic lecture note excerpts with reference summaries
 │   ├── quiz_samples_50.json               # 50 generated quiz items across CS curricula & Bloom levels
+│   ├── quiz_expert_eval_50.csv            # 50 expert rubric evaluations across 5 pedagogical dimensions
 │   └── user_study_responses.csv           # 15-participant empirical SUS & AI Likert ratings
 ├── scripts/
 │   ├── evaluate_rag.py                    # RAG vector retrieval, Cosine similarity & Groundedness harness
 │   ├── evaluate_summarization.py          # ROUGE-1/2/L, Flesch Reading Ease & Compression harness
-│   ├── evaluate_quiz_rubric.py            # 5-dimension human rubric statistics & Cohen's Kappa agreement
+│   ├── evaluate_quiz_rubric.py            # 5-dimension expert rubric statistics & Bloom breakdown
 │   ├── run_latency_benchmarks.py          # 10-iteration wall-clock latency measurement across tiers
 │   └── analyze_user_study.py              # Brooke (1996) SUS scoring & Cronbach's alpha reliability
 └── results/
@@ -28,9 +29,9 @@ evaluation/
     ├── rag_metrics_summary.json           # Aggregated RAG retrieval statistics
     ├── summarization_results.csv          # Raw per-sample ROUGE and Flesch scores
     ├── summarization_metrics_summary.json  # Aggregated summarization metrics
-    ├── quiz_human_eval_50.csv             # Raw multi-rater ratings across 50 questions
-    ├── quiz_evaluation_summary.json       # Quiz rubric statistics & Kappa scores
-    ├── latency_benchmarks.csv             # Raw per-iteration wall-clock measurements (80 rows)
+    ├── quiz_human_eval_50.csv             # Evaluated quiz item rows & notes across 50 questions
+    ├── quiz_evaluation_summary.json       # Quiz rubric descriptive distributions & Bloom taxonomy breakdown
+    ├── latency_benchmarks.csv             # Raw per-iteration wall-clock measurements (240 rows across 3 tiers)
     ├── latency_summary.json               # Latency percentiles (P50, P95, mean, stddev)
     ├── user_study_calculated_scores.csv   # Raw participant responses & individual SUS scores
     └── user_study_summary.json            # SUS aggregate score, CI, Grade, and qualitative ratings
@@ -68,7 +69,7 @@ This will run all 5 harnesses sequentially and regenerate all artifacts in `eval
 
    _Outputs:_ `evaluation/results/summarization_results.csv` and `evaluation/results/summarization_metrics_summary.json`
 
-3. **Quiz Generation Rubric & Inter-Rater Reliability:**
+3. **Quiz Generation Rubric & Pedagogical Quality:**
 
    ```bash
    python evaluation/scripts/evaluate_quiz_rubric.py
@@ -95,5 +96,5 @@ This will run all 5 harnesses sequentially and regenerate all artifacts in `eval
 ## 🔬 Methodology & Scientific Integrity
 
 - **Zero Hardcoded Target Assertions:** Evaluation scripts do not assert predefined target values. All metrics reflect genuine computations over the dataset inputs and live models/indices.
-- **Data Provenance:** Raw sample outputs and per-rater/per-run logs are preserved in CSV format for direct manual inspection and independent verification.
-- **Statistical Rigor:** All summary reports provide sample size ($N$), mean ($\mu$), standard deviation ($\sigma$), confidence intervals ($95\%\ \text{CI}$), and reliability metrics (Cohen's $\kappa$, Cronbach's $\alpha$).
+- **Data Provenance:** Raw sample outputs and per-sample logs are preserved in CSV format for direct manual inspection and independent verification.
+- **Statistical Rigor:** Summary reports provide sample size ($N$), mean ($\mu$), standard deviation ($\sigma$), median, confidence intervals ($95\%\ \text{CI}$), and psychometric reliability where applicable (e.g., Cronbach's $\alpha$). Single-rater evaluations explicitly omit synthetic multi-rater metrics.

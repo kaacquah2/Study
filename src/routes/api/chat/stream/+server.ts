@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { adminDb } from '$lib/server/admin';
 import { enforceRateLimit } from '$lib/server/rateLimiter';
 import { MLBackendError } from '$lib/server/ai/client';
+import { handleServerError } from '$lib/server/apiError';
 
 import { moderateInput } from '$lib/server/ai/moderation';
 
@@ -45,7 +46,8 @@ function sanitizeContextText(text: string): string {
 		.slice(0, 1_000);
 }
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+	const { request } = event;
 	try {
 		const user = await verifySessionUser(request);
 
@@ -73,12 +75,12 @@ export const POST: RequestHandler = async ({ request }) => {
 		const parsed = ChatBodySchema.safeParse(body);
 
 		if (!parsed.success) {
+			console.warn('[chat/stream POST] Validation failed:', parsed.error.issues);
 			return json(
 				{
 					error: {
 						code: 'INVALID_INPUT',
-						message: 'Validation failed',
-						fields: parsed.error.format()
+						message: 'Validation failed'
 					}
 				},
 				{ status: 400 }
@@ -247,17 +249,13 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 		});
 	} catch (err) {
-		console.error('Chat SSE API error:', err);
 		const message = err instanceof Error ? err.message : '';
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
 		if (err instanceof MLBackendError && err.status === 503) {
 			return json({ error: { code: 'MODEL_WARMING_UP', message: 'Warming up' } }, { status: 503 });
 		}
-		return json(
-			{ error: { code: 'SERVER_ERROR', message: message || 'Internal Server Error' } },
-			{ status: 500 }
-		);
+		return handleServerError(err, event);
 	}
 };

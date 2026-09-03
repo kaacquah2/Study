@@ -34,14 +34,16 @@
 	--color-danger: var(--danger);
 	--color-danger-soft: var(--danger-soft);
 
-	/* Semantic Mastery States (derived from FSRS data) */
-	--color-mastery-strong: var(--success);
+	/* Semantic Mastery States (derived from FSRS data)
+	   Dedicated ramp — independent of brand colour so mastery state
+	   is never confused with branding when the palette changes. */
+	--color-mastery-strong: var(--mastery-strong);
 	--color-mastery-strong-soft: var(--success-soft);
-	--color-mastery-learning: var(--primary);
+	--color-mastery-learning: var(--mastery-learning);
 	--color-mastery-learning-soft: var(--primary-soft);
-	--color-mastery-weak: var(--accent);
+	--color-mastery-weak: var(--mastery-weak);
 	--color-mastery-weak-soft: var(--accent-soft);
-	--color-mastery-none: var(--text-muted);
+	--color-mastery-none: var(--mastery-none);
 	--color-mastery-none-soft: var(--surface-muted);
 
 	/* ── Hero gradient ── */
@@ -95,102 +97,10 @@
 	}
 }
 
-/* Theme definitions */
-
-/* Light — default */
-:root,
-[data-theme='light'] {
-	--bg: #f5f4fc;
-	--surface: #ffffff;
-	--surface-muted: #f1f0fa;
-	--surface-glass: rgba(255, 255, 255, 0.75);
-	--border: rgba(107, 92, 246, 0.12);
-	--border-strong: rgba(107, 92, 246, 0.22);
-	--text: #16131e;
-	--text-muted: #5f5882;
-	--text-subtle: #9d98bb;
-	--primary: #6b5cf6;
-	--primary-soft: #eeecfd;
-	--primary-hover: #5a4ce0;
-	--primary-glow: rgba(107, 92, 246, 0.28);
-	--accent: #e8940c;
-	--accent-soft: #fdf3dc;
-	--accent-text: #9a5f00;
-	--success: #15803d;
-	--success-soft: #e7f7ef;
-	--danger: #dc2626;
-	--danger-soft: #fdeaea;
-	--hero-from: #2a1f5c;
-	--hero-mid: #3d2a7a;
-	--hero-to: #1a1032;
-
-	/* Heatmap Empty Cells */
-	--heatmap-empty-bg: #dddaf0;
-	--heatmap-empty-border: #b9b4d8;
-
-	/* Course Specific Accents */
-	--c-violet: #7c3aed;
-	--c-violet-soft: #f5f3ff;
-	--c-amber: #b45309;
-	--c-amber-soft: #fffbeb;
-	--c-emerald: #047857;
-	--c-emerald-soft: #ecfdf5;
-
-	/* Shadows (light mode) */
-	--shadow-xs: 0 1px 2px rgba(22, 19, 30, 0.04);
-	--shadow-sm: 0 1px 3px rgba(22, 19, 30, 0.06), 0 1px 2px rgba(22, 19, 30, 0.04);
-	--shadow-md: 0 4px 12px rgba(22, 19, 30, 0.08), 0 1px 3px rgba(22, 19, 30, 0.04);
-	--shadow-lg: 0 12px 28px rgba(22, 19, 30, 0.12), 0 4px 8px rgba(22, 19, 30, 0.06);
-	--shadow-xl: 0 24px 48px rgba(22, 19, 30, 0.14), 0 8px 16px rgba(22, 19, 30, 0.08);
-	--shadow-primary: 0 4px 16px rgba(107, 92, 246, 0.32);
-}
-
-/* Dark */
-[data-theme='dark'] {
-	--bg: #0d0d12;
-	--surface: #13121a;
-	--surface-muted: #1a1926;
-	--surface-glass: rgba(19, 18, 26, 0.82);
-	--border: rgba(255, 255, 255, 0.07);
-	--border-strong: rgba(255, 255, 255, 0.12);
-	--text: #eeecf7;
-	--text-muted: #8b86aa;
-	--text-subtle: #554f6d;
-	--primary: #8875f5;
-	--primary-soft: #201b42;
-	--primary-hover: #9986ff;
-	--primary-glow: rgba(136, 117, 245, 0.35);
-	--accent: #f5a624;
-	--accent-soft: #2e2008;
-	--accent-text: #f5a624;
-	--success: #34d399;
-	--success-soft: #0a2118;
-	--danger: #f87171;
-	--danger-soft: #250f0f;
-	--hero-from: #3c2f82;
-	--hero-mid: #2c2065;
-	--hero-to: #1a1240;
-
-	/* Heatmap Empty Cells */
-	--heatmap-empty-bg: #1d1c2a;
-	--heatmap-empty-border: #2a2840;
-
-	/* Course Specific Accents */
-	--c-violet: #a78bfa;
-	--c-violet-soft: #1e1436;
-	--c-amber: #fbbf24;
-	--c-amber-soft: #2a1a04;
-	--c-emerald: #34d399;
-	--c-emerald-soft: #082018;
-
-	/* Shadows (dark mode) */
-	--shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
-	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
-	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
-	--shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4);
-	--shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.7), 0 8px 16px rgba(0, 0, 0, 0.5);
-	--shadow-primary: 0 4px 20px rgba(136, 117, 245, 0.4);
-}
+/* Theme token values are defined in design-tokens.css (imported above).
+ * Do NOT redeclare :root or [data-theme] blocks here — that creates divergence.
+ * The @theme block above references the CSS variable names;
+ * design-tokens.css is the single source of truth for their values. */
 
 /* Global resets for fonts and base styles */
 body {
@@ -540,13 +450,44 @@ h6 {
 		transition: none !important;
 	}
 
-	/* 7. 3D Flip Card: instantaneous state toggle without 3D rotation disorientation */
+	/* 7. 3D Flip Card: instantaneous state toggle without 3D rotation disorientation or mirrored backface */
 	.flip-card {
 		perspective: none !important;
 	}
 	.flip-card-inner {
 		transform-style: flat !important;
 		transition: none !important;
+		transform: none !important;
+	}
+	.flip-card-inner.is-flipped {
+		transform: none !important;
+	}
+	.flip-card-front,
+	.flip-card-back {
+		backface-visibility: visible !important;
+		-webkit-backface-visibility: visible !important;
+		transition: none !important;
+		transform: none !important;
+	}
+	.flip-card-inner:not(.is-flipped) .flip-card-front {
+		opacity: 1 !important;
+		pointer-events: auto !important;
+		z-index: 2 !important;
+	}
+	.flip-card-inner:not(.is-flipped) .flip-card-back {
+		opacity: 0 !important;
+		pointer-events: none !important;
+		z-index: 1 !important;
+	}
+	.flip-card-inner.is-flipped .flip-card-front {
+		opacity: 0 !important;
+		pointer-events: none !important;
+		z-index: 1 !important;
+	}
+	.flip-card-inner.is-flipped .flip-card-back {
+		opacity: 1 !important;
+		pointer-events: auto !important;
+		z-index: 2 !important;
 	}
 
 	/* 8. Ambient Background Canvas & Cursor Aura */
@@ -554,4 +495,27 @@ h6 {
 	.ambient-canvas {
 		display: none !important;
 	}
+}
+
+/* ─── Accessibility: Skip to Content Link ────────────────────────────────── */
+.skip-link {
+	position: fixed;
+	top: -100px;
+	left: 1rem;
+	z-index: 100;
+	padding: 0.625rem 1.25rem;
+	background: var(--primary);
+	color: #ffffff;
+	font-weight: 700;
+	font-size: 0.875rem;
+	border-radius: 0.75rem;
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+	text-decoration: none;
+	transition: top 0.18s ease-in-out;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+	top: 1rem;
+	outline: 2px solid var(--primary-hover);
+	outline-offset: 2px;
 }

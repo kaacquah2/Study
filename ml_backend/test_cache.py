@@ -24,7 +24,7 @@ def test_cache_key_generation_param_variation():
     assert key1 != key2, "Different generation parameters must produce distinct cache keys."
 
 def test_memory_cache_hit_miss():
-    cm = CacheManager(in_memory_maxsize=10, in_memory_ttl=60)
+    cm = CacheManager(in_memory_maxsize=10, in_memory_ttl=60, enable_redis=False)
     key = "ml_cache:test:123"
     
     val, status = cm.get(key)
@@ -39,7 +39,7 @@ def test_memory_cache_hit_miss():
 
 def test_memory_cache_maxsize_eviction():
     maxsize = 5
-    cm = CacheManager(in_memory_maxsize=maxsize, in_memory_ttl=60)
+    cm = CacheManager(in_memory_maxsize=maxsize, in_memory_ttl=60, enable_redis=False)
     
     for i in range(10):
         key = f"ml_cache:test:{i}"

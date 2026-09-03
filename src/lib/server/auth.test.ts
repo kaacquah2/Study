@@ -247,7 +247,9 @@ describe('verifySessionUser Unit Tests', () => {
 				current: 0,
 				longest: 0,
 				lastStudiedOn: null,
-				timezone: 'Africa/Accra'
+				timezone: 'Africa/Accra',
+				freezesAvailable: 1,
+				lastFreezeRefill: null
 			},
 			createdAt: 'MOCK_TIMESTAMP'
 		});

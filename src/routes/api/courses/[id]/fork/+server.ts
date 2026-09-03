@@ -2,13 +2,15 @@ import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
+import { handleServerError } from '$lib/server/apiError';
 
 /**
  * POST /api/courses/[id]/fork
  * Clones/Forks a course template into the authenticated user's library.
  * Reuses existing pre-generated module content to save AI generation costs.
  */
-export const POST: RequestHandler = async ({ params, request }) => {
+export const POST: RequestHandler = async (event) => {
+	const { params, request } = event;
 	const { id: sourceCourseId } = params;
 
 	try {
@@ -69,6 +71,8 @@ export const POST: RequestHandler = async ({ params, request }) => {
 
 			batch.set(newModRef, {
 				id: newModRef.id,
+				courseId: newCourseRef.id,
+				ownerUid: user.uid,
 				order: modData.order,
 				type: modData.type,
 				title: modData.title,
@@ -93,14 +97,10 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			{ status: 201 }
 		);
 	} catch (err) {
-		console.error('Course Fork error:', err);
 		const message = err instanceof Error ? err.message : '';
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
-		return json(
-			{ error: { code: 'SERVER_ERROR', message: message || 'Failed to fork course' } },
-			{ status: 500 }
-		);
+		return handleServerError(err, event);
 	}
 };

@@ -79,6 +79,8 @@ export const POST: RequestHandler = async ({ params, request }) => {
 				const newModuleRef = newCourseRef.collection('modules').doc();
 				transaction.set(newModuleRef, {
 					id: newModuleRef.id,
+					courseId: newCourseRef.id,
+					ownerUid: user.uid,
 					order: mod.order,
 					type: mod.type,
 					title: mod.title,

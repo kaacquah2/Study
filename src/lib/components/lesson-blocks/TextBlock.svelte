@@ -14,7 +14,7 @@
 	});
 </script>
 
-<div class="prose prose-sm leading-relaxed max-w-none text-text">
+<div class="prose prose-sm max-w-none leading-relaxed text-text">
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 	{@html renderedHtml}
 </div>

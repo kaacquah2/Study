@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { auth, db } from '$lib/firebase/client';
+	import { db } from '$lib/firebase/client';
+	import { apiFetch } from '$lib/api/client';
 	import { collection, query, where, getDocs } from 'firebase/firestore';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
@@ -70,21 +71,18 @@
 		if (!courseId) return;
 		loadingMap = true;
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch(`/api/knowledge-map?courseId=${encodeURIComponent(courseId)}`, {
-				headers: { Authorization: `Bearer ${idToken}` }
-			});
+			const { data, headers } = await apiFetch<{
+				graph: { nodes: ConceptNode[]; edges: PrerequisiteEdge[] } | null;
+				mastery: Record<string, ModuleMastery>;
+				recommendation: RecommendationResult | null;
+				isStale?: boolean;
+			}>(`/api/knowledge-map?courseId=${encodeURIComponent(courseId)}`);
 
-			if (!res.ok) {
-				throw new Error('Failed to load knowledge map');
-			}
-
-			const data = await res.json();
 			mapData = {
 				graph: data.graph || null,
 				mastery: data.mastery || {},
 				recommendation: data.recommendation || null,
-				isStale: Boolean(data.isStale || res.headers.get('X-Knowledge-Map-Stale'))
+				isStale: Boolean(data.isStale || headers.get('X-Knowledge-Map-Stale'))
 			};
 		} catch (err) {
 			console.error('Failed to load map data:', err);
@@ -146,26 +144,17 @@
 
 	async function handleFlagEdge(source: string, target: string) {
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch('/api/knowledge-map', {
+			await apiFetch('/api/knowledge-map', {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
+				body: {
 					action: 'flag',
 					courseId: selectedCourseId,
 					source,
 					target
-				})
+				}
 			});
-			if (res.ok) {
-				toastStore.success('Prerequisite edge flagged and hidden.');
-				await fetchKnowledgeMap(selectedCourseId);
-			} else {
-				toastStore.error('Failed to flag edge.');
-			}
+			toastStore.success('Prerequisite edge flagged and hidden.');
+			await fetchKnowledgeMap(selectedCourseId);
 		} catch (err) {
 			console.error('Edge flagging error:', err);
 			toastStore.error('Error flagging edge.');
@@ -177,15 +166,15 @@
 	<title>Knowledge Map &mdash; AI Study Buddy</title>
 </svelte:head>
 
-<div class="max-w-5xl gap-6 py-4 mx-auto flex w-full flex-col">
+<div class="mx-auto flex w-full max-w-5xl flex-col gap-6 py-4">
 	<!-- Header Bar -->
 	<div
-		class="gap-4 pb-4 sm:flex-row sm:items-center sm:justify-between flex flex-col border-b border-border"
+		class="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between"
 	>
 		<div>
 			<a
 				href={resolve('/app')}
-				class="gap-1.5 text-xs font-bold inline-flex items-center text-text-muted transition-colors hover:text-primary"
+				class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted transition-colors hover:text-primary"
 			>
 				&larr; Return to Dashboard
 			</a>
@@ -196,12 +185,12 @@
 		</div>
 
 		<!-- Course Selector Dropdown & Search -->
-		<div class="gap-2 sm:flex-row sm:items-center flex flex-col">
+		<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
 			<input
 				type="text"
 				bind:value={searchQuery}
 				placeholder="Search concept..."
-				class="px-3 py-2 text-xs font-medium rounded-xl border border-border bg-surface text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+				class="rounded-xl border border-border bg-surface px-3 py-2 text-xs font-medium text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
 			/>
 			{#if loadingCourses}
 				<div class="h-10 w-48 animate-pulse rounded-xl bg-surface-muted"></div>
@@ -209,7 +198,7 @@
 				<select
 					value={selectedCourseId}
 					onchange={handleCourseSelect}
-					class="px-4 py-2 text-xs font-bold shadow-xs sm:w-64 w-full cursor-pointer rounded-xl border border-border bg-surface text-text focus:border-primary focus:outline-none"
+					class="w-full cursor-pointer rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text shadow-xs focus:border-primary focus:outline-none sm:w-64"
 				>
 					{#each courses as course (course.id)}
 						<option value={course.id}>📚 {course.title}</option>
@@ -221,26 +210,26 @@
 
 	<!-- Mastery Color Legend Bar -->
 	<div
-		class="gap-3 rounded-2xl px-4 py-2.5 text-xs font-semibold shadow-2xs flex flex-wrap items-center justify-between border border-border bg-surface text-text-muted"
+		class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-text-muted shadow-2xs"
 	>
-		<div class="gap-2 font-bold flex items-center text-text">
+		<div class="flex items-center gap-2 font-bold text-text">
 			<span>🎨 Mastery Legend:</span>
 		</div>
-		<div class="gap-4 flex flex-wrap items-center">
-			<span class="gap-1.5 flex items-center">
-				<span class="h-2.5 w-2.5 bg-emerald-500 rounded-full"></span>
+		<div class="flex flex-wrap items-center gap-4">
+			<span class="flex items-center gap-1.5">
+				<span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
 				<strong class="text-text">Mastered</strong> (≥80%)
 			</span>
-			<span class="gap-1.5 flex items-center">
+			<span class="flex items-center gap-1.5">
 				<span class="h-2.5 w-2.5 rounded-full bg-primary"></span>
 				<strong class="text-text">Reviewing</strong> (40–79%)
 			</span>
-			<span class="gap-1.5 flex items-center">
-				<span class="h-2.5 w-2.5 bg-amber-500 rounded-full"></span>
+			<span class="flex items-center gap-1.5">
+				<span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
 				<strong class="text-text">Learning</strong> (1–39%)
 			</span>
-			<span class="gap-1.5 flex items-center">
-				<span class="h-2.5 w-2.5 bg-slate-400 rounded-full"></span>
+			<span class="flex items-center gap-1.5">
+				<span class="h-2.5 w-2.5 rounded-full bg-slate-400"></span>
 				<strong class="text-text">Not Assessed</strong>
 			</span>
 		</div>
@@ -249,18 +238,18 @@
 	<!-- AI Recommended Next Step Banner (if available from recommendNext.ts) -->
 	{#if mapData.recommendation}
 		<div
-			class="gap-4 rounded-3xl p-5 shadow-xs sm:flex-row sm:items-center flex flex-col justify-between border border-primary/30 bg-linear-to-r from-primary-soft/40 via-surface to-surface"
+			class="flex flex-col justify-between gap-4 rounded-3xl border border-primary/30 bg-linear-to-r from-primary-soft/40 via-surface to-surface p-5 shadow-xs sm:flex-row sm:items-center"
 		>
-			<div class="gap-3.5 flex items-center">
+			<div class="flex items-center gap-3.5">
 				<div
-					class="h-11 w-11 rounded-2xl text-xl text-white flex shrink-0 items-center justify-center bg-primary shadow-md shadow-primary/20"
+					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-xl text-white shadow-primary/20 shadow-md"
 				>
 					🎯
 				</div>
 				<div>
-					<div class="gap-2 flex items-center">
+					<div class="flex items-center gap-2">
 						<span
-							class="px-2 py-0.5 font-black tracking-wider rounded-full bg-primary/10 text-[10px] text-primary uppercase"
+							class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black tracking-wider text-primary uppercase"
 						>
 							AI Recommended Next Topic
 						</span>
@@ -279,12 +268,12 @@
 				</div>
 			</div>
 
-			<div class="gap-2 flex shrink-0 items-center">
+			<div class="flex shrink-0 items-center gap-2">
 				<button
 					type="button"
 					onclick={() =>
 						mapData.recommendation && handleNodeAction(mapData.recommendation.node, 'lesson')}
-					class="gap-1.5 px-4 py-2.5 text-xs font-bold text-white shadow-xs inline-flex cursor-pointer items-center rounded-xl bg-primary transition-all hover:bg-primary-hover active:scale-95"
+					class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-primary-hover active:scale-95"
 				>
 					<span>Study Topic &rarr;</span>
 				</button>
@@ -293,7 +282,7 @@
 	{/if}
 
 	{#if loadingMap || loadingCourses}
-		<div class="gap-4 flex flex-col">
+		<div class="flex flex-col gap-4">
 			<Skeleton variant="card" />
 			<Skeleton variant="card" />
 		</div>

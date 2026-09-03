@@ -17,34 +17,48 @@ vi.mock('$lib/stores/theme.svelte', () => ({
 	}
 }));
 
+// Mock app navigation and environment
+vi.mock('$app/environment', () => ({
+	browser: true
+}));
+
+const mockGoto = vi.fn();
+vi.mock('$app/navigation', () => ({
+	goto: (...args: unknown[]) => mockGoto(...args)
+}));
+
 interface QueuedResponse {
 	queued: boolean;
 	courseId: string;
-	_status?: number;
 }
 
 describe('apiFetch client utility', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		global.fetch = vi.fn();
+		delete (global as Record<string, unknown>).window;
 	});
 
-	it('injects Authorization, theme, and timezone headers', async () => {
+	it('injects Authorization, theme, and timezone headers and returns wrapper', async () => {
 		vi.mocked(global.fetch).mockResolvedValue({
 			ok: true,
 			status: 200,
+			headers: new Headers({ 'content-type': 'application/json' }),
 			json: async () => ({ success: true })
-		} as Response);
+		} as unknown as Response);
 
 		const res = await apiFetch<{ success: boolean }>('/api/test');
-		expect(res.success).toBe(true);
+		expect(res.data.success).toBe(true);
+		expect(res.status).toBe(200);
+		expect(res.ok).toBe(true);
 
 		expect(global.fetch).toHaveBeenCalledWith('/api/test', {
 			headers: expect.objectContaining({
 				Authorization: 'Bearer mock-token-123',
 				'X-Client-Theme': 'dark',
 				'X-Client-Timezone': expect.any(String)
-			})
+			}),
+			signal: expect.anything()
 		});
 	});
 
@@ -52,8 +66,9 @@ describe('apiFetch client utility', () => {
 		vi.mocked(global.fetch).mockResolvedValue({
 			ok: true,
 			status: 200,
+			headers: new Headers(),
 			json: async () => ({ id: '1' })
-		} as Response);
+		} as unknown as Response);
 
 		await apiFetch('/api/courses', {
 			method: 'POST',
@@ -76,8 +91,9 @@ describe('apiFetch client utility', () => {
 		vi.mocked(global.fetch).mockResolvedValue({
 			ok: false,
 			status: 429,
+			headers: new Headers(),
 			json: async () => ({ error: { code: 'RATE_LIMITED', message: 'Rate limit exceeded' } })
-		} as Response);
+		} as unknown as Response);
 
 		await expect(apiFetch('/api/courses')).rejects.toThrow(ApiError);
 
@@ -91,15 +107,87 @@ describe('apiFetch client utility', () => {
 		}
 	});
 
-	it('handles 202 queued responses correctly', async () => {
+	it('handles 202 queued responses without mutating parsed response body', async () => {
+		const rawPayload = { queued: true, courseId: 'abc-123' };
 		vi.mocked(global.fetch).mockResolvedValue({
 			ok: true,
 			status: 202,
-			json: async () => ({ queued: true, courseId: 'abc-123' })
-		} as Response);
+			headers: new Headers(),
+			json: async () => ({ ...rawPayload })
+		} as unknown as Response);
 
 		const res = await apiFetch<QueuedResponse>('/api/courses/generate-outline', { method: 'POST' });
-		expect(res.queued).toBe(true);
-		expect(res._status).toBe(202);
+		expect(res.data.queued).toBe(true);
+		expect(res.data.courseId).toBe('abc-123');
+		expect(res.status).toBe(202);
+		expect((res.data as unknown as Record<string, unknown>)._status).toBeUndefined();
+	});
+
+	it('handles 204 No Content responses cleanly', async () => {
+		vi.mocked(global.fetch).mockResolvedValue({
+			ok: true,
+			status: 204,
+			headers: new Headers()
+		} as unknown as Response);
+
+		const res = await apiFetch('/api/items/1', { method: 'DELETE' });
+		expect(res.status).toBe(204);
+		expect(res.ok).toBe(true);
+		expect(res.data).toBeUndefined();
+	});
+
+	it('combines custom signal and timeout', async () => {
+		const abortController = new AbortController();
+		vi.mocked(global.fetch).mockResolvedValue({
+			ok: true,
+			status: 200,
+			headers: new Headers(),
+			json: async () => ({ ok: true })
+		} as unknown as Response);
+
+		await apiFetch('/api/long-job', {
+			signal: abortController.signal,
+			timeout: 5000
+		});
+
+		expect(global.fetch).toHaveBeenCalledWith(
+			'/api/long-job',
+			expect.objectContaining({
+				signal: expect.any(AbortSignal)
+			})
+		);
+	});
+
+	it('handles responseType: blob', async () => {
+		const mockBlob = new Blob(['sample,data'], { type: 'text/csv' });
+		vi.mocked(global.fetch).mockResolvedValue({
+			ok: true,
+			status: 200,
+			headers: new Headers({ 'content-type': 'text/csv' }),
+			blob: async () => mockBlob
+		} as unknown as Response);
+
+		const res = await apiFetch<Blob>('/api/export', { responseType: 'blob' });
+		expect(res.ok).toBe(true);
+		expect(res.data).toBe(mockBlob);
+	});
+
+	it('redirects to login on 401 when in browser and on protected route', async () => {
+		(global as Record<string, unknown>).window = {
+			location: {
+				pathname: '/app/courses',
+				search: '?id=123'
+			}
+		};
+
+		vi.mocked(global.fetch).mockResolvedValue({
+			ok: false,
+			status: 401,
+			headers: new Headers(),
+			json: async () => ({ error: { message: 'Session expired' } })
+		} as unknown as Response);
+
+		await expect(apiFetch('/api/protected')).rejects.toThrow(ApiError);
+		expect(mockGoto).toHaveBeenCalledWith('/?redirect=%2Fapp%2Fcourses%3Fid%3D123');
 	});
 });

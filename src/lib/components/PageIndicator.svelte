@@ -11,7 +11,7 @@
 </script>
 
 <div
-	class="gap-2 px-3 py-1 text-xs font-semibold shadow-xs inline-flex items-center rounded-full border border-border bg-surface text-text-muted"
+	class="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-text-muted shadow-xs"
 >
 	<span class="font-bold text-primary">{label} {current}</span>
 	<span>of</span>

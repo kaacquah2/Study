@@ -3,9 +3,11 @@ import { json } from '@sveltejs/kit';
 import { adminDb, FieldValue } from '$lib/server/admin';
 import { verifySessionUser } from '$lib/server/auth';
 import crypto from 'crypto';
+import { handleServerError } from '$lib/server/apiError';
 
 // POST /api/courses/[id]/share
-export const POST: RequestHandler = async ({ params, url, request }) => {
+export const POST: RequestHandler = async (event) => {
+	const { params, url, request } = event;
 	const { id: courseId } = params;
 
 	try {
@@ -66,8 +68,12 @@ export const POST: RequestHandler = async ({ params, url, request }) => {
 			);
 		}
 
-		// 3. Generate a 12-character token
-		const token = crypto.randomBytes(6).toString('hex'); // 12-char hex string
+		// Parse optional isPublic flag from request body (defaults to false for private capability links)
+		const body = await request.json().catch(() => ({}));
+		const isPublic = body?.isPublic === true;
+
+		// 3. Generate a 32-character (16-byte / 128-bit) token
+		const token = crypto.randomBytes(16).toString('hex');
 
 		// 4. Retrieve sharer name from user profile
 		const userDoc = await adminDb.collection('users').doc(user.uid).get();
@@ -80,6 +86,10 @@ export const POST: RequestHandler = async ({ params, url, request }) => {
 			courseId,
 			sharedByUid: user.uid,
 			sharedByName,
+			isPublic,
+			tags: courseData.tags || [],
+			level: courseData.level || 'intermediate',
+			isOfficial: false,
 			snapshot: {
 				title: courseData.title,
 				description: courseData.description,
@@ -87,27 +97,25 @@ export const POST: RequestHandler = async ({ params, url, request }) => {
 				modules
 			},
 			claimCount: 0,
+			importCount: 0,
 			revoked: false,
 			createdAt: FieldValue.serverTimestamp()
 		});
 
 		const shareUrl = `${url.origin}/share/${token}`;
-		return json({ token, url: shareUrl }, { status: 201 });
+		return json({ token, url: shareUrl, isPublic }, { status: 201 });
 	} catch (err) {
-		console.error('Create share token error:', err);
 		const message = err instanceof Error ? err.message : '';
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
-		return json(
-			{ error: { code: 'SERVER_ERROR', message: message || 'Internal Server Error' } },
-			{ status: 500 }
-		);
+		return handleServerError(err, event);
 	}
 };
 
 // DELETE /api/courses/[id]/share (Revokes all shared links generated for this course)
-export const DELETE: RequestHandler = async ({ params, request }) => {
+export const DELETE: RequestHandler = async (event) => {
+	const { params, request } = event;
 	const { id: courseId } = params;
 
 	try {
@@ -143,14 +151,10 @@ export const DELETE: RequestHandler = async ({ params, request }) => {
 
 		return new Response(null, { status: 204 });
 	} catch (err) {
-		console.error('Revoke share links error:', err);
 		const message = err instanceof Error ? err.message : '';
 		if (message.includes('Unauthorized')) {
-			return json({ error: { code: 'UNAUTHORIZED', message: message } }, { status: 401 });
+			return json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 401 });
 		}
-		return json(
-			{ error: { code: 'SERVER_ERROR', message: message || 'Internal Server Error' } },
-			{ status: 500 }
-		);
+		return handleServerError(err, event);
 	}
 };

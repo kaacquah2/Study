@@ -3,7 +3,7 @@
 	import { chatStore } from '$lib/stores/chat.svelte';
 	import { studySessionStore, type CanonicalConcept } from '$lib/stores/studySession.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import { auth } from '$lib/firebase/client';
+	import { apiFetch } from '$lib/api/client';
 
 	interface Props {
 		courseId?: string;
@@ -141,42 +141,32 @@
 		const conceptLabel = resolvedConcept?.term || snippet.slice(0, 40);
 
 		try {
-			const idToken = await auth.currentUser?.getIdToken();
-			const res = await fetch('/api/documents/flashcards', {
+			await apiFetch('/api/documents/flashcards', {
 				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${idToken}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
+				body: {
 					documentText: snippet,
 					courseId,
 					moduleId,
 					conceptId,
 					conceptTag: resolvedConcept?.id || undefined
-				})
+				}
 			});
 
-			if (res.ok) {
-				studySessionStore.recordEvent({
-					type: 'flashcard_created',
-					snippet,
-					conceptId,
-					summary: `Created flashcard for "${conceptLabel}"`
-				});
-				toastStore.success(`Added flashcard for "${conceptLabel}" to your FSRS memory deck!`);
-			} else {
-				// Local fallback card creation if offline or rate-limited
-				studySessionStore.recordEvent({
-					type: 'flashcard_created',
-					snippet,
-					conceptId,
-					summary: `Created local flashcard for "${conceptLabel}"`
-				});
-				toastStore.info(`Saved concept "${conceptLabel}" to your memory study list.`);
-			}
+			studySessionStore.recordEvent({
+				type: 'flashcard_created',
+				snippet,
+				conceptId,
+				summary: `Created flashcard for "${conceptLabel}"`
+			});
+			toastStore.success(`Added flashcard for "${conceptLabel}" to your FSRS memory deck!`);
 		} catch (err) {
 			console.warn('Flashcard generation error:', err);
+			studySessionStore.recordEvent({
+				type: 'flashcard_created',
+				snippet,
+				conceptId,
+				summary: `Created local flashcard for "${conceptLabel}"`
+			});
 			toastStore.info(`Saved concept "${conceptLabel}" for review.`);
 		} finally {
 			isCreatingCard = false;
@@ -213,15 +203,15 @@
 		role="toolbar"
 		aria-label="Study Lens contextual tools"
 		aria-live="polite"
-		class="animate-pop-in gap-1 rounded-2xl p-1.5 shadow-2xl backdrop-blur-md fixed z-50 flex items-center border border-border/80 bg-surface/95"
+		class="animate-pop-in fixed z-50 flex items-center gap-1 rounded-2xl border border-border/80 bg-surface/95 p-1.5 shadow-2xl backdrop-blur-md"
 		style="left: {posX}px; top: {posY}px;"
 	>
-		<div class="gap-1 flex items-center">
+		<div class="flex items-center gap-1">
 			<button
 				type="button"
 				onclick={handleExplain}
 				aria-label="Explain this highlighted text simply"
-				class="gap-1 px-2.5 py-1.5 font-bold inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
+				class="inline-flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-bold text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
 				title="Explain this highlighted text simply"
 			>
 				<span aria-hidden="true">💡</span>
@@ -232,7 +222,7 @@
 				type="button"
 				onclick={handleExample}
 				aria-label="Provide a practical example of highlighted text"
-				class="gap-1 px-2.5 py-1.5 font-bold inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
+				class="inline-flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-bold text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
 				title="Give a concrete example"
 			>
 				<span aria-hidden="true">🧪</span>
@@ -243,7 +233,7 @@
 				type="button"
 				onclick={handleQuizMe}
 				aria-label="Quiz me on highlighted text"
-				class="gap-1 px-2.5 py-1.5 font-bold inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
+				class="inline-flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-bold text-text transition-colors hover:bg-primary-soft hover:text-primary active:scale-95"
 				title="Test my understanding on this sentence"
 			>
 				<span aria-hidden="true">❓</span>
@@ -257,7 +247,7 @@
 				aria-label={isCreatingCard
 					? 'Saving flashcard...'
 					: 'Convert highlighted text into FSRS memory flashcard'}
-				class="gap-1 px-2.5 py-1.5 font-bold hover:bg-amber-500/15 hover:text-amber-500 inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text transition-colors active:scale-95 disabled:opacity-50"
+				class="inline-flex cursor-pointer items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-bold text-text transition-colors hover:bg-amber-500/15 hover:text-amber-500 active:scale-95 disabled:opacity-50"
 				title="Convert into FSRS memory flashcard"
 			>
 				<span aria-hidden="true">🗂️</span>
@@ -267,7 +257,7 @@
 			<button
 				type="button"
 				onclick={handleSpeak}
-				class="p-1.5 inline-flex cursor-pointer items-center rounded-xl text-[11px] text-text-muted transition-colors hover:bg-surface-muted hover:text-text active:scale-95"
+				class="inline-flex cursor-pointer items-center rounded-xl p-1.5 text-[11px] text-text-muted transition-colors hover:bg-surface-muted hover:text-text active:scale-95"
 				title="Listen to this text"
 				aria-label="Read selected text aloud"
 			>

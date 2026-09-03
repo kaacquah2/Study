@@ -22,8 +22,19 @@ function initAdmin(): App {
 	// SDK's global app registry still holds the old (possibly unauthenticated) app.
 	// We delete it so initializeApp() uses the latest credentials from .env.
 	const existingApps = getApps();
-	for (const a of existingApps) {
-		deleteApp(a).catch(() => {}); // fire-and-forget; sync deletion not needed
+	if (import.meta.env.DEV) {
+		// Delete any previously initialized app in development/HMR only.
+		// When Vite reloads this module, the old (possibly stale) app still lives in the
+		// Firebase Admin SDK registry. Deleting it forces initializeApp() to pick up the
+		// latest credentials from .env. This MUST NOT run in production: serverless runtimes
+		// share module scope across concurrent invocations and fire-and-forget deletion
+		// creates a window where no valid app exists.
+		for (const a of existingApps) {
+			deleteApp(a).catch(() => {});
+		}
+	} else if (existingApps.length > 0) {
+		// Production/serverless: reuse the already-initialized app.
+		return existingApps[0];
 	}
 
 	if (emulatorHost) {
