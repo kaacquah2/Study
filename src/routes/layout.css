@@ -1,6 +1,9 @@
 /* Design tokens & Tailwind */
 @import '../lib/styles/design-tokens.css';
 @import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
 	/* ── Backgrounds ── */
 	--color-bg: var(--bg);

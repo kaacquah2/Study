@@ -21,7 +21,7 @@ describe('hooks.server.ts Handle Hook', () => {
 		const response = await handle({ event: mockEvent, resolve: mockResolve });
 
 		expect(response.headers.get('Content-Security-Policy')).toBe(
-			"default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com;"
+			"default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://apis.google.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com;"
 		);
 		expect(response.headers.get('X-Frame-Options')).toBe('DENY');
 		expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');

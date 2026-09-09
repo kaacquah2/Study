@@ -6,6 +6,7 @@
 	import StreakChip from '$lib/components/StreakChip.svelte';
 	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 	import Toast from '$lib/components/Toast.svelte';
+	import Avatar from '$lib/components/Avatar.svelte';
 	import AssistantChat from '$lib/components/AssistantChat.svelte';
 	import DesktopSidebar from '$lib/components/DesktopSidebar.svelte';
 	import MobileNav from '$lib/components/MobileNav.svelte';
@@ -22,11 +23,11 @@
 		Users,
 		Menu,
 		GraduationCap,
-		Crown,
 		Settings,
 		LogOut,
 		TriangleAlert,
-		ShieldCheck
+		ShieldCheck,
+		TrendingUp
 	} from '@lucide/svelte';
 
 	// View Transitions API — smooth cross-page animations (respects prefers-reduced-motion)
@@ -85,21 +86,6 @@
 		}
 	});
 
-	let userInitials = $derived.by(() => {
-		if (authStore.user?.displayName) {
-			return authStore.user.displayName
-				.split(' ')
-				.map((n) => n[0])
-				.join('')
-				.toUpperCase()
-				.slice(0, 2);
-		}
-		if (authStore.user?.email) {
-			return authStore.user.email.slice(0, 2).toUpperCase();
-		}
-		return '??';
-	});
-
 	let pageBreadcrumb = $derived.by(() => {
 		if (currentPath === '/app') return { parent: 'Workspace', current: 'Dashboard' };
 		if (currentPath.includes('/courses/createCourse'))
@@ -109,6 +95,8 @@
 		if (currentPath.includes('/review'))
 			return { parent: 'Workspace', current: 'Practice & Review' };
 		if (currentPath.includes('/mistakes')) return { parent: 'Workspace', current: 'Mistake Bank' };
+		if (currentPath.includes('/progress'))
+			return { parent: 'Workspace', current: 'Performance Analytics' };
 		if (currentPath.includes('/study-groups'))
 			return { parent: 'Workspace', current: 'Study Groups' };
 		if (currentPath.includes('/settings'))
@@ -117,7 +105,7 @@
 			return { parent: 'Workspace', current: 'Knowledge Map' };
 		if (currentPath.includes('/knowledge'))
 			return { parent: 'Workspace', current: 'Knowledge Base' };
-		if (currentPath.includes('/admin')) return { parent: 'Workspace', current: 'System Analytics' };
+		if (currentPath.includes('/admin')) return { parent: 'Workspace', current: 'Admin Console' };
 		if (currentPath.includes('/courses/'))
 			return { parent: 'Dashboard', current: 'Course Workspace' };
 		return { parent: 'Workspace', current: 'Dashboard' };
@@ -132,11 +120,31 @@
 		)
 	);
 
-	let isSuperAdmin = $derived(
-		Boolean(authStore.profile?.role === 'superadmin' || authStore.profile?.isSuperAdmin)
-	);
-
 	let navItems = $derived.by(() => {
+		if (currentPath.startsWith('/app/admin')) {
+			return [
+				{
+					label: 'Cohort Analytics',
+					href: '/app/admin',
+					icon: TrendingUp
+				},
+				{
+					label: 'Users & Roles',
+					href: '/app/admin?tab=users',
+					icon: Users
+				},
+				{
+					label: 'AI Infrastructure',
+					href: '/app/admin?tab=system',
+					icon: BrainCircuit
+				},
+				{
+					label: 'Profile & Settings',
+					href: '/app/settings',
+					icon: Settings
+				}
+			];
+		}
 		const items = [
 			{
 				label: 'Dashboard',
@@ -166,6 +174,11 @@
 				icon: AlertCircle
 			},
 			{
+				label: 'Performance',
+				href: '/app/progress',
+				icon: TrendingUp
+			},
+			{
 				label: 'Study Groups',
 				href: '/app/study-groups',
 				icon: Users
@@ -173,7 +186,7 @@
 		];
 		if (isAdmin) {
 			items.push({
-				label: 'System Analytics',
+				label: 'Admin Console',
 				href: '/app/admin',
 				icon: ShieldCheck
 			});
@@ -221,16 +234,42 @@
 				<div
 					class="hidden items-center gap-2 rounded-full border border-border/80 bg-surface-muted/60 px-3.5 py-1.5 text-xs font-semibold text-text-muted shadow-2xs md:flex"
 				>
-					<span class="flex items-center gap-1.5 text-primary">
-						<GraduationCap class="h-4 w-4" aria-hidden="true" />
-						<a href="/app" class="transition-colors hover:underline">{pageBreadcrumb.parent}</a>
-					</span>
-					<span class="text-text-muted/40">/</span>
-					<span class="font-bold text-text">{pageBreadcrumb.current}</span>
+					{#if currentPath.startsWith('/app/admin')}
+						<span class="flex items-center gap-1.5 font-bold text-primary">
+							<ShieldCheck class="h-4 w-4" aria-hidden="true" />
+							<span>Admin Command Center</span>
+						</span>
+						<span class="text-text-muted/40">/</span>
+						<span class="font-bold text-text">
+							{#if page.url.searchParams.get('tab') === 'users'}
+								Users & Access Governance
+							{:else if page.url.searchParams.get('tab') === 'system'}
+								AI & System Infrastructure
+							{:else}
+								Platform Oversight
+							{/if}
+						</span>
+					{:else}
+						<span class="flex items-center gap-1.5 text-primary">
+							<GraduationCap class="h-4 w-4" aria-hidden="true" />
+							<a href="/app" class="transition-colors hover:underline">{pageBreadcrumb.parent}</a>
+						</span>
+						<span class="text-text-muted/40">/</span>
+						<span class="font-bold text-text">{pageBreadcrumb.current}</span>
+					{/if}
 				</div>
 
 				<div class="relative z-40 flex items-center gap-3">
-					<StreakChip />
+					{#if currentPath.startsWith('/app/admin')}
+						<div
+							class="hidden items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-bold text-primary sm:flex"
+						>
+							<span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+							<span>Live Administrator Mode</span>
+						</div>
+					{:else}
+						<StreakChip />
+					{/if}
 
 					<div class="relative">
 						<button
@@ -243,19 +282,12 @@
 							aria-expanded={userMenuOpen}
 							aria-controls="user-account-menu"
 						>
-							{#if authStore.user.photoURL}
-								<img
-									src={authStore.user.photoURL}
-									alt={authStore.user.displayName || 'User'}
-									class="h-8 w-8 rounded-full object-cover"
-								/>
-							{:else}
-								<div
-									class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary"
-								>
-									{userInitials}
-								</div>
-							{/if}
+							<Avatar
+								src={authStore.user.photoURL}
+								name={authStore.user.displayName || authStore.user.email}
+								size="md"
+								border={false}
+							/>
 						</button>
 
 						{#if userMenuOpen}
@@ -271,19 +303,11 @@
 								class="absolute top-full right-0 z-50 mt-2 flex w-64 flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-2xl"
 							>
 								<div class="flex items-center gap-3 border-b border-border/60 pb-3">
-									{#if authStore.user.photoURL}
-										<img
-											src={authStore.user.photoURL}
-											alt={authStore.user.displayName || 'User'}
-											class="h-10 w-10 rounded-full border border-border object-cover"
-										/>
-									{:else}
-										<div
-											class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-bold text-primary"
-										>
-											{userInitials}
-										</div>
-									{/if}
+									<Avatar
+										src={authStore.user.photoURL}
+										name={authStore.user.displayName || authStore.user.email}
+										size="xl"
+									/>
 									<div class="truncate">
 										<span class="block truncate text-xs font-bold text-text">
 											{authStore.user.displayName || 'Student'}
@@ -313,26 +337,15 @@
 										<Compass class="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
 										<span>Explore Courses</span>
 									</a>
-									{#if isSuperAdmin}
-										<a
-											role="menuitem"
-											href="/superadmin"
-											onclick={() => closeUserMenu(false)}
-											class="flex items-center gap-2.5 rounded-xl bg-violet-500/10 px-3 py-2 font-bold text-violet-500 hover:bg-violet-500/20 focus:bg-violet-500/20 focus:outline-none"
-										>
-											<Crown class="h-4 w-4 shrink-0" aria-hidden="true" />
-											<span>Super Admin Console</span>
-										</a>
-									{/if}
 									{#if isAdmin}
 										<a
 											role="menuitem"
 											href="/app/admin"
 											onclick={() => closeUserMenu(false)}
-											class="flex items-center gap-2.5 rounded-xl bg-primary-soft/60 px-3 py-2 font-bold text-primary hover:bg-primary-soft focus:bg-primary-soft focus:outline-none"
+											class="flex items-center gap-2.5 rounded-xl bg-primary-soft/80 px-3 py-2 font-bold text-primary hover:bg-primary-soft focus:bg-primary-soft focus:outline-none"
 										>
 											<ShieldCheck class="h-4 w-4 shrink-0" aria-hidden="true" />
-											<span>Admin Dashboard</span>
+											<span>Admin Console</span>
 										</a>
 									{/if}
 									<a
@@ -367,8 +380,8 @@
 						{/if}
 					</div>
 
-					<div class="md:hidden">
-						<ThemeSwitcher />
+					<div class="flex items-center">
+						<ThemeSwitcher size="sm" />
 					</div>
 				</div>
 			</header>

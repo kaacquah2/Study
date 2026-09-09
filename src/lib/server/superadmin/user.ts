@@ -28,9 +28,9 @@ export interface SuperAdminStats {
 }
 
 /**
- * Ensures the requesting user has superadmin privileges.
- * Checks Firestore document `role === 'superadmin'` or `isSuperAdmin === true`
- * or Firebase Auth custom claim `superadmin === true`.
+ * Ensures the requesting user has administrator privileges.
+ * Checks Firestore document `role === 'admin' | 'superadmin'` or `isAdmin === true` / `isSuperAdmin === true`
+ * or Firebase Auth custom claim `admin === true` / `superadmin === true`.
  */
 export async function verifySuperAdmin(request: Request): Promise<AuthenticatedUser> {
 	const user = await verifySessionUser(request);
@@ -45,7 +45,12 @@ export async function verifySuperAdmin(request: Request): Promise<AuthenticatedU
 		const authHeader = request.headers.get('Authorization');
 		if (authHeader?.startsWith('Bearer ')) {
 			const decoded = await adminAuth.verifyIdToken(authHeader.substring(7));
-			if (decoded.superadmin === true || decoded.role === 'superadmin') {
+			if (
+				decoded.superadmin === true ||
+				decoded.role === 'superadmin' ||
+				decoded.admin === true ||
+				decoded.role === 'admin'
+			) {
 				isSuperAdminClaim = true;
 			}
 		}
@@ -53,17 +58,20 @@ export async function verifySuperAdmin(request: Request): Promise<AuthenticatedU
 		// Ignore token decode error if already verified by verifySessionUser
 	}
 
-	const isSuperAdminDoc = userData?.role === 'superadmin' || userData?.isSuperAdmin === true;
+	const isSuperAdminDoc =
+		userData?.role === 'superadmin' ||
+		userData?.role === 'admin' ||
+		userData?.isSuperAdmin === true ||
+		userData?.isAdmin === true;
 
 	if (!isSuperAdminClaim && !isSuperAdminDoc) {
-		// Fallback check: if user is the first admin/owner or environment override
-		const superAdminEmail = process.env.SUPERADMIN_EMAIL;
-		if (superAdminEmail && user.email?.toLowerCase() === superAdminEmail.toLowerCase()) {
-			// Super admin by environment configuration
+		// Fallback check: if user matches environment admin configuration
+		const adminEmail = process.env.ADMIN_EMAIL || process.env.SUPERADMIN_EMAIL;
+		if (adminEmail && user.email?.toLowerCase() === adminEmail.toLowerCase()) {
 			return user;
 		}
 
-		throw new Error('FORBIDDEN: Super Admin privileges required');
+		throw new Error('FORBIDDEN: Admin privileges required');
 	}
 
 	return user;
@@ -268,16 +276,17 @@ export async function updateUserAdminState(
 	};
 
 	if (updates.role !== undefined) {
+		const isNowAdmin = updates.role === 'admin' || updates.role === 'superadmin';
 		firestoreUpdates.role = updates.role;
-		firestoreUpdates.isAdmin = updates.role === 'admin' || updates.role === 'superadmin';
-		firestoreUpdates.isSuperAdmin = updates.role === 'superadmin';
+		firestoreUpdates.isAdmin = isNowAdmin;
+		firestoreUpdates.isSuperAdmin = isNowAdmin;
 
 		// Sync Firebase Auth Custom Claims
 		try {
 			await adminAuth.setCustomUserClaims(targetUid, {
 				role: updates.role,
-				admin: updates.role === 'admin' || updates.role === 'superadmin',
-				superadmin: updates.role === 'superadmin'
+				admin: isNowAdmin,
+				superadmin: isNowAdmin
 			});
 		} catch (err) {
 			console.warn(`[superadmin] Could not update custom claims for ${targetUid}:`, err);

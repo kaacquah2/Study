@@ -12,7 +12,23 @@ const config = {
 		runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
 	},
 	kit: {
-		adapter: isNodeBuild ? nodeAdapter() : netlifyAdapter()
+		adapter: isNodeBuild ? nodeAdapter() : netlifyAdapter(),
+		csp: {
+			directives: {
+				'default-src': ['self'],
+				'script-src': ['self'],
+				'style-src': ['self', 'unsafe-inline', 'https://fonts.googleapis.com'],
+				'font-src': ['self', 'https://fonts.gstatic.com'],
+				'img-src': ['self', 'data:', 'https:'],
+				'connect-src': [
+					'self',
+					'https://*.googleapis.com',
+					'https://*.firebaseio.com',
+					'wss://*.firebaseio.com'
+				]
+			},
+			mode: 'auto'
+		}
 	}
 };
 

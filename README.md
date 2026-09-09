@@ -21,6 +21,8 @@ Developed as a Final Year Project for the Department of Computer Science at **Kw
 
 ## 📚 Academic & Architectural Documentation
 
+- 📊 **[PowerPoint Defense Presentation (`Study_AI_Defense_Presentation.pptx`)](Study_AI_Defense_Presentation.pptx):** 16:9 widescreen presentation deck covering the app, core features, educational problem, what makes it different, and empirical defense results.
+- 🎤 **[Defense Master Guide (`docs/DEFENSE_PRESENTATION_GUIDE.md`)](docs/DEFENSE_PRESENTATION_GUIDE.md):** Slide-by-slide presenter scripts, Ronald & Yoofi speaking divisions, and top 10 tough examiner defense Q&A.
 - 🏛️ **[System Architecture Document (`docs/ARCHITECTURE.md`)](docs/ARCHITECTURE.md):** Learning Intelligence Engine pipeline, `LearningEvent` schema, heuristic mastery formula derivation, adaptation rules, and multi-model registry.
 - 🔬 **[Evaluation Framework (`docs/EVALUATION.md`)](docs/EVALUATION.md):** RAG retrieval precision, answer groundedness, hallucination mitigation, and quiz generation quality rubrics.
 - ⚡ **[Performance Benchmarks (`docs/BENCHMARKS.md`)](docs/BENCHMARKS.md):** End-to-end latency benchmarks across cloud and local inference tiers, memory profiles, and caching ratios.

@@ -99,6 +99,11 @@ service cloud.firestore {
       allow read: if signedIn() && (resource.data.status == 'approved' || resource.data.submittedBy == request.auth.uid);
       allow write: if false;
     }
+
+    // Server-only moderation log — Admin SDK writes only
+    match /moderationFlags/{docId} {
+      allow read, write: if false;
+    }
   }
 }
 

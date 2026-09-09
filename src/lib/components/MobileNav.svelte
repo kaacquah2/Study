@@ -2,6 +2,7 @@
 	import type { Component } from 'svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { chatStore } from '$lib/stores/chat.svelte';
+	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 	import {
 		X,
 		Sparkles,
@@ -103,17 +104,24 @@
 				</nav>
 			</div>
 
-			<button
-				type="button"
-				onclick={() => {
-					onCloseMenu();
-					authStore.logout();
-				}}
-				class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-danger-soft py-3 text-xs font-bold text-danger"
-			>
-				<LogOut class="h-4 w-4" aria-hidden="true" />
-				<span>Log out</span>
-			</button>
+			<div class="flex flex-col gap-3 border-t border-border/60 pt-4">
+				<div class="flex items-center justify-between">
+					<span class="text-xs font-bold text-text-muted">Theme</span>
+					<ThemeSwitcher />
+				</div>
+
+				<button
+					type="button"
+					onclick={() => {
+						onCloseMenu();
+						authStore.logout();
+					}}
+					class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-danger-soft py-3 text-xs font-bold text-danger transition-colors hover:bg-danger/15 active:scale-95"
+				>
+					<LogOut class="h-4 w-4" aria-hidden="true" />
+					<span>Log out</span>
+				</button>
+			</div>
 		</div>
 	</div>
 {/if}

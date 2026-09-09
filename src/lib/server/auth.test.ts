@@ -242,6 +242,7 @@ describe('verifySessionUser Unit Tests', () => {
 			displayName: 'New User',
 			photoURL: 'https://example.com/pic.png',
 			theme: 'light',
+			role: 'student',
 			isBanned: false,
 			streak: {
 				current: 0,

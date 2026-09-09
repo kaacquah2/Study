@@ -7,5 +7,6 @@
 			"root": "ml_backend",
 			"extraPaths": [".", "fine_tuning", "../.venv/Lib/site-packages"]
 		}
-	]
+	],
+	"reportMissingTypeStubs": false
 }

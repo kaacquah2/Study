@@ -8,8 +8,20 @@
 		<link rel="apple-touch-icon" href="/icon-192.png" />
 		<script>
 			try {
-				var t = localStorage.getItem('study_buddy_theme') || 'dark';
-				document.documentElement.classList.add(t === 'dark' ? 'dark' : 'light');
+				var saved = localStorage.getItem('theme') || localStorage.getItem('study_buddy_theme');
+				var t =
+					saved === 'light' || saved === 'dark'
+						? saved
+						: window.matchMedia('(prefers-color-scheme: dark)').matches
+							? 'dark'
+							: 'light';
+				if (t === 'dark') {
+					document.documentElement.classList.add('dark');
+					document.documentElement.classList.remove('light');
+				} else {
+					document.documentElement.classList.remove('dark');
+					document.documentElement.classList.add('light');
+				}
 				document.documentElement.setAttribute('data-theme', t);
 			} catch (e) {}
 		</script>

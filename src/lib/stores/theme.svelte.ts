@@ -4,19 +4,24 @@ import { doc, updateDoc } from 'firebase/firestore';
 
 export type Theme = 'light' | 'dark';
 
-class ThemeStore {
+export class ThemeStore {
 	current = $state<Theme>('light');
 
 	constructor() {
 		if (browser) {
-			const saved = localStorage.getItem('theme');
+			const saved =
+				typeof localStorage !== 'undefined'
+					? localStorage.getItem('theme') || localStorage.getItem('study_buddy_theme')
+					: null;
 			if (saved === 'light' || saved === 'dark') {
 				this.current = saved;
 			} else if (saved === 'focus') {
 				this.current = 'dark';
-			} else {
+			} else if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
 				const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 				this.current = systemPrefersDark ? 'dark' : 'light';
+			} else {
+				this.current = 'light';
 			}
 			this.applyTheme(this.current);
 		}
@@ -25,7 +30,9 @@ class ThemeStore {
 	async setTheme(theme: Theme) {
 		this.current = theme;
 		if (browser) {
-			localStorage.setItem('theme', theme);
+			if (typeof localStorage !== 'undefined') {
+				localStorage.setItem('theme', theme);
+			}
 			this.applyTheme(theme);
 
 			// If authenticated, sync with Firestore profile
@@ -40,9 +47,16 @@ class ThemeStore {
 		}
 	}
 
-	private applyTheme(theme: Theme) {
-		if (browser) {
+	public applyTheme(theme: Theme) {
+		if (browser && typeof document !== 'undefined' && document.documentElement) {
 			document.documentElement.setAttribute('data-theme', theme);
+			if (theme === 'dark') {
+				document.documentElement.classList.add('dark');
+				document.documentElement.classList.remove('light');
+			} else {
+				document.documentElement.classList.remove('dark');
+				document.documentElement.classList.add('light');
+			}
 		}
 	}
 }

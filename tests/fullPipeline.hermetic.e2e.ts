@@ -8,10 +8,29 @@ import { test, expect } from '@playwright/test';
  * flow through the real SvelteKit server, verify ID tokens via Firebase Admin SDK,
  * execute Firestore transactions, and perform genuine state mutations.
  */
+async function checkEmulatorAvailable(host: string, port: number): Promise<boolean> {
+	try {
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 1000);
+		await fetch(`http://${host}:${port}`, { signal: controller.signal });
+		clearTimeout(timeout);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 test.describe('Hermetic Production Flow: Auth -> Course Generation -> Persistence -> Quiz Completion', () => {
 	test('unmocked production pipeline: authenticate, create course, verify Firestore persistence, and complete module', async ({
 		page
 	}) => {
+		const authRunning = await checkEmulatorAvailable('127.0.0.1', 9099);
+		const firestoreRunning = await checkEmulatorAvailable('127.0.0.1', 8085);
+		test.skip(
+			!authRunning || !firestoreRunning,
+			'Firebase emulators (Auth :9099, Firestore :8085) are not running. Run emulators to execute unmocked hermetic tests.'
+		);
+
 		const testEmail = `hermetic_user_${Date.now()}@example.com`;
 		const testPassword = 'Password123!';
 

@@ -25,6 +25,8 @@ import os
 import uuid
 import json
 import secrets
+import hmac
+import hashlib
 import asyncio
 import logging
 import random
@@ -42,6 +44,7 @@ from dotenv import load_dotenv
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from cachetools import TTLCache  # type: ignore[import-untyped]
 
 # Load environment variables before importing model packages
 load_dotenv()
@@ -356,8 +359,6 @@ app.add_middleware(
 # ── Auth dependency ────────────────────────────────────────────────────────────
 
 _ML_SECRET = os.getenv("ML_BACKEND_SECRET", "")
-from cachetools import TTLCache  # already in requirements via cache.py
-
 _NONCE_TTL = 300  # 5 minutes window (seconds)
 
 # Fallback in-memory nonce store: bounded to prevent flood-based memory exhaustion.
@@ -421,7 +422,6 @@ async def verify_api_key(request: Request) -> None:
         except ValueError:
             raise HTTPException(status_code=401, detail="Invalid HMAC timestamp.")
 
-        import time
         now = time.time()
         if abs(now - ts) > _NONCE_TTL:
             raise HTTPException(status_code=401, detail="HMAC request signature timestamp expired.")
@@ -432,7 +432,6 @@ async def verify_api_key(request: Request) -> None:
         body_bytes = await request.body()
         body_str = body_bytes.decode("utf-8") if body_bytes else "{}"
         message = f"{ts_str}.{nonce}.{body_str}"
-        import hmac, hashlib
         expected_sig = hmac.new(_ML_SECRET.encode("utf-8"), message.encode("utf-8"), hashlib.sha256).hexdigest()
 
         if not hmac.compare_digest(sig, expected_sig):
@@ -518,7 +517,7 @@ async def health_readiness():
         "eager_warmup": _EAGER_WARMUP,
     }
     if errors:
-        payload["errors"] = errors
+        payload["has_errors"] = True
 
     status_code = 200 if is_ready else 503
     return JSONResponse(status_code=status_code, content=payload)
@@ -863,7 +862,7 @@ async def chat(body: ChatRequest, request: Request, response: Response):
         raise HTTPException(status_code=504, detail="Inference request timed out.")
     except RuntimeError as e:
         logger.warning(f"Chat model not ready: {e}")
-        raise HTTPException(status_code=503, detail=str(e))
+        raise HTTPException(status_code=503, detail="Chat service temporarily unavailable.")
     except Exception as e:
         _MODEL_STATUS["chat_assistant"] = f"error: {str(e)}"
         raise _handle_500_error(request, "Chat", e)

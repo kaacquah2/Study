@@ -112,7 +112,11 @@ export const POST: RequestHandler = async ({ request }) => {
 		);
 	} catch (err: unknown) {
 		const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-		if (errorMessage.includes('UNAUTHORIZED') || errorMessage.includes('Session expired')) {
+		if (
+			errorMessage.toLowerCase().includes('unauthorized') ||
+			errorMessage.toLowerCase().includes('session expired') ||
+			errorMessage.toLowerCase().includes('invalid id token')
+		) {
 			return json(
 				{ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
 				{ status: 401 }
@@ -127,13 +131,16 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 };
 
-export const GET: RequestHandler = async ({ request }) => {
+export const GET: RequestHandler = async ({ request, url }) => {
 	const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 	try {
 		const user = await verifySessionUser(request);
+		const limitParam = Number(url.searchParams.get('limit') || '100');
+		const limitCount = Math.min(Math.max(Number.isFinite(limitParam) ? limitParam : 100, 10), 300);
+
 		const profile = await getUserLearningProfile(user.uid);
-		const recentEvents = await getRecentUserLearningEvents(user.uid, 20);
+		const recentEvents = await getRecentUserLearningEvents(user.uid, limitCount);
 
 		return json(
 			{
@@ -145,7 +152,11 @@ export const GET: RequestHandler = async ({ request }) => {
 		);
 	} catch (err: unknown) {
 		const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-		if (errorMessage.includes('UNAUTHORIZED') || errorMessage.includes('Session expired')) {
+		if (
+			errorMessage.toLowerCase().includes('unauthorized') ||
+			errorMessage.toLowerCase().includes('session expired') ||
+			errorMessage.toLowerCase().includes('invalid id token')
+		) {
 			return json(
 				{ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
 				{ status: 401 }

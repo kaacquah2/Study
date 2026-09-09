@@ -143,6 +143,13 @@ export async function verifySessionUser(request: Request): Promise<Authenticated
 			const userDocRef = adminDb.collection('users').doc(uid);
 			const userDoc = await userDocRef.get();
 
+			const adminEmail = process.env.ADMIN_EMAIL || process.env.SUPERADMIN_EMAIL;
+			const isSuperAdminEnv = Boolean(
+				adminEmail &&
+				decodedToken.email &&
+				decodedToken.email.toLowerCase() === adminEmail.toLowerCase()
+			);
+
 			if (!userDoc.exists) {
 				const clientTzHeader = request.headers.get('X-Client-Timezone');
 				const clientThemeHeader = request.headers.get('X-Client-Theme');
@@ -153,12 +160,13 @@ export async function verifySessionUser(request: Request): Promise<Authenticated
 						? clientThemeHeader
 						: 'light';
 
-				await userDocRef.set({
+				const initialProfile: Record<string, unknown> = {
 					uid,
 					email: decodedToken.email || '',
 					displayName: decodedToken.name || null,
 					photoURL: decodedToken.picture || null,
 					theme: theme,
+					role: isSuperAdminEnv ? 'admin' : 'student',
 					isBanned: false,
 					streak: {
 						current: 0,
@@ -169,10 +177,50 @@ export async function verifySessionUser(request: Request): Promise<Authenticated
 						lastFreezeRefill: null
 					},
 					createdAt: FieldValue.serverTimestamp()
-				});
+				};
+
+				if (isSuperAdminEnv) {
+					initialProfile.isAdmin = true;
+					initialProfile.isSuperAdmin = true;
+				}
+
+				await userDocRef.set(initialProfile);
+
+				if (isSuperAdminEnv) {
+					try {
+						await adminAuth.setCustomUserClaims(uid, {
+							role: 'admin',
+							admin: true,
+							superadmin: true
+						});
+					} catch (claimsErr) {
+						console.warn('[auth] Could not set custom claims for admin:', claimsErr);
+					}
+				}
+
 				userCacheData = { exists: true, isBanned: false };
 			} else {
 				const userData = userDoc.data();
+
+				// If user matches ADMIN_EMAIL but isn't marked as admin in Firestore, promote automatically
+				if (isSuperAdminEnv && (userData?.role !== 'admin' || !userData?.isAdmin)) {
+					await userDocRef.update({
+						role: 'admin',
+						isAdmin: true,
+						isSuperAdmin: true,
+						updatedAt: FieldValue.serverTimestamp()
+					});
+					try {
+						await adminAuth.setCustomUserClaims(uid, {
+							role: 'admin',
+							admin: true,
+							superadmin: true
+						});
+					} catch (claimsErr) {
+						console.warn('[auth] Could not set custom claims for admin:', claimsErr);
+					}
+				}
+
 				userCacheData = {
 					exists: true,
 					isBanned: userData?.isBanned === true,

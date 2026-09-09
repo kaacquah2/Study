@@ -10,14 +10,19 @@ export const GET: RequestHandler = async ({ request, url }) => {
 		const user = await verifySessionUser(request);
 		const moduleId = url.searchParams.get('moduleId') || undefined;
 		const resolvedParam = url.searchParams.get('resolved');
-		const resolved = resolvedParam !== null ? resolvedParam === 'true' : false;
+		const resolved =
+			resolvedParam !== null && resolvedParam !== '' ? resolvedParam === 'true' : undefined;
 
 		const mistakes = await getUserMistakes(user.uid, { moduleId, resolved, limit: 100 });
 
 		return json({ mistakes, requestId }, { headers: { 'X-Request-Id': requestId } });
 	} catch (err: unknown) {
 		const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-		if (errorMessage.includes('UNAUTHORIZED') || errorMessage.includes('Session expired')) {
+		if (
+			errorMessage.toLowerCase().includes('unauthorized') ||
+			errorMessage.toLowerCase().includes('session expired') ||
+			errorMessage.toLowerCase().includes('invalid id token')
+		) {
 			return json(
 				{ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
 				{ status: 401 }
@@ -52,7 +57,11 @@ export const PATCH: RequestHandler = async ({ request }) => {
 		return json({ success: true, requestId }, { headers: { 'X-Request-Id': requestId } });
 	} catch (err: unknown) {
 		const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-		if (errorMessage.includes('UNAUTHORIZED') || errorMessage.includes('Session expired')) {
+		if (
+			errorMessage.toLowerCase().includes('unauthorized') ||
+			errorMessage.toLowerCase().includes('session expired') ||
+			errorMessage.toLowerCase().includes('invalid id token')
+		) {
 			return json(
 				{ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
 				{ status: 401 }

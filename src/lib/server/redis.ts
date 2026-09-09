@@ -121,3 +121,13 @@ export async function redisDel(key: string): Promise<boolean> {
 export async function redisPublish(channel: string, message: string): Promise<number | null> {
 	return await redisCommand<number>(['PUBLISH', channel, message]);
 }
+
+export async function redisPing(): Promise<boolean> {
+	if (!isRedisConfigured()) return false;
+	try {
+		const res = await redisCommand<string>(['PING']);
+		return res === 'PONG';
+	} catch {
+		return false;
+	}
+}

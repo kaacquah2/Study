@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { auth } from '$lib/firebase/client';
 	import {
 		signInWithEmailAndPassword,
 		createUserWithEmailAndPassword,
 		signInWithPopup,
+		signInWithRedirect,
+		getRedirectResult,
 		GoogleAuthProvider,
 		sendPasswordResetEmail
 	} from 'firebase/auth';
@@ -76,6 +79,8 @@
 				return 'The Google sign-in popup was blocked by your browser. Please allow popups.';
 			case 'auth/network-request-failed':
 				return 'Network connection error. Unable to reach authentication servers.';
+			case 'auth/internal-error':
+				return 'Authentication failed due to an internal browser or network error. If using an ad blocker, Brave Shields, or privacy extension, please pause it for localhost, or ensure third-party cookies are allowed.';
 			default:
 				return code
 					? `Authentication failed (${code}). Please check your settings.`
@@ -110,20 +115,54 @@
 		}
 	};
 
+	onMount(async () => {
+		try {
+			const result = await getRedirectResult(auth);
+			if (result?.user) {
+				successMessage = 'Signed in successfully.';
+			}
+		} catch (err) {
+			console.error('Redirect Auth Error:', err);
+			const code = (err as { code?: string }).code || '';
+			if (code) {
+				authError = getFriendlyAuthError(code);
+			}
+		}
+	});
+
 	const handleGoogleSignIn = async () => {
 		if (loading) return;
 		loading = true;
 		authError = '';
 		successMessage = '';
 
+		const provider = new GoogleAuthProvider();
+		provider.setCustomParameters({ prompt: 'select_account' });
+
 		try {
-			const provider = new GoogleAuthProvider();
-			provider.setCustomParameters({ prompt: 'select_account' });
 			await signInWithPopup(auth, provider);
-		} catch (err) {
-			console.error('Google Auth Error:', err);
+		} catch (err: unknown) {
 			const code = (err as { code?: string }).code || '';
-			if (code !== 'auth/popup-closed-by-user') {
+			if (code === 'auth/popup-closed-by-user') {
+				loading = false;
+				return;
+			}
+
+			// In privacy-oriented browsers (Brave, Safari, or Chrome with third-party cookie restrictions),
+			// cross-origin iframe storage checks fail with 'auth/internal-error' or 'auth/popup-blocked'.
+			// Automatically fallback to seamless full-page redirect authentication!
+			if (code === 'auth/internal-error' || code === 'auth/popup-blocked') {
+				console.warn(`Popup auth unavailable (${code}). Falling back to signInWithRedirect...`);
+				try {
+					await signInWithRedirect(auth, provider);
+					return;
+				} catch (redirectErr) {
+					console.error('Google Redirect Error:', redirectErr);
+					const rCode = (redirectErr as { code?: string }).code || '';
+					authError = getFriendlyAuthError(rCode);
+				}
+			} else {
+				console.error('Google Auth Error:', err);
 				authError = getFriendlyAuthError(code);
 			}
 		} finally {

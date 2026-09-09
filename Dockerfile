@@ -24,8 +24,8 @@ ENV PORT=5173
 ENV HOST=0.0.0.0
 
 COPY --from=builder /app/package*.json ./
+RUN npm ci --omit=dev
 COPY --from=builder /app/build ./build
-COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 5173
 

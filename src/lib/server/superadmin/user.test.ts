@@ -46,7 +46,7 @@ describe('verifySuperAdmin Security Check', () => {
 		expect(result.uid).toBe('super_1');
 	});
 
-	it('should REJECT user with isAdmin === true (privilege escalation check)', async () => {
+	it('should ALLOW user with role === "admin" / isAdmin === true (merged admin privileges)', async () => {
 		const fakeAdmin = { uid: 'admin_1', email: 'admin@example.com' };
 		vi.mocked(authModule.verifySessionUser).mockResolvedValue(fakeAdmin);
 
@@ -59,9 +59,8 @@ describe('verifySuperAdmin Security Check', () => {
 		} as unknown as ReturnType<typeof adminModule.adminDb.collection>);
 
 		const req = new Request('http://localhost/api/superadmin/users');
-		await expect(verifySuperAdmin(req)).rejects.toThrow(
-			'FORBIDDEN: Super Admin privileges required'
-		);
+		const result = await verifySuperAdmin(req);
+		expect(result.uid).toBe('admin_1');
 	});
 
 	it('should REJECT standard user with role === "user"', async () => {
@@ -78,7 +77,7 @@ describe('verifySuperAdmin Security Check', () => {
 
 		const req = new Request('http://localhost/api/superadmin/users');
 		await expect(verifySuperAdmin(req)).rejects.toThrow(
-			'FORBIDDEN: Super Admin privileges required'
+			'FORBIDDEN: Admin privileges required'
 		);
 	});
 });

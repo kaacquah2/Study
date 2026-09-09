@@ -2,21 +2,7 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import ThemeSwitcher from './ThemeSwitcher.svelte';
 	import StreakChip from './StreakChip.svelte';
-
-	let initials = $derived.by(() => {
-		if (authStore.user?.displayName) {
-			return authStore.user.displayName
-				.split(' ')
-				.map((n) => n[0])
-				.join('')
-				.toUpperCase()
-				.slice(0, 2);
-		}
-		if (authStore.user?.email) {
-			return authStore.user.email.slice(0, 2).toUpperCase();
-		}
-		return '??';
-	});
+	import Avatar from './Avatar.svelte';
 </script>
 
 <header
@@ -60,20 +46,11 @@
 		{#if authStore.user}
 			<StreakChip />
 
-			{#if authStore.user.photoURL}
-				<img
-					src={authStore.user.photoURL}
-					alt={authStore.user.displayName || 'User'}
-					loading="lazy"
-					class="h-8 w-8 rounded-full border border-border object-cover"
-				/>
-			{:else}
-				<div
-					class="flex h-8 w-8 items-center justify-center rounded-full border border-primary/10 bg-primary-soft text-xs font-bold text-text shadow-sm select-none"
-				>
-					{initials}
-				</div>
-			{/if}
+			<Avatar
+				src={authStore.user.photoURL}
+				name={authStore.user.displayName || authStore.user.email}
+				size="md"
+			/>
 
 			<button
 				type="button"

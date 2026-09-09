@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { adminDb } from '$lib/server/admin';
-import { isRedisConfigured } from '$lib/server/redis';
+import { isRedisConfigured, redisPing } from '$lib/server/redis';
 import { validateMLBackendConnection } from '$lib/server/ai/client';
 
 const VERSION = '1.0.0';
@@ -32,16 +32,8 @@ async function readinessResponse() {
 
 	// 2. Redis connectivity (optional dependency — degraded if not configured)
 	if (isRedisConfigured()) {
-		// Upstash REST API ping: issue a PING command and check response
 		const redisCheck = await Promise.race([
-			fetch((process.env.UPSTASH_REDIS_REST_URL || process.env.REDIS_URL || '') + '/ping', {
-				method: 'GET',
-				headers: {
-					Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN || process.env.REDIS_TOKEN || ''}`
-				}
-			})
-				.then((r) => (r.ok ? ('ok' as const) : ('down' as const)))
-				.catch(() => 'down' as const),
+			redisPing().then((ok) => (ok ? ('ok' as const) : ('down' as const))),
 			new Promise<'down'>((resolve) => setTimeout(() => resolve('down'), 2000))
 		]);
 		checks.redis = redisCheck;

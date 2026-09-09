@@ -4,19 +4,7 @@
 	import { page } from '$app/state';
 	import HeroPanel from '$lib/components/HeroPanel.svelte';
 	import AuthForm from '$lib/components/AuthForm.svelte';
-
-	// Track whether the avatar image failed to load
-	let avatarBroken = $state(false);
-	$effect(() => {
-		// Reset when user changes (e.g. after sign-out / sign-in)
-		if (authStore.user?.photoURL) avatarBroken = false;
-	});
-
-	let userInitials = $derived.by(() => {
-		const name = authStore.user?.displayName;
-		if (name) return name.slice(0, 2).toUpperCase();
-		return authStore.user?.email?.slice(0, 2).toUpperCase() ?? '??';
-	});
+	import Avatar from '$lib/components/Avatar.svelte';
 
 	// If already logged in and explicit redirect param exists, redirect immediately
 	$effect(() => {
@@ -83,19 +71,16 @@
 					<!-- Avatar -->
 					<div class="relative mb-4 inline-block">
 						<div
-							class="mx-auto flex h-15 w-15 items-center justify-center rounded-full text-sm font-bold text-primary"
-							style="background: var(--primary-soft); border: 2px solid var(--border-strong); box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--border);"
+							class="mx-auto flex h-15 w-15 items-center justify-center rounded-full"
+							style="border: 2px solid var(--border-strong); box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--border);"
 						>
-							{#if authStore.user.photoURL && !avatarBroken}
-								<img
-									src={authStore.user.photoURL}
-									alt={authStore.user.displayName || 'Profile photo'}
-									class="h-15 w-15 rounded-full object-cover"
-									onerror={() => (avatarBroken = true)}
-								/>
-							{:else}
-								{userInitials}
-							{/if}
+							<Avatar
+								src={authStore.user.photoURL}
+								name={authStore.user.displayName || authStore.user.email}
+								size="custom"
+								class="h-full w-full text-sm font-bold"
+								border={false}
+							/>
 						</div>
 						<!-- Online indicator -->
 						<span

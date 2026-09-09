@@ -408,7 +408,8 @@
 	</section>
 
 	<!-- Quick Action Learning Grid -->
-	<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+	<!-- Quick Action Learning Grid -->
+	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 		<!-- 1. Practice & Recall -->
 		<a
 			href="/app/review"
@@ -433,7 +434,29 @@
 			>
 		</a>
 
-		<!-- 2. Knowledge Map -->
+		<!-- 2. Performance & Analytics -->
+		<a
+			href="/app/progress"
+			class="group flex items-center justify-between rounded-2xl border border-border bg-surface p-4.5 shadow-2xs transition-all duration-180 hover:border-emerald-500/40 hover:bg-surface-muted/50"
+		>
+			<div class="flex items-center gap-3.5">
+				<div
+					class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-lg text-emerald-500"
+				>
+					📊
+				</div>
+				<div>
+					<h4 class="font-display text-xs font-bold text-text group-hover:text-emerald-500">
+						My Progress
+					</h4>
+					<p class="text-[11px] text-text-muted">Strengths & weak areas</p>
+				</div>
+			</div>
+			<span class="text-xs text-text-muted transition-transform group-hover:translate-x-0.5">→</span
+			>
+		</a>
+
+		<!-- 3. Knowledge Map -->
 		<a
 			href="/app/knowledge-map"
 			class="group flex items-center justify-between rounded-2xl border border-border bg-surface p-4.5 shadow-2xs transition-all duration-180 hover:border-primary/40 hover:bg-surface-muted/50"
@@ -455,7 +478,7 @@
 			>
 		</a>
 
-		<!-- 3. AI Study Tutor -->
+		<!-- 4. AI Study Tutor -->
 		<button
 			type="button"
 			onclick={() => chatStore.toggle()}

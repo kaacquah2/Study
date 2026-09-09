@@ -11,7 +11,7 @@ export interface UserProfile {
 	displayName: string | null;
 	photoURL: string | null;
 	theme: Theme;
-	role?: 'user' | 'admin' | 'superadmin';
+	role?: 'student' | 'user' | 'instructor' | 'admin' | 'superadmin';
 	isAdmin?: boolean;
 	isSuperAdmin?: boolean;
 	isBanned?: boolean;
@@ -34,6 +34,23 @@ export class AuthStore {
 	authResolved = $state<boolean>(false);
 	timedOut = $state<boolean>(false);
 
+	get isAdmin(): boolean {
+		return (
+			this.profile?.isAdmin === true ||
+			this.profile?.isSuperAdmin === true ||
+			this.profile?.role === 'admin' ||
+			this.profile?.role === 'superadmin'
+		);
+	}
+
+	get isSuperAdmin(): boolean {
+		return this.profile?.isSuperAdmin === true || this.profile?.role === 'superadmin';
+	}
+
+	get isStudent(): boolean {
+		return !this.isAdmin;
+	}
+
 	private unsubscribeProfile: (() => void) | null = null;
 	private timeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -47,10 +64,15 @@ export class AuthStore {
 		const hasSession = localStorage.getItem('study_buddy_has_session') === 'true';
 		const cachedProfile = localStorage.getItem('study_buddy_profile');
 
+		const isLocal =
+			import.meta.env.DEV ||
+			(browser &&
+				(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'));
+
 		if (hasSession && cachedProfile) {
 			try {
 				this.profile = JSON.parse(cachedProfile);
-				if (import.meta.env.DEV && localStorage.getItem('study_buddy_mock_auth') === 'true') {
+				if (isLocal && localStorage.getItem('study_buddy_mock_auth') === 'true') {
 					this.user = {
 						uid: this.profile?.uid || 'mock-user-1',
 						email: this.profile?.email || 'test@example.com',
@@ -113,7 +135,7 @@ export class AuthStore {
 								displayName: firebaseUser.displayName || emailHandle,
 								photoURL: firebaseUser.photoURL,
 								theme: themeStore.current,
-								role: 'user',
+								role: 'student',
 								streak: { current: 0, longest: 0, lastStudiedOn: null, timezone: 'UTC' }
 							} as UserProfile;
 						}
@@ -123,7 +145,10 @@ export class AuthStore {
 					}
 				);
 			} else if (
-				import.meta.env.DEV &&
+				(import.meta.env.DEV ||
+					(browser &&
+						(window.location.hostname === 'localhost' ||
+							window.location.hostname === '127.0.0.1'))) &&
 				localStorage.getItem('study_buddy_mock_auth') === 'true' &&
 				this.user
 			) {

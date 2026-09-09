@@ -13,7 +13,7 @@ function getGeminiApiKey(): string {
 }
 
 function getGeminiModel(): string {
-	return env.GEMINI_MODEL || process.env.GEMINI_MODEL || 'gemini-flash-latest';
+	return env.GEMINI_MODEL || process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 }
 
 async function callGeminiApi<T>(

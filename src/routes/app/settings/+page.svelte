@@ -3,6 +3,7 @@
 	import StreakHeatmap from '$lib/components/StreakHeatmap.svelte';
 	import BadgeStrip from '$lib/components/BadgeStrip.svelte';
 	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
+	import Avatar from '$lib/components/Avatar.svelte';
 	import { apiFetch } from '$lib/api/client';
 	import { toastStore } from '$lib/stores/toast.svelte';
 
@@ -84,19 +85,13 @@
 		class="flex flex-col items-start justify-between gap-6 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:flex-row sm:items-center sm:p-8"
 	>
 		<div class="flex items-center gap-5">
-			{#if photoURL}
-				<img
-					src={photoURL}
-					alt={displayName}
-					class="h-16 w-16 rounded-2xl border-2 border-primary/20 object-cover shadow-md"
-				/>
-			{:else}
-				<div
-					class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft text-xl font-black text-primary shadow-inner"
-				>
-					{initials}
-				</div>
-			{/if}
+			<Avatar
+				src={photoURL}
+				name={displayName || email}
+				size="2xl"
+				shape="rounded"
+				class="border-2 border-primary/20 shadow-md"
+			/>
 
 			<div>
 				<h1 class="font-display text-xl font-bold text-text sm:text-2xl">{displayName}</h1>

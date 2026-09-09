@@ -12,7 +12,9 @@
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/500.css';
 
-:root {
+:root,
+[data-theme='light'],
+.light {
 	/* ── Font families ── */
 	/* Source Serif 4 for headings: editorial, institutional — nothing like an AI dashboard */
 	--font-display: 'Source Serif 4 Variable', Georgia, serif;

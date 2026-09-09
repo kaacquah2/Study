@@ -1,9 +1,12 @@
 <script lang="ts">
 	import type { Component } from 'svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import { themeStore } from '$lib/stores/theme.svelte';
 	import StreakHeatmap from '$lib/components/StreakHeatmap.svelte';
 	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
+	import Avatar from '$lib/components/Avatar.svelte';
 	import { chatStore } from '$lib/stores/chat.svelte';
+	import { page } from '$app/state';
 	import {
 		BookOpen,
 		Sparkles,
@@ -11,8 +14,8 @@
 		Flame,
 		LogOut,
 		ChevronUp,
-		Crown,
-		ShieldCheck
+		ShieldCheck,
+		GraduationCap
 	} from '@lucide/svelte';
 
 	interface Props {
@@ -23,25 +26,7 @@
 	let { currentPath, navItems }: Props = $props();
 
 	let sidebarProfileOpen = $state(false);
-
-	let userInitials = $derived.by(() => {
-		if (authStore.user?.displayName) {
-			return authStore.user.displayName
-				.split(' ')
-				.map((n) => n[0])
-				.join('')
-				.toUpperCase()
-				.slice(0, 2);
-		}
-		if (authStore.user?.email) {
-			return authStore.user.email.slice(0, 2).toUpperCase();
-		}
-		return '??';
-	});
-
-	let isSuperAdmin = $derived(
-		Boolean(authStore.profile?.role === 'superadmin' || authStore.profile?.isSuperAdmin)
-	);
+	let profileContainer: HTMLDivElement | null = $state(null);
 
 	let isAdmin = $derived(
 		Boolean(
@@ -57,39 +42,100 @@
 		'/app/knowledge-map': 'Map & Study',
 		'/app/review': 'Practice',
 		'/app/study-groups': 'Community',
-		'/app/admin': 'Administration'
+		'/app/admin': 'Administration',
+		'/app/settings': 'System'
 	};
+
+	let isItemActive = $derived((href: string) => {
+		if (currentPath.startsWith('/app/admin')) {
+			const currentTab = page.url.searchParams.get('tab') || 'overview';
+			if (href === '/app/admin') return currentTab === 'overview';
+			if (href === '/app/admin?tab=users') return currentTab === 'users' || currentTab === 'students';
+			if (href === '/app/admin?tab=system') return currentTab === 'system';
+			return currentPath === href;
+		}
+		return currentPath === href || (href !== '/app' && currentPath.startsWith(href));
+	});
 </script>
 
+<svelte:window
+	onclick={(e) => {
+		if (sidebarProfileOpen && profileContainer && !profileContainer.contains(e.target as Node)) {
+			sidebarProfileOpen = false;
+		}
+	}}
+	onkeydown={(e) => {
+		if (e.key === 'Escape' && sidebarProfileOpen) {
+			sidebarProfileOpen = false;
+		}
+	}}
+/>
+
 <aside
-	class="sticky top-0 z-30 hidden h-screen w-56 shrink-0 flex-col justify-between overflow-hidden border-r select-none md:flex xl:w-64"
+	class="sticky top-0 z-30 hidden h-screen w-60 shrink-0 flex-col justify-between border-r select-none md:flex xl:w-64"
 	style="background: var(--surface); border-color: var(--border); box-shadow: 1px 0 0 0 var(--border);"
 >
-	<!-- Fixed Top Zone -->
-	<div class="flex shrink-0 flex-col gap-4 p-4 pb-2 xl:gap-6 xl:p-5 xl:pb-3">
-		<a href="/app" class="flex items-center gap-3">
-			<div
-				class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-primary/20 shadow-md"
-			>
-				<BookOpen class="h-5 w-5" aria-hidden="true" />
-			</div>
-			<div class="min-w-0">
-				<span
-					class="block truncate font-display text-sm font-bold tracking-tight text-text xl:text-base"
-					>AI Study Buddy</span
+	<!-- Fixed Header Zone (Logo / Branding) -->
+	<div class="flex shrink-0 items-center justify-between border-b border-border/60 p-4 xl:p-5">
+		{#if currentPath.startsWith('/app/admin')}
+			<a href="/app/admin" class="flex items-center gap-3">
+				<div
+					class="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-indigo-600 to-violet-700 text-white shadow-md shadow-violet-500/20"
 				>
-				<span class="block truncate text-[10px] font-semibold text-text-muted"
-					>Interactive AI Tutor</span
+					<ShieldCheck class="h-5 w-5" aria-hidden="true" />
+				</div>
+				<div class="min-w-0">
+					<span
+						class="block truncate font-display text-sm font-bold tracking-tight text-text xl:text-base"
+						>Admin Console</span
+					>
+					<span class="block truncate text-[10px] font-semibold text-primary"
+						>System Command Center</span
+					>
+				</div>
+			</a>
+		{:else}
+			<a href="/app" class="flex items-center gap-3">
+				<div
+					class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-primary/20 shadow-md"
 				>
-			</div>
-		</a>
+					<BookOpen class="h-5 w-5" aria-hidden="true" />
+				</div>
+				<div class="min-w-0">
+					<span
+						class="block truncate font-display text-sm font-bold tracking-tight text-text xl:text-base"
+						>AI Study Buddy</span
+					>
+					<span class="block truncate text-[10px] font-semibold text-text-muted"
+						>Interactive AI Tutor</span
+					>
+				</div>
+			</a>
+		{/if}
+	</div>
 
-		<nav class="flex flex-col gap-1 xl:gap-1.5">
+	<!-- Scrollable Middle Zone (Quick action + Nav list + Heatmap) -->
+	<div
+		class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3.5 py-3 space-y-3.5 scrollbar-thin xl:px-4"
+	>
+		{#if currentPath.startsWith('/app/admin')}
+			<!-- Quick Switch to Learner Mode -->
+			<a
+				href="/app"
+				class="flex w-full items-center justify-between gap-2.5 rounded-xl border border-border bg-surface-muted/90 px-3 py-2 text-xs font-semibold text-text transition-all duration-200 hover:border-primary/40 hover:bg-primary-soft hover:text-primary xl:px-3.5 xl:py-2.5"
+			>
+				<div class="flex items-center gap-2 truncate">
+					<GraduationCap class="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+					<span class="truncate">Switch to Student View</span>
+				</div>
+				<span class="text-[11px] text-text-muted">Exit ↗</span>
+			</a>
+		{:else}
 			<!-- AI Study Tutor Prominent Quick Action -->
 			<button
 				type="button"
 				onclick={() => chatStore.toggle()}
-				class="mb-1.5 flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all duration-200 xl:px-4 xl:py-2.5"
+				class="flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all duration-200 xl:px-3.5 xl:py-2.5"
 				style="border: 1px solid var(--primary-glow); background: var(--primary-soft); color: var(--primary); box-shadow: 0 0 0 0 var(--primary-glow);"
 				onmouseenter={(e) => {
 					(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 0 3px var(--primary-glow)';
@@ -110,10 +156,13 @@
 					{chatStore.isOpen ? 'Open' : 'Chat'}
 				</span>
 			</button>
+		{/if}
 
+		<!-- Navigation Items -->
+		<nav class="flex flex-col gap-1">
 			{#each navItems as item (item.href)}
-				{#if sectionBreaks[item.href]}
-					<div class="mt-3 mb-1 flex items-center gap-2 px-3">
+				{#if sectionBreaks[item.href] && !currentPath.startsWith('/app/admin')}
+					<div class="mt-2.5 mb-1 flex items-center gap-2 px-2.5">
 						<div class="h-px flex-1" style="background: var(--border);"></div>
 						<span
 							class="text-[9px] font-bold tracking-widest uppercase"
@@ -124,13 +173,12 @@
 						<div class="h-px flex-1" style="background: var(--border);"></div>
 					</div>
 				{/if}
-				{@const active =
-					currentPath === item.href || (item.href !== '/app' && currentPath.startsWith(item.href))}
+				{@const active = isItemActive(item.href)}
 				{@const Icon = item.icon}
 				<a
 					href={item.href}
 					aria-current={active ? 'page' : undefined}
-					class="relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-150 xl:px-4 xl:py-2"
+					class="relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium transition-all duration-150 xl:px-3.5 xl:py-2"
 					style={active
 						? 'background: var(--primary-soft); color: var(--primary); font-weight: 600;'
 						: 'color: var(--text-muted);'}
@@ -149,7 +197,7 @@
 					<!-- Left accent bar for active state -->
 					{#if active}
 						<span
-							class="absolute top-1/2 left-0 h-4 w-0.75 -translate-y-1/2 rounded-full"
+							class="absolute top-1/2 left-0 h-4 w-1 -translate-y-1/2 rounded-r-full"
 							style="background: var(--primary);"
 						></span>
 					{/if}
@@ -158,42 +206,53 @@
 				</a>
 			{/each}
 		</nav>
+
+		<!-- Heatmap or Admin Info Card -->
+		<div class="pt-1">
+			{#if currentPath.startsWith('/app/admin')}
+				<div class="rounded-xl border border-border/70 bg-surface-muted/60 p-3 text-center">
+					<div class="mb-1 flex items-center justify-center text-primary">
+						<ShieldCheck class="h-5 w-5" />
+					</div>
+					<div class="text-[11px] font-bold text-text">Root Platform Access</div>
+					<div class="mt-0.5 text-[10px] text-text-muted">Full administrative privileges active.</div>
+				</div>
+			{:else}
+				<StreakHeatmap />
+			{/if}
+		</div>
 	</div>
 
-	<!-- Scrollable Middle Zone -->
-	<div class="min-h-0 flex-1 scrollbar-thin overflow-y-auto px-5 py-2">
-		<StreakHeatmap />
-	</div>
-
-	<!-- Fixed Bottom Zone -->
-	<div class="relative flex shrink-0 flex-col gap-2.5 border-t border-border/80 p-4 pt-3">
-		<div class="flex items-center justify-between px-2 text-xs font-bold text-text-muted">
-			<span>Theme</span>
-			<ThemeSwitcher />
+	<!-- Fixed Bottom Zone (Theme Switcher + Profile Menu) - Always Visible -->
+	<div
+		bind:this={profileContainer}
+		class="relative flex shrink-0 flex-col gap-2.5 border-t border-border/80 bg-surface p-3 xl:p-3.5"
+	>
+		<!-- Full-width Theme Switcher Row -->
+		<div class="flex flex-col gap-1.5 px-0.5">
+			<div
+				class="flex items-center justify-between text-[10px] font-bold tracking-wider uppercase text-text-muted"
+			>
+				<span>Theme</span>
+				<span class="font-medium text-text-subtle capitalize">{themeStore.current} Mode</span>
+			</div>
+			<ThemeSwitcher fullWidth={true} />
 		</div>
 
-		<div class="relative">
+		<!-- User Profile Section -->
+		<div class="relative border-t border-border/60 pt-1.5">
 			{#if sidebarProfileOpen}
 				<div
 					role="menu"
 					aria-label="User profile options"
-					class="absolute bottom-full left-0 z-50 mb-3 flex w-full flex-col gap-3 rounded-2xl border border-border bg-surface p-3 shadow-2xl transition-all duration-180"
+					class="absolute bottom-full left-0 z-50 mb-2.5 flex w-full flex-col gap-3 rounded-2xl border border-border bg-surface p-3 shadow-2xl transition-all duration-180"
 				>
 					<div class="flex items-center gap-3 border-b border-border/60 pb-3">
-						{#if authStore.user?.photoURL}
-							<img
-								src={authStore.user.photoURL}
-								alt={authStore.user.displayName || 'User profile picture'}
-								class="h-9 w-9 rounded-full border border-border object-cover"
-							/>
-						{:else}
-							<div
-								class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary"
-								aria-hidden="true"
-							>
-								{userInitials}
-							</div>
-						{/if}
+						<Avatar
+							src={authStore.user?.photoURL}
+							name={authStore.user?.displayName || authStore.profile?.displayName || authStore.user?.email}
+							size="lg"
+						/>
 						<div class="min-w-0 truncate">
 							<span class="block truncate text-xs font-bold text-text">
 								{authStore.user?.displayName || authStore.profile?.displayName || 'Student'}
@@ -228,27 +287,15 @@
 							{/if}
 						</a>
 
-						{#if isSuperAdmin}
-							<a
-								href="/superadmin"
-								role="menuitem"
-								onclick={() => (sidebarProfileOpen = false)}
-								class="flex items-center gap-2.5 rounded-xl bg-violet-500/10 px-3 py-2 font-bold text-violet-500 transition-colors hover:bg-violet-500/20"
-							>
-								<Crown class="h-4 w-4 shrink-0" aria-hidden="true" />
-								<span>Super Admin Console</span>
-							</a>
-						{/if}
-
 						{#if isAdmin}
 							<a
 								href="/app/admin"
 								role="menuitem"
 								onclick={() => (sidebarProfileOpen = false)}
-								class="flex items-center gap-2.5 rounded-xl bg-primary-soft/60 px-3 py-2 font-bold text-primary transition-colors hover:bg-primary-soft"
+								class="flex items-center gap-2.5 rounded-xl bg-primary-soft/80 px-3 py-2 font-bold text-primary transition-colors hover:bg-primary-soft"
 							>
 								<ShieldCheck class="h-4 w-4 shrink-0" aria-hidden="true" />
-								<span>Admin Dashboard</span>
+								<span>Admin Console</span>
 							</a>
 						{/if}
 					</div>
@@ -277,20 +324,11 @@
 				class="group flex w-full cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-transparent px-2 py-1.5 text-left transition-all duration-180 hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98]"
 			>
 				<div class="flex items-center gap-2.5 overflow-hidden">
-					{#if authStore.user?.photoURL}
-						<img
-							src={authStore.user.photoURL}
-							alt={authStore.user.displayName || 'User profile picture'}
-							class="h-8 w-8 rounded-full border border-border object-cover"
-						/>
-					{:else}
-						<div
-							class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary"
-							aria-hidden="true"
-						>
-							{userInitials}
-						</div>
-					{/if}
+					<Avatar
+						src={authStore.user?.photoURL}
+						name={authStore.user?.displayName || authStore.user?.email}
+						size="md"
+					/>
 					<div class="min-w-0 truncate">
 						<span
 							class="block truncate text-xs font-bold text-text transition-colors group-hover:text-primary"

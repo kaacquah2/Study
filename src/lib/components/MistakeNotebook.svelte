@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import { apiFetch } from '$lib/api/client';
+	import { authStore } from '$lib/stores/auth.svelte';
 	import { toastStore } from '$lib/stores/toast.svelte';
-	import { AlertCircle, CheckCircle2, Sparkles, Check } from '@lucide/svelte';
+	import { AlertCircle, CheckCircle2, Sparkles, Check, RefreshCw } from '@lucide/svelte';
 	import type { MistakeRecord } from '$lib/server/analytics/mistakeRecords';
 
 	interface Props {
@@ -22,6 +22,13 @@
 	let isAnswerChecked = $state(false);
 
 	const fetchMistakes = async () => {
+		if (authStore.loading) return;
+		if (!authStore.user) {
+			loading = false;
+			mistakes = [];
+			return;
+		}
+
 		loading = true;
 		error = '';
 		try {
@@ -33,7 +40,7 @@
 			const endpoint = `/api/analytics/mistakes${query.toString() ? `?${query.toString()}` : ''}`;
 
 			const { data } = await apiFetch<{ mistakes?: MistakeRecord[] }>(endpoint);
-			mistakes = data.mistakes || [];
+			mistakes = data?.mistakes || [];
 		} catch (e: unknown) {
 			const err = e as Error;
 			error = err.message || 'Failed to load mistake notebook';
@@ -42,8 +49,16 @@
 		}
 	};
 
-	onMount(() => {
-		fetchMistakes();
+	$effect(() => {
+		if (authStore.authResolved && authStore.user) {
+			// Track reactive dependencies
+			void selectedFilter;
+			void moduleId;
+			fetchMistakes();
+		} else if (authStore.authResolved && !authStore.user) {
+			loading = false;
+			mistakes = [];
+		}
 	});
 
 	const handleResolve = async (questionId: string) => {
@@ -130,7 +145,6 @@
 					aria-selected={selectedFilter === 'unresolved'}
 					onclick={() => {
 						selectedFilter = 'unresolved';
-						fetchMistakes();
 					}}
 					class="cursor-pointer rounded-md px-2.5 py-1 font-medium transition-colors {selectedFilter ===
 					'unresolved'
@@ -145,7 +159,6 @@
 					aria-selected={selectedFilter === 'resolved'}
 					onclick={() => {
 						selectedFilter = 'resolved';
-						fetchMistakes();
 					}}
 					class="cursor-pointer rounded-md px-2.5 py-1 font-medium transition-colors {selectedFilter ===
 					'resolved'
@@ -153,6 +166,20 @@
 						: 'text-muted-foreground hover:text-foreground'}"
 				>
 					Resolved
+				</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={selectedFilter === 'all'}
+					onclick={() => {
+						selectedFilter = 'all';
+					}}
+					class="cursor-pointer rounded-md px-2.5 py-1 font-medium transition-colors {selectedFilter ===
+					'all'
+						? 'bg-muted text-foreground'
+						: 'text-muted-foreground hover:text-foreground'}"
+				>
+					All
 				</button>
 			</div>
 		</div>
@@ -162,9 +189,17 @@
 		<div
 			role="alert"
 			aria-live="polite"
-			class="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-400"
+			class="flex items-center justify-between rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-400"
 		>
-			{error}
+			<span>{error}</span>
+			<button
+				type="button"
+				onclick={fetchMistakes}
+				class="flex cursor-pointer items-center gap-1 rounded-md bg-rose-500/20 px-2.5 py-1 text-[11px] font-semibold text-rose-300 transition-colors hover:bg-rose-500/30"
+			>
+				<RefreshCw class="h-3 w-3" />
+				Retry
+			</button>
 		</div>
 	{/if}
 
@@ -287,7 +322,9 @@
 			<p class="text-muted-foreground mt-1 max-w-sm text-xs">
 				{selectedFilter === 'unresolved'
 					? 'Great work! You have no unresolved quiz errors in your error bank.'
-					: 'No resolved questions in history yet.'}
+					: selectedFilter === 'resolved'
+						? 'No resolved questions in history yet.'
+						: 'No mistakes recorded yet. Take quizzes to track and practice missed questions!'}
 			</p>
 		</div>
 	{:else}

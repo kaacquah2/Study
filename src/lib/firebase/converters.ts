@@ -93,7 +93,9 @@ export interface UserProfileDoc {
 	badges?: string[];
 	longestStreak?: number;
 	streakFreezes?: number;
+	role?: string;
 	isAdmin?: boolean;
+	isSuperAdmin?: boolean;
 	onboardingComplete?: boolean;
 	streak?: {
 		current: number;

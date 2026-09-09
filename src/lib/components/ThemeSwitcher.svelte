@@ -1,6 +1,14 @@
 <script lang="ts">
 	import { themeStore, type Theme } from '$lib/stores/theme.svelte';
 
+	interface Props {
+		fullWidth?: boolean;
+		size?: 'sm' | 'md';
+		class?: string;
+	}
+
+	let { fullWidth = false, size = 'md', class: className = '' }: Props = $props();
+
 	const themes: { id: Theme; label: string }[] = [
 		{ id: 'light', label: 'Light' },
 		{ id: 'dark', label: 'Dark' }
@@ -8,7 +16,7 @@
 </script>
 
 <div
-	class="inline-flex rounded-full border border-border bg-surface-muted p-1 shadow-xs"
+	class="{fullWidth ? 'flex w-full' : 'inline-flex'} rounded-full border border-border bg-surface-muted/90 p-1 shadow-2xs transition-colors {className}"
 	role="group"
 	aria-label="Theme selector"
 >
@@ -17,16 +25,18 @@
 			type="button"
 			aria-label={`Switch to ${label} theme`}
 			aria-pressed={themeStore.current === id}
-			class="flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-180 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 {themeStore.current ===
+			class="flex cursor-pointer items-center justify-center gap-1.5 rounded-full font-semibold transition-all duration-180 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 {fullWidth
+				? 'flex-1'
+				: ''} {size === 'sm' ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1.5 text-xs'} {themeStore.current ===
 			id
-				? 'bg-primary text-white shadow-xs'
-				: 'text-text-muted hover:text-text'}"
+				? 'bg-primary text-white shadow-xs font-bold'
+				: 'text-text-muted hover:text-text hover:bg-surface/50'}"
 			onclick={() => themeStore.setTheme(id)}
 		>
 			{#if id === 'light'}
 				<!-- Sun Icon -->
 				<svg
-					class="h-3.5 w-3.5"
+					class={size === 'sm' ? 'h-3 w-3 shrink-0' : 'h-3.5 w-3.5 shrink-0'}
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
@@ -42,7 +52,7 @@
 			{:else}
 				<!-- Moon Icon -->
 				<svg
-					class="h-3.5 w-3.5"
+					class={size === 'sm' ? 'h-3 w-3 shrink-0' : 'h-3.5 w-3.5 shrink-0'}
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"

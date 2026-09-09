@@ -108,21 +108,58 @@ export async function getUserMistakes(
 	userId: string,
 	options: { moduleId?: string; resolved?: boolean; limit?: number } = {}
 ): Promise<MistakeRecord[]> {
-	let query: FirebaseFirestore.Query = adminDb
-		.collection('mistakeRecords')
-		.doc(userId)
-		.collection('mistakes');
+	try {
+		let query: FirebaseFirestore.Query = adminDb
+			.collection('mistakeRecords')
+			.doc(userId)
+			.collection('mistakes');
 
-	if (typeof options.resolved === 'boolean') {
-		query = query.where('resolved', '==', options.resolved);
+		if (typeof options.resolved === 'boolean') {
+			query = query.where('resolved', '==', options.resolved);
+		}
+
+		if (options.moduleId) {
+			query = query.where('moduleId', '==', options.moduleId);
+		}
+
+		query = query.orderBy('lastMistakeAt', 'desc').limit(options.limit || 50);
+
+		const snapshot = await query.get();
+		return snapshot.docs.map((doc) => doc.data() as MistakeRecord);
+	} catch (err: unknown) {
+		console.warn(
+			'[getUserMistakes] Query failed or composite index missing, falling back to in-memory filter and sort:',
+			err
+		);
+
+		try {
+			const snapshot = await adminDb
+				.collection('mistakeRecords')
+				.doc(userId)
+				.collection('mistakes')
+				.get();
+
+			let records = snapshot.docs.map((doc) => doc.data() as MistakeRecord);
+
+			if (typeof options.resolved === 'boolean') {
+				records = records.filter((m) => Boolean(m.resolved) === options.resolved);
+			}
+
+			if (options.moduleId) {
+				records = records.filter((m) => m.moduleId === options.moduleId);
+			}
+
+			records.sort((a, b) => {
+				const timeA = a.lastMistakeAt ? new Date(a.lastMistakeAt).getTime() : 0;
+				const timeB = b.lastMistakeAt ? new Date(b.lastMistakeAt).getTime() : 0;
+				return timeB - timeA;
+			});
+
+			const limit = options.limit || 50;
+			return records.slice(0, limit);
+		} catch (fallbackErr) {
+			console.error('[getUserMistakes] Fallback fetch failed:', fallbackErr);
+			return [];
+		}
 	}
-
-	if (options.moduleId) {
-		query = query.where('moduleId', '==', options.moduleId);
-	}
-
-	query = query.orderBy('lastMistakeAt', 'desc').limit(options.limit || 50);
-
-	const snapshot = await query.get();
-	return snapshot.docs.map((doc) => doc.data() as MistakeRecord);
 }
