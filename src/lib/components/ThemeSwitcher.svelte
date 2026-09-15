@@ -16,7 +16,9 @@
 </script>
 
 <div
-	class="{fullWidth ? 'flex w-full' : 'inline-flex'} rounded-full border border-border bg-surface-muted/90 p-1 shadow-2xs transition-colors {className}"
+	class="{fullWidth
+		? 'flex w-full'
+		: 'inline-flex'} rounded-full border border-border bg-surface-muted/90 p-1 shadow-2xs transition-colors {className}"
 	role="group"
 	aria-label="Theme selector"
 >
@@ -27,10 +29,11 @@
 			aria-pressed={themeStore.current === id}
 			class="flex cursor-pointer items-center justify-center gap-1.5 rounded-full font-semibold transition-all duration-180 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 {fullWidth
 				? 'flex-1'
-				: ''} {size === 'sm' ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1.5 text-xs'} {themeStore.current ===
-			id
-				? 'bg-primary text-white shadow-xs font-bold'
-				: 'text-text-muted hover:text-text hover:bg-surface/50'}"
+				: ''} {size === 'sm'
+				? 'px-2.5 py-1 text-[11px]'
+				: 'px-3 py-1.5 text-xs'} {themeStore.current === id
+				? 'bg-primary font-bold text-white shadow-xs'
+				: 'text-text-muted hover:bg-surface/50 hover:text-text'}"
 			onclick={() => themeStore.setTheme(id)}
 		>
 			{#if id === 'light'}

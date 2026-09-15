@@ -39,6 +39,7 @@ def test_handle_500_error_fallback_request_id():
     http_exc = _handle_500_error(mock_request, "TestEndpoint", sensitive_exception)
 
     assert http_exc.status_code == 500
+    assert isinstance(http_exc.detail, dict)
     assert http_exc.detail["request_id"] == "header-req-id-5678"
     assert http_exc.detail["message"] == "Internal Server Error"
     assert "cuda_allocator" not in str(http_exc.detail)

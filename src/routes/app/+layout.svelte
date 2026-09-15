@@ -264,7 +264,7 @@
 						<div
 							class="hidden items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-bold text-primary sm:flex"
 						>
-							<span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+							<span class="h-2 w-2 animate-pulse rounded-full bg-emerald-500"></span>
 							<span>Live Administrator Mode</span>
 						</div>
 					{:else}

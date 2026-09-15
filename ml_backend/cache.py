@@ -100,7 +100,12 @@ class CacheManager:
             try:
                 raw_val = self._redis_client.get(key)
                 if raw_val is not None:
-                    data = json.loads(raw_val.decode("utf-8"))
+                    if isinstance(raw_val, bytes):
+                        data = json.loads(raw_val.decode("utf-8"))
+                    elif isinstance(raw_val, str):
+                        data = json.loads(raw_val)
+                    else:
+                        data = raw_val
                     return data, "HIT"
             except Exception as e:
                 logger.warning(f"[CacheManager] Redis read error ({e}). Falling back to memory cache.")
@@ -111,14 +116,16 @@ class CacheManager:
             val = self._memory_cache[key]
             if isinstance(val, (dict, list)):
                 return val, "HIT"
-            try:
-                data = json.loads(val)
-                if isinstance(data, (dict, list, str, int, float, bool)):
-                    return data, "HIT"
-            except Exception:
-                logger.warning(f"[CacheManager] Failed to deserialize in-memory value for key {key}.")
-                del self._memory_cache[key]
-                return None, "MISS"
+            if isinstance(val, (str, bytes, bytearray)):
+                try:
+                    data = json.loads(val)
+                    if isinstance(data, (dict, list, str, int, float, bool)):
+                        return data, "HIT"
+                except Exception:
+                    logger.warning(f"[CacheManager] Failed to deserialize in-memory value for key {key}.")
+                    del self._memory_cache[key]
+                    return None, "MISS"
+            return None, "MISS"
 
         return None, "MISS"
 

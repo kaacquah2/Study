@@ -47,7 +47,10 @@
 			const x = padLeft + (day / totalDays) * chartW;
 
 			// Natural forgetting curve
-			const decayVal = Math.max(15, Math.round(100 * Math.exp((-day * 1.5) / Math.max(stabilityDays, 5))));
+			const decayVal = Math.max(
+				15,
+				Math.round(100 * Math.exp((-day * 1.5) / Math.max(stabilityDays, 5)))
+			);
 			const yDecay = padTop + chartH - (decayVal / 100) * chartH;
 
 			// Spaced repetition review curve (resets upward on review days)
@@ -80,18 +83,24 @@
 
 	let decayPath = $derived.by(() => {
 		if (curvePoints.length === 0) return '';
-		return curvePoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.yDecay.toFixed(1)}`).join(' ');
+		return curvePoints
+			.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.yDecay.toFixed(1)}`)
+			.join(' ');
 	});
 
 	let fsrsPath = $derived.by(() => {
 		if (curvePoints.length === 0) return '';
-		return curvePoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.yFSRS.toFixed(1)}`).join(' ');
+		return curvePoints
+			.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.yFSRS.toFixed(1)}`)
+			.join(' ');
 	});
 
 	let fsrsArea = $derived.by(() => {
 		if (curvePoints.length === 0) return '';
 		const base = padTop + chartH;
-		const line = curvePoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.yFSRS.toFixed(1)}`).join(' ');
+		const line = curvePoints
+			.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.yFSRS.toFixed(1)}`)
+			.join(' ');
 		const first = curvePoints[0];
 		const last = curvePoints[curvePoints.length - 1];
 		return `${line} L ${last.x} ${base} L ${first.x} ${base} Z`;
@@ -108,7 +117,9 @@
 		<div>
 			<div class="flex items-center gap-2">
 				<h3 class="font-display text-sm font-bold text-text">{title}</h3>
-				<span class="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-500">
+				<span
+					class="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-500"
+				>
 					FSRS-Powered
 				</span>
 			</div>
@@ -119,12 +130,16 @@
 
 		<div class="flex items-center gap-4">
 			<div class="text-right">
-				<span class="block text-[10px] font-bold tracking-wider text-text-muted uppercase">Estimated Retention</span>
+				<span class="block text-[10px] font-bold tracking-wider text-text-muted uppercase"
+					>Estimated Retention</span
+				>
 				<span class="font-display text-base font-black text-emerald-500">{currentRetention}%</span>
 			</div>
 			<div class="h-7 w-px bg-border"></div>
 			<div class="text-right">
-				<span class="block text-[10px] font-bold tracking-wider text-text-muted uppercase">Memory Stability</span>
+				<span class="block text-[10px] font-bold tracking-wider text-text-muted uppercase"
+					>Memory Stability</span
+				>
 				<span class="font-display text-base font-black text-primary">~{stabilityDays}d</span>
 			</div>
 		</div>
@@ -206,7 +221,7 @@
 			{#each [0, 7, 14, 21, 30] as day (day)}
 				{@const x = padLeft + (day / 30) * chartW}
 				<text
-					x={x}
+					{x}
 					y={height - 8}
 					text-anchor="middle"
 					font-size="9"
@@ -272,7 +287,9 @@
 	</div>
 
 	<!-- Legend & Helper Note -->
-	<div class="mt-1 flex flex-wrap items-center justify-between border-t border-border/50 pt-2 text-[11px] text-text-muted">
+	<div
+		class="mt-1 flex flex-wrap items-center justify-between border-t border-border/50 pt-2 text-[11px] text-text-muted"
+	>
 		<div class="flex items-center gap-4">
 			<div class="flex items-center gap-1.5">
 				<span class="h-2 w-4 rounded-full bg-primary"></span>
@@ -285,7 +302,9 @@
 		</div>
 		<div>
 			{#if dueCardCount > 0}
-				<span class="font-bold text-amber-500">⚡ {dueCardCount} flashcards due for review today</span>
+				<span class="font-bold text-amber-500"
+					>⚡ {dueCardCount} flashcards due for review today</span
+				>
 			{:else}
 				<span class="text-emerald-500">✓ All memory reviews up to date</span>
 			{/if}

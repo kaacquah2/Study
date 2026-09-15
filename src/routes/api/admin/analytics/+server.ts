@@ -84,13 +84,19 @@ export const GET: RequestHandler = async ({ request }) => {
 			}
 
 			const text = `${data.title || ''} ${data.topic || ''} ${data.category || ''}`.toLowerCase();
-			if (/python|code|programming|neural|ai|machine learning|web|javascript|software|algorithm|deep learning/i.test(text)) {
+			if (
+				/python|code|programming|neural|ai|machine learning|web|javascript|software|algorithm|deep learning/i.test(
+					text
+				)
+			) {
 				domainCounts['Computer Science & AI']++;
 			} else if (/math|algebra|calculus|geometry|statistic|linear|probability/i.test(text)) {
 				domainCounts['Mathematics & Logic']++;
 			} else if (/physic|chemist|biolog|science|astronomy|neuroscience/i.test(text)) {
 				domainCounts['Physical & Natural Sciences']++;
-			} else if (/history|philosophy|psychology|sociology|political|art|music|literature/i.test(text)) {
+			} else if (
+				/history|philosophy|psychology|sociology|political|art|music|literature/i.test(text)
+			) {
 				domainCounts['Humanities & Social Sciences']++;
 			} else if (/business|finance|econom|market|manage|startup/i.test(text)) {
 				domainCounts['Business & Economics']++;
@@ -100,7 +106,7 @@ export const GET: RequestHandler = async ({ request }) => {
 		}
 
 		const domainDistribution = Object.entries(domainCounts)
-			.filter(([_, count]) => count > 0)
+			.filter(([, count]) => count > 0)
 			.map(([domain, count]) => ({
 				domain,
 				count,

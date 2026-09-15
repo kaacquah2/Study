@@ -19,21 +19,6 @@
 	let lastStudiedOn = $derived(authStore.profile?.streak?.lastStudiedOn);
 	let userBadges = $derived(authStore.profile?.badges ?? []);
 
-	let initials = $derived.by(() => {
-		if (displayName && displayName !== 'Student') {
-			return displayName
-				.split(' ')
-				.map((n) => n[0])
-				.join('')
-				.toUpperCase()
-				.slice(0, 2);
-		}
-		if (email) {
-			return email.slice(0, 2).toUpperCase();
-		}
-		return '??';
-	});
-
 	let exporting = $state(false);
 	let deleting = $state(false);
 	let showDeleteModal = $state(false);

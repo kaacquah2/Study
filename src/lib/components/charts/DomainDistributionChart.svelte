@@ -24,16 +24,48 @@
 	}: Props = $props();
 
 	const domainColorMap: Record<string, { bg: string; text: string; dot: string; icon: string }> = {
-		'Computer Science & AI': { bg: 'bg-primary/10', text: 'text-primary', dot: 'bg-primary', icon: '💻' },
-		'Mathematics & Logic': { bg: 'bg-emerald-500/10', text: 'text-emerald-500', dot: 'bg-emerald-500', icon: '📐' },
-		'Physical & Natural Sciences': { bg: 'bg-amber-500/10', text: 'text-amber-500', dot: 'bg-amber-500', icon: '🔬' },
-		'Humanities & Social Sciences': { bg: 'bg-indigo-500/10', text: 'text-indigo-500', dot: 'bg-indigo-500', icon: '🏛️' },
-		'Business & Economics': { bg: 'bg-rose-500/10', text: 'text-rose-500', dot: 'bg-rose-500', icon: '📈' },
-		'Languages & General': { bg: 'bg-teal-500/10', text: 'text-teal-500', dot: 'bg-teal-500', icon: '🌍' }
+		'Computer Science & AI': {
+			bg: 'bg-primary/10',
+			text: 'text-primary',
+			dot: 'bg-primary',
+			icon: '💻'
+		},
+		'Mathematics & Logic': {
+			bg: 'bg-emerald-500/10',
+			text: 'text-emerald-500',
+			dot: 'bg-emerald-500',
+			icon: '📐'
+		},
+		'Physical & Natural Sciences': {
+			bg: 'bg-amber-500/10',
+			text: 'text-amber-500',
+			dot: 'bg-amber-500',
+			icon: '🔬'
+		},
+		'Humanities & Social Sciences': {
+			bg: 'bg-indigo-500/10',
+			text: 'text-indigo-500',
+			dot: 'bg-indigo-500',
+			icon: '🏛️'
+		},
+		'Business & Economics': {
+			bg: 'bg-rose-500/10',
+			text: 'text-rose-500',
+			dot: 'bg-rose-500',
+			icon: '📈'
+		},
+		'Languages & General': {
+			bg: 'bg-teal-500/10',
+			text: 'text-teal-500',
+			dot: 'bg-teal-500',
+			icon: '🌍'
+		}
 	};
 </script>
 
-<div class="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs">
+<div
+	class="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs"
+>
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div>
@@ -67,13 +99,22 @@
 	<!-- Grid of Domain Cards -->
 	<div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
 		{#each domains as d (d.domain)}
-			{@const colors = domainColorMap[d.domain] || { bg: 'bg-surface-muted', text: 'text-text', dot: 'bg-primary', icon: '📚' }}
-			<div class="flex items-center justify-between rounded-xl border border-border/60 bg-surface-muted/50 p-2.5 transition-colors hover:bg-surface-muted">
-				<div class="flex items-center gap-2 min-w-0">
+			{@const colors = domainColorMap[d.domain] || {
+				bg: 'bg-surface-muted',
+				text: 'text-text',
+				dot: 'bg-primary',
+				icon: '📚'
+			}}
+			<div
+				class="flex items-center justify-between rounded-xl border border-border/60 bg-surface-muted/50 p-2.5 transition-colors hover:bg-surface-muted"
+			>
+				<div class="flex min-w-0 items-center gap-2">
 					<span class="text-base">{colors.icon}</span>
 					<div class="min-w-0">
 						<span class="block truncate text-xs font-bold text-text">{d.domain}</span>
-						<span class="block text-[10px] text-text-muted">{d.count} course{d.count === 1 ? '' : 's'}</span>
+						<span class="block text-[10px] text-text-muted"
+							>{d.count} course{d.count === 1 ? '' : 's'}</span
+						>
 					</div>
 				</div>
 				<span class="font-mono text-xs font-bold {colors.text}">{d.percentage}%</span>
@@ -82,7 +123,9 @@
 	</div>
 
 	<!-- Footer -->
-	<div class="mt-3 flex items-center justify-between border-t border-border/50 pt-2 text-[11px] text-text-muted">
+	<div
+		class="mt-3 flex items-center justify-between border-t border-border/50 pt-2 text-[11px] text-text-muted"
+	>
 		<span>Auto-classified via course outline concepts.</span>
 		<span class="font-medium text-primary">Live Distribution</span>
 	</div>

@@ -76,9 +76,7 @@ describe('verifySuperAdmin Security Check', () => {
 		} as unknown as ReturnType<typeof adminModule.adminDb.collection>);
 
 		const req = new Request('http://localhost/api/superadmin/users');
-		await expect(verifySuperAdmin(req)).rejects.toThrow(
-			'FORBIDDEN: Admin privileges required'
-		);
+		await expect(verifySuperAdmin(req)).rejects.toThrow('FORBIDDEN: Admin privileges required');
 	});
 });
 

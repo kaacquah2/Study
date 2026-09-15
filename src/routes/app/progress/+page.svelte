@@ -339,13 +339,48 @@
 		else if (afternoon > morning && afternoon > evening) peakTime = 'Afternoon (1:00 PM - 4:30 PM)';
 
 		const weekData = [
-			{ day: 'Mon', fullName: 'Monday', minutes: Math.max(10, Math.round(counts['Mon'].minutes)), questions: counts['Mon'].questions },
-			{ day: 'Tue', fullName: 'Tuesday', minutes: Math.max(10, Math.round(counts['Tue'].minutes)), questions: counts['Tue'].questions },
-			{ day: 'Wed', fullName: 'Wednesday', minutes: Math.max(10, Math.round(counts['Wed'].minutes)), questions: counts['Wed'].questions },
-			{ day: 'Thu', fullName: 'Thursday', minutes: Math.max(10, Math.round(counts['Thu'].minutes)), questions: counts['Thu'].questions },
-			{ day: 'Fri', fullName: 'Friday', minutes: Math.max(10, Math.round(counts['Fri'].minutes)), questions: counts['Fri'].questions },
-			{ day: 'Sat', fullName: 'Saturday', minutes: Math.max(10, Math.round(counts['Sat'].minutes)), questions: counts['Sat'].questions },
-			{ day: 'Sun', fullName: 'Sunday', minutes: Math.max(10, Math.round(counts['Sun'].minutes)), questions: counts['Sun'].questions }
+			{
+				day: 'Mon',
+				fullName: 'Monday',
+				minutes: Math.max(10, Math.round(counts['Mon'].minutes)),
+				questions: counts['Mon'].questions
+			},
+			{
+				day: 'Tue',
+				fullName: 'Tuesday',
+				minutes: Math.max(10, Math.round(counts['Tue'].minutes)),
+				questions: counts['Tue'].questions
+			},
+			{
+				day: 'Wed',
+				fullName: 'Wednesday',
+				minutes: Math.max(10, Math.round(counts['Wed'].minutes)),
+				questions: counts['Wed'].questions
+			},
+			{
+				day: 'Thu',
+				fullName: 'Thursday',
+				minutes: Math.max(10, Math.round(counts['Thu'].minutes)),
+				questions: counts['Thu'].questions
+			},
+			{
+				day: 'Fri',
+				fullName: 'Friday',
+				minutes: Math.max(10, Math.round(counts['Fri'].minutes)),
+				questions: counts['Fri'].questions
+			},
+			{
+				day: 'Sat',
+				fullName: 'Saturday',
+				minutes: Math.max(10, Math.round(counts['Sat'].minutes)),
+				questions: counts['Sat'].questions
+			},
+			{
+				day: 'Sun',
+				fullName: 'Sunday',
+				minutes: Math.max(10, Math.round(counts['Sun'].minutes)),
+				questions: counts['Sun'].questions
+			}
 		];
 
 		return { weekData, peakTime, morningPct, afternoonPct, eveningPct };

@@ -15,10 +15,12 @@ from pathlib import Path
 
 # Force UTF-8 stdout if possible on Windows
 if sys.stdout.encoding and sys.stdout.encoding.lower() not in ["utf-8", "utf8"]:
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-    except AttributeError:
-        pass
+    reconfigure_fn = getattr(sys.stdout, "reconfigure", None)
+    if callable(reconfigure_fn):
+        try:
+            reconfigure_fn(encoding="utf-8")
+        except Exception:
+            pass
 
 # Add project root and ml_backend to path
 project_root = Path(__file__).resolve().parent.parent
@@ -40,11 +42,11 @@ def main():
     print("Running empirical benchmarks live against local models, FAISS vector store, and data...")
     print("-" * 80)
 
-    from scripts.evaluate_rag import run_rag_evaluation
-    from scripts.evaluate_summarization import run_summarization_evaluation
-    from scripts.evaluate_quiz_rubric import run_quiz_evaluation
-    from scripts.run_latency_benchmarks import run_latency_benchmarks
-    from scripts.analyze_user_study import run_user_study_analysis
+    from scripts.evaluate_rag import run_rag_evaluation  # pyright: ignore[reportMissingImports]
+    from scripts.evaluate_summarization import run_summarization_evaluation  # pyright: ignore[reportMissingImports]
+    from scripts.evaluate_quiz_rubric import run_quiz_evaluation  # pyright: ignore[reportMissingImports]
+    from scripts.run_latency_benchmarks import run_latency_benchmarks  # pyright: ignore[reportMissingImports]
+    from scripts.analyze_user_study import run_user_study_analysis  # pyright: ignore[reportMissingImports]
 
     results = {}
 

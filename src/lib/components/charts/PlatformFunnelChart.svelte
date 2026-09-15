@@ -35,7 +35,9 @@
 	];
 </script>
 
-<div class="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs">
+<div
+	class="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs"
+>
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div>
@@ -57,25 +59,34 @@
 		{#each stages as stage, idx (stage.stage)}
 			{@const widthPct = Math.max(12, Math.round((stage.count / maxCount) * 100))}
 			{@const prevCount = idx > 0 ? stages[idx - 1].count : null}
-			{@const stepConversion = prevCount && prevCount > 0 ? Math.round((stage.count / prevCount) * 100) : null}
+			{@const stepConversion =
+				prevCount && prevCount > 0 ? Math.round((stage.count / prevCount) * 100) : null}
 			{@const gradient = stageGradients[idx % stageGradients.length]}
 
 			<div class="flex flex-col gap-1">
 				<div class="flex items-center justify-between text-xs">
 					<div class="flex items-center gap-2">
-						<span class="flex h-5 w-5 items-center justify-center rounded-md bg-surface-muted text-[10px] font-bold text-text-muted">
+						<span
+							class="flex h-5 w-5 items-center justify-center rounded-md bg-surface-muted text-[10px] font-bold text-text-muted"
+						>
 							{idx + 1}
 						</span>
 						<span class="font-bold text-text">{stage.stage}</span>
 						{#if stage.description}
-							<span class="hidden text-[11px] text-text-muted sm:inline">({stage.description})</span>
+							<span class="hidden text-[11px] text-text-muted sm:inline">({stage.description})</span
+							>
 						{/if}
 					</div>
 
 					<div class="flex items-center gap-2 font-mono">
 						<span class="font-black text-text">{stage.count}</span>
 						{#if stepConversion !== null}
-							<span class="rounded bg-surface-muted px-1.5 py-0.5 text-[10px] font-bold {stepConversion >= 70 ? 'text-emerald-500' : 'text-amber-500'}">
+							<span
+								class="rounded bg-surface-muted px-1.5 py-0.5 text-[10px] font-bold {stepConversion >=
+								70
+									? 'text-emerald-500'
+									: 'text-amber-500'}"
+							>
 								{stepConversion}%
 							</span>
 						{/if}
@@ -94,7 +105,9 @@
 	</div>
 
 	<!-- Bottom summary footer -->
-	<div class="flex items-center justify-between border-t border-border/50 pt-2 text-[11px] text-text-muted">
+	<div
+		class="flex items-center justify-between border-t border-border/50 pt-2 text-[11px] text-text-muted"
+	>
 		<span>Calculated across all registered student and admin cohorts.</span>
 		<span class="font-medium text-primary">Live Data</span>
 	</div>

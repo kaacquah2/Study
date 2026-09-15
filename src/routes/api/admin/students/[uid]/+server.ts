@@ -145,10 +145,7 @@ export const PATCH: RequestHandler = async ({ request, params }) => {
 			}
 
 			// If target user is already admin or superadmin, only an administrator can modify them
-			if (
-				(existingRole === 'admin' || existingRole === 'superadmin') &&
-				!isAdminRole(actor.role)
-			) {
+			if ((existingRole === 'admin' || existingRole === 'superadmin') && !isAdminRole(actor.role)) {
 				return json(
 					{
 						error: {

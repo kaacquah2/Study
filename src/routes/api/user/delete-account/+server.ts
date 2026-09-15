@@ -43,3 +43,5 @@ export const POST: RequestHandler = async ({ request }) => {
 		);
 	}
 };
+
+export const DELETE: RequestHandler = POST;

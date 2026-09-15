@@ -48,7 +48,9 @@
 	});
 </script>
 
-<div class="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs">
+<div
+	class="flex flex-col justify-between rounded-2xl border border-border bg-surface p-5 shadow-xs"
+>
 	<!-- Top Bar -->
 	<div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
 		<div>
@@ -64,7 +66,9 @@
 		</div>
 
 		<div class="text-left sm:text-right">
-			<span class="block text-[10px] font-bold tracking-wider text-text-muted uppercase">This Week's Study</span>
+			<span class="block text-[10px] font-bold tracking-wider text-text-muted uppercase"
+				>This Week's Study</span
+			>
 			<span class="font-display text-base font-black text-text">{formattedTotalTime}</span>
 		</div>
 	</div>
@@ -76,7 +80,7 @@
 				{@const heightPct = Math.max(8, Math.round((item.minutes / maxMinutes) * 100))}
 				{@const isTopDay = item.minutes === Math.max(...weekData.map((d) => d.minutes))}
 				<div
-					class="group relative flex flex-1 flex-col items-center gap-2 cursor-pointer"
+					class="group relative flex flex-1 cursor-pointer flex-col items-center gap-2"
 					onmouseenter={() => (hoveredDay = item)}
 					onmouseleave={() => (hoveredDay = null)}
 					role="figure"
@@ -85,16 +89,18 @@
 					<!-- Tooltip -->
 					{#if hoveredDay?.day === item.day}
 						<div
-							class="pointer-events-none absolute -top-11 z-20 whitespace-nowrap rounded-xl border border-border bg-surface px-2.5 py-1 text-[11px] font-bold text-text shadow-md"
+							class="pointer-events-none absolute -top-11 z-20 rounded-xl border border-border bg-surface px-2.5 py-1 text-[11px] font-bold whitespace-nowrap text-text shadow-md"
 						>
 							<span>{item.fullName}: </span>
 							<span class="text-primary">{item.minutes}m</span>
-							<span class="text-text-muted font-normal"> ({item.questions} qs)</span>
+							<span class="font-normal text-text-muted"> ({item.questions} qs)</span>
 						</div>
 					{/if}
 
 					<!-- Bar Column -->
-					<div class="relative flex h-28 w-full max-w-9 items-end justify-center rounded-xl bg-surface-muted/60 p-1">
+					<div
+						class="relative flex h-28 w-full max-w-9 items-end justify-center rounded-xl bg-surface-muted/60 p-1"
+					>
 						<div
 							class="w-full rounded-lg transition-all duration-300 {isTopDay
 								? 'bg-linear-to-t from-primary to-indigo-500 shadow-xs'
@@ -121,7 +127,8 @@
 		<div class="flex items-center justify-between text-xs">
 			<span class="text-text-muted">Peak Focus Window:</span>
 			<span class="flex items-center gap-1.5 font-bold text-primary">
-				<span>⚡</span> {peakTime}
+				<span>⚡</span>
+				{peakTime}
 			</span>
 		</div>
 
@@ -146,9 +153,15 @@
 			</div>
 
 			<div class="flex items-center justify-between text-[10px] font-semibold text-text-muted">
-				<span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-amber-400"></span> 🌅 Morning ({morningPct}%)</span>
-				<span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-sky-500"></span> ☀️ Afternoon ({afternoonPct}%)</span>
-				<span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-indigo-500"></span> 🌙 Evening ({eveningPct}%)</span>
+				<span class="flex items-center gap-1"
+					><span class="h-2 w-2 rounded-full bg-amber-400"></span> 🌅 Morning ({morningPct}%)</span
+				>
+				<span class="flex items-center gap-1"
+					><span class="h-2 w-2 rounded-full bg-sky-500"></span> ☀️ Afternoon ({afternoonPct}%)</span
+				>
+				<span class="flex items-center gap-1"
+					><span class="h-2 w-2 rounded-full bg-indigo-500"></span> 🌙 Evening ({eveningPct}%)</span
+				>
 			</div>
 		</div>
 	</div>

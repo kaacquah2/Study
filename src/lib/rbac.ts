@@ -102,7 +102,7 @@ export function hasPermission(role: string | undefined | null, permission: Permi
 export function canAssignRole(actorRole: string | undefined | null, targetRole: string): boolean {
 	const actorNorm = normalizeRole(actorRole);
 	if (actorNorm === 'admin' || actorNorm === 'superadmin') {
-		return true;
+		return Boolean(targetRole);
 	}
 	return false;
 }

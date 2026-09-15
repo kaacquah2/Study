@@ -179,7 +179,9 @@ async function seedAdmin() {
 	console.log('======================================================');
 	console.log('\nHow to access:');
 	console.log('1. Log in to the application at http://localhost:5173/');
-	console.log('2. If you are already logged in on the browser, refresh or re-sign in to refresh auth claims.');
+	console.log(
+		'2. If you are already logged in on the browser, refresh or re-sign in to refresh auth claims.'
+	);
 	console.log('3. Access the unified Admin Console:');
 	console.log('   - Admin Console:     http://localhost:5173/app/admin');
 	console.log('   - User Management:   http://localhost:5173/superadmin/user-management');

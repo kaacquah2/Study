@@ -800,41 +800,43 @@ def test_cached_quiz_reshuffle_with_duplicate_options():
 
 def test_inference_timeout_from_header():
     """Verify that _get_inference_timeout respects X-Timeout-Seconds header."""
+    import main
     from main import _get_inference_timeout
     from starlette.requests import Request
 
-    scope = {
-        "type": "http",
-        "method": "POST",
-        "path": "/summarize",
-        "headers": [(b"x-timeout-seconds", b"12.5")],
-    }
-    req = Request(scope)
-    timeout = _get_inference_timeout(req)
-    assert timeout == 12.5
+    with patch.object(main, "_INFERENCE_TIMEOUT", 20.0):
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/summarize",
+            "headers": [(b"x-timeout-seconds", b"12.5")],
+        }
+        req = Request(scope)
+        timeout = _get_inference_timeout(req)
+        assert timeout == 12.5
 
-    # With header exceeding ceiling, capped at _INFERENCE_TIMEOUT
-    scope_high = {
-        "type": "http",
-        "method": "POST",
-        "path": "/summarize",
-        "headers": [(b"x-timeout-seconds", b"120.0")],
-    }
-    req_high = Request(scope_high)
-    timeout_high = _get_inference_timeout(req_high)
-    assert timeout_high == 20.0
+        # With header exceeding ceiling, capped at _INFERENCE_TIMEOUT
+        scope_high = {
+            "type": "http",
+            "method": "POST",
+            "path": "/summarize",
+            "headers": [(b"x-timeout-seconds", b"120.0")],
+        }
+        req_high = Request(scope_high)
+        timeout_high = _get_inference_timeout(req_high)
+        assert timeout_high == 20.0
 
-    # With multiplier for lesson/quiz
-    timeout_mult = _get_inference_timeout(req_high, multiplier=1.5)
-    assert timeout_mult == 30.0
+        # With multiplier for lesson/quiz
+        timeout_mult = _get_inference_timeout(req_high, multiplier=1.5)
+        assert timeout_mult == 30.0
 
-    # With invalid header, fallback to default
-    scope_invalid = {
-        "type": "http",
-        "method": "POST",
-        "path": "/summarize",
-        "headers": [(b"x-timeout-seconds", b"invalid_number")],
-    }
-    req_invalid = Request(scope_invalid)
-    timeout_invalid = _get_inference_timeout(req_invalid)
-    assert timeout_invalid == 20.0
+        # With invalid header, fallback to default
+        scope_invalid = {
+            "type": "http",
+            "method": "POST",
+            "path": "/summarize",
+            "headers": [(b"x-timeout-seconds", b"invalid_number")],
+        }
+        req_invalid = Request(scope_invalid)
+        timeout_invalid = _get_inference_timeout(req_invalid)
+        assert timeout_invalid == 20.0

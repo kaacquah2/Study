@@ -21,15 +21,9 @@
 
 	let totalCalls = $derived(geminiCount + mlBackendCount + ollamaCount);
 
-	let geminiPct = $derived(
-		totalCalls > 0 ? Math.round((geminiCount / totalCalls) * 100) : 100
-	);
-	let mlBackendPct = $derived(
-		totalCalls > 0 ? Math.round((mlBackendCount / totalCalls) * 100) : 0
-	);
-	let ollamaPct = $derived(
-		totalCalls > 0 ? Math.max(0, 100 - geminiPct - mlBackendPct) : 0
-	);
+	let geminiPct = $derived(totalCalls > 0 ? Math.round((geminiCount / totalCalls) * 100) : 100);
+	let mlBackendPct = $derived(totalCalls > 0 ? Math.round((mlBackendCount / totalCalls) * 100) : 0);
+	let ollamaPct = $derived(totalCalls > 0 ? Math.max(0, 100 - geminiPct - mlBackendPct) : 0);
 
 	let activeModelCount = $derived(
 		mlBackendHealth?.models_loaded
@@ -46,17 +40,22 @@
 				<h3 class="font-display text-base font-bold text-text">
 					Inference Traffic & Multi-Tier Routing
 				</h3>
-				<span class="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-400">
+				<span
+					class="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-400"
+				>
 					Self-Healing Chain
 				</span>
 			</div>
 			<p class="mt-0.5 text-xs text-text-muted">
-				Real-time request distribution across Gemini Cloud, self-hosted PyTorch, and local offline models.
+				Real-time request distribution across Gemini Cloud, self-hosted PyTorch, and local offline
+				models.
 			</p>
 		</div>
 		<div class="flex items-center gap-2 text-xs">
 			<span class="text-text-muted">Total Inferences:</span>
-			<span class="font-display font-black text-text">{totalCalls > 0 ? totalCalls.toLocaleString() : 'Standby'}</span>
+			<span class="font-display font-black text-text"
+				>{totalCalls > 0 ? totalCalls.toLocaleString() : 'Standby'}</span
+			>
 		</div>
 	</div>
 
@@ -64,8 +63,10 @@
 	<div class="flex flex-col gap-2">
 		<div class="flex items-center justify-between text-xs font-semibold">
 			<span class="text-text-muted">Inference Traffic Allocation</span>
-			<span class="text-text font-bold">
-				{totalCalls > 0 ? `${geminiPct}% Cloud / ${100 - geminiPct}% Local` : '100% Primary Cloud Active'}
+			<span class="font-bold text-text">
+				{totalCalls > 0
+					? `${geminiPct}% Cloud / ${100 - geminiPct}% Local`
+					: '100% Primary Cloud Active'}
 			</span>
 		</div>
 
@@ -85,7 +86,9 @@
 				{/if}
 				{#if mlBackendPct > 0}
 					<div
-						class="h-full bg-emerald-500 transition-all duration-500 {geminiPct === 0 ? 'rounded-l-full' : ''} {ollamaPct === 0 ? 'rounded-r-full' : ''}"
+						class="h-full bg-emerald-500 transition-all duration-500 {geminiPct === 0
+							? 'rounded-l-full'
+							: ''} {ollamaPct === 0 ? 'rounded-r-full' : ''}"
 						style="width: {mlBackendPct}%;"
 						title="PyTorch CPU: {mlBackendCount} calls ({mlBackendPct}%)"
 					></div>
@@ -138,20 +141,31 @@
 					Google Cloud GenAI API for dynamic curriculum outlines, adaptive lessons, and reasoning.
 				</p>
 			</div>
-			<div class="mt-4 flex items-center justify-between border-t border-border/40 pt-2 text-[10px] text-text-muted">
+			<div
+				class="mt-4 flex items-center justify-between border-t border-border/40 pt-2 text-[10px] text-text-muted"
+			>
 				<span>Requests: <strong class="text-text">{geminiCount}</strong></span>
 				<span class="font-bold text-primary">Latency: ~600ms</span>
 			</div>
 		</div>
 
 		<!-- Tier 2: PyTorch CPU Engine -->
-		<div class="flex flex-col justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+		<div
+			class="flex flex-col justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4"
+		>
 			<div>
 				<div class="flex items-center justify-between">
-					<span class="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-extrabold text-emerald-400">
+					<span
+						class="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-extrabold text-emerald-400"
+					>
 						TIER 2 LOCAL ML
 					</span>
-					<span class="flex items-center gap-1 text-[11px] font-bold {mlBackendHealth?.status === 'ok' || !mlBackendHealth ? 'text-emerald-400' : 'text-amber-400'}">
+					<span
+						class="flex items-center gap-1 text-[11px] font-bold {mlBackendHealth?.status ===
+							'ok' || !mlBackendHealth
+							? 'text-emerald-400'
+							: 'text-amber-400'}"
+					>
 						<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> Ready
 					</span>
 				</div>
@@ -160,17 +174,23 @@
 					Self-hosted HuggingFace models (Flan-T5, MixQG, TinyLlama) with dynamic INT8 quantization.
 				</p>
 			</div>
-			<div class="mt-4 flex items-center justify-between border-t border-border/40 pt-2 text-[10px] text-text-muted">
+			<div
+				class="mt-4 flex items-center justify-between border-t border-border/40 pt-2 text-[10px] text-text-muted"
+			>
 				<span>Models Active: <strong class="text-text">{activeModelCount}/6</strong></span>
 				<span class="font-bold text-emerald-400">Zero Cloud Cost</span>
 			</div>
 		</div>
 
 		<!-- Tier 3: Ollama / Failover -->
-		<div class="flex flex-col justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+		<div
+			class="flex flex-col justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"
+		>
 			<div>
 				<div class="flex items-center justify-between">
-					<span class="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-500">
+					<span
+						class="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-500"
+					>
 						TIER 3 FAILOVER
 					</span>
 					<span class="flex items-center gap-1 text-[11px] font-bold text-text-muted">
@@ -182,7 +202,9 @@
 					Emergency zero-internet fallback guaranteeing 100% course generator and quiz continuity.
 				</p>
 			</div>
-			<div class="mt-4 flex items-center justify-between border-t border-border/40 pt-2 text-[10px] text-text-muted">
+			<div
+				class="mt-4 flex items-center justify-between border-t border-border/40 pt-2 text-[10px] text-text-muted"
+			>
 				<span>Fallback Ratio: <strong class="text-amber-400">{fallbackPercentage}%</strong></span>
 				<span class="font-bold text-amber-500">Air-Gapped Capable</span>
 			</div>

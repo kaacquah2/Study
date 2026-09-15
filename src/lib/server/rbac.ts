@@ -73,9 +73,7 @@ export async function verifyAdmin(request: Request): Promise<RBACUser> {
 
 	// Environment admin fallback
 	const adminEmail = process.env.ADMIN_EMAIL || process.env.SUPERADMIN_EMAIL;
-	const isEnvAdmin = Boolean(
-		adminEmail && user.email?.toLowerCase() === adminEmail.toLowerCase()
-	);
+	const isEnvAdmin = Boolean(adminEmail && user.email?.toLowerCase() === adminEmail.toLowerCase());
 
 	const isSuperAdmin = isClaimSuperAdmin || status.isSuperAdmin || status.isAdmin || isEnvAdmin;
 	const isAdmin = isClaimAdmin || status.isAdmin || isSuperAdmin;

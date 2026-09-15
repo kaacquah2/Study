@@ -16,6 +16,7 @@ import json
 import csv
 import logging
 from pathlib import Path
+from typing import Any
 import numpy as np
 
 # Set environment paths to ml_backend
@@ -34,11 +35,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger(__name__)
 
 
-def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
+def cosine_similarity(a: Any, b: Any) -> float:
     """Compute cosine similarity between two 1D vectors."""
-    dot = np.dot(a, b)
-    norm_a = np.linalg.norm(a)
-    norm_b = np.linalg.norm(b)
+    a_arr = np.asarray(a)
+    b_arr = np.asarray(b)
+    dot = np.dot(a_arr, b_arr)
+    norm_a = np.linalg.norm(a_arr)
+    norm_b = np.linalg.norm(b_arr)
     if norm_a == 0 or norm_b == 0:
         return 0.0
     return float(dot / (norm_a * norm_b))

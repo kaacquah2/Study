@@ -79,6 +79,7 @@ def run_summarization_evaluation():
     logger.info(f"Loaded {len(samples)} summarization samples from {data_file}")
 
     # Compute ROUGE scores using evaluate / rouge_score
+    scorer = None
     try:
         from rouge_score import rouge_scorer
         scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
@@ -139,7 +140,7 @@ def run_summarization_evaluation():
             )
 
         if status == "SUCCESS" and pred_summary:
-            if has_rouge:
+            if has_rouge and scorer is not None:
                 scores = scorer.score(gold_summary, pred_summary)
                 r1 = scores["rouge1"].fmeasure * 100.0
                 r2 = scores["rouge2"].fmeasure * 100.0

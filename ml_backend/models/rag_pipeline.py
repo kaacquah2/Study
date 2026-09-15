@@ -43,6 +43,7 @@ try:
     from langchain_text_splitters import RecursiveCharacterTextSplitter
     _HAS_LANGCHAIN_SPLITTER = True
 except ImportError:
+    RecursiveCharacterTextSplitter = None
     _HAS_LANGCHAIN_SPLITTER = False
 
 logger = logging.getLogger(__name__)
@@ -109,7 +110,7 @@ class RAGPipeline:
         # Monotonic counter — only ever increments, never reused
         self._next_id: int = 0
 
-        if _HAS_LANGCHAIN_SPLITTER:
+        if _HAS_LANGCHAIN_SPLITTER and RecursiveCharacterTextSplitter is not None:
             self._text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=1000,
                 chunk_overlap=200,
@@ -294,7 +295,8 @@ class RAGPipeline:
             ):
                 try:
                     sel = faiss.IDSelectorBatch(np.array(authorized_fids, dtype="int64"))
-                    params = faiss.SearchParameters(sel=sel)
+                    params = faiss.SearchParameters()
+                    params.sel = sel
                     k = min(len(authorized_fids), top_k)
                     distances, indices = self._index.search(query_embedding, k, params=params)
                 except Exception as exc:

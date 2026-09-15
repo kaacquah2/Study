@@ -50,7 +50,8 @@
 		if (currentPath.startsWith('/app/admin')) {
 			const currentTab = page.url.searchParams.get('tab') || 'overview';
 			if (href === '/app/admin') return currentTab === 'overview';
-			if (href === '/app/admin?tab=users') return currentTab === 'users' || currentTab === 'students';
+			if (href === '/app/admin?tab=users')
+				return currentTab === 'users' || currentTab === 'students';
 			if (href === '/app/admin?tab=system') return currentTab === 'system';
 			return currentPath === href;
 		}
@@ -116,7 +117,7 @@
 
 	<!-- Scrollable Middle Zone (Quick action + Nav list + Heatmap) -->
 	<div
-		class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3.5 py-3 space-y-3.5 scrollbar-thin xl:px-4"
+		class="min-h-0 flex-1 scrollbar-thin space-y-3.5 overflow-x-hidden overflow-y-auto px-3.5 py-3 xl:px-4"
 	>
 		{#if currentPath.startsWith('/app/admin')}
 			<!-- Quick Switch to Learner Mode -->
@@ -215,7 +216,9 @@
 						<ShieldCheck class="h-5 w-5" />
 					</div>
 					<div class="text-[11px] font-bold text-text">Root Platform Access</div>
-					<div class="mt-0.5 text-[10px] text-text-muted">Full administrative privileges active.</div>
+					<div class="mt-0.5 text-[10px] text-text-muted">
+						Full administrative privileges active.
+					</div>
 				</div>
 			{:else}
 				<StreakHeatmap />
@@ -231,7 +234,7 @@
 		<!-- Full-width Theme Switcher Row -->
 		<div class="flex flex-col gap-1.5 px-0.5">
 			<div
-				class="flex items-center justify-between text-[10px] font-bold tracking-wider uppercase text-text-muted"
+				class="flex items-center justify-between text-[10px] font-bold tracking-wider text-text-muted uppercase"
 			>
 				<span>Theme</span>
 				<span class="font-medium text-text-subtle capitalize">{themeStore.current} Mode</span>
@@ -250,7 +253,9 @@
 					<div class="flex items-center gap-3 border-b border-border/60 pb-3">
 						<Avatar
 							src={authStore.user?.photoURL}
-							name={authStore.user?.displayName || authStore.profile?.displayName || authStore.user?.email}
+							name={authStore.user?.displayName ||
+								authStore.profile?.displayName ||
+								authStore.user?.email}
 							size="lg"
 						/>
 						<div class="min-w-0 truncate">

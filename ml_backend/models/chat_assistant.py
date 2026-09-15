@@ -184,7 +184,7 @@ def _is_seq2seq() -> bool:
 
     try:
         config = AutoConfig.from_pretrained(_MODEL_ID)
-        _IS_SEQ2SEQ_CACHE = getattr(config, "is_encoder_decoder", False)
+        _IS_SEQ2SEQ_CACHE = bool(getattr(config, "is_encoder_decoder", False))
     except Exception as e:
         logger.warning(f"Could not inspect config for {_MODEL_ID}: {e}. Falling back to string match.")
         _IS_SEQ2SEQ_CACHE = any(keyword in _MODEL_ID.lower() for keyword in ["t5", "seq2seq", "bart", "pegasus"])

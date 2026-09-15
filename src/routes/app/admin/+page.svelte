@@ -177,7 +177,12 @@
 
 	$effect(() => {
 		const tabParam = page.url.searchParams.get('tab')?.toLowerCase();
-		if (tabParam === 'users' || tabParam === 'students' || tabParam === 'roles' || tabParam === 'access') {
+		if (
+			tabParam === 'users' ||
+			tabParam === 'students' ||
+			tabParam === 'roles' ||
+			tabParam === 'access'
+		) {
 			activeTab = 'students';
 		} else if (tabParam === 'system') {
 			activeTab = 'system';
@@ -515,10 +520,12 @@
 						</div>
 						<div class="my-3">
 							<div class="font-display text-3xl font-black text-text">
-								{analytics.studentStats?.totalUsers ?? (analytics.studentStats?.totalAdmins ? 1 : 0)}
+								{analytics.studentStats?.totalUsers ??
+									(analytics.studentStats?.totalAdmins ? 1 : 0)}
 							</div>
 							<span class="text-xs font-semibold text-primary">
-								{analytics.studentStats?.totalStudents ?? 0} students · {analytics.studentStats?.totalAdmins ?? 1} admin
+								{analytics.studentStats?.totalStudents ?? 0} students · {analytics.studentStats
+									?.totalAdmins ?? 1} admin
 							</span>
 						</div>
 						<div class="text-[11px] text-text-muted">
@@ -795,9 +802,7 @@
 
 				<!-- Educational Funnel & Curriculum Domain Distribution -->
 				<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-					<PlatformFunnelChart
-						stages={analytics.learningFunnel}
-					/>
+					<PlatformFunnelChart stages={analytics.learningFunnel} />
 					<DomainDistributionChart
 						domains={analytics.domainDistribution}
 						totalCourses={analytics.coursesGenerated}
@@ -869,15 +874,20 @@
 				<!-- Tab Subheader -->
 				<div class="flex flex-col gap-1">
 					<div class="flex items-center gap-2">
-						<h2 class="font-display text-base font-bold text-text">User Directory & Role Governance</h2>
+						<h2 class="font-display text-base font-bold text-text">
+							User Directory & Role Governance
+						</h2>
 						{#if students.length > 0}
-							<span class="rounded-full bg-surface-muted px-2.5 py-0.5 text-[11px] font-bold text-text-muted">
+							<span
+								class="rounded-full bg-surface-muted px-2.5 py-0.5 text-[11px] font-bold text-text-muted"
+							>
 								{students.length} Accounts
 							</span>
 						{/if}
 					</div>
 					<p class="text-xs text-text-muted">
-						Unified user management: inspect individual learning dossiers, assign platform roles (Student, Instructor, Admin), and manage suspensions.
+						Unified user management: inspect individual learning dossiers, assign platform roles
+						(Student, Instructor, Admin), and manage suspensions.
 					</p>
 				</div>
 
@@ -971,11 +981,7 @@
 											<!-- Student Info -->
 											<td class="px-5 py-3.5">
 												<div class="flex items-center gap-3">
-													<Avatar
-														src={s.photoURL}
-														name={s.displayName || s.email}
-														size="lg"
-													/>
+													<Avatar src={s.photoURL} name={s.displayName || s.email} size="lg" />
 													<div>
 														<div class="font-bold text-text">
 															{s.displayName || 'Unnamed Student'}

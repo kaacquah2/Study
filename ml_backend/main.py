@@ -517,6 +517,7 @@ async def health_readiness():
         "eager_warmup": _EAGER_WARMUP,
     }
     if errors:
+        payload["errors"] = errors
         payload["has_errors"] = True
 
     status_code = 200 if is_ready else 503

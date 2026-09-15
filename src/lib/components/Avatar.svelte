@@ -102,9 +102,6 @@
 	{:else if computedInitials}
 		<span class="font-bold tracking-tight select-none">{computedInitials}</span>
 	{:else}
-		<User
-			class="{iconSizes[size] || 'h-4 w-4'} opacity-80"
-			aria-hidden="true"
-		/>
+		<User class="{iconSizes[size] || 'h-4 w-4'} opacity-80" aria-hidden="true" />
 	{/if}
 </div>
